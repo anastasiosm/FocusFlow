@@ -16,4 +16,4 @@ namespace FocusFlow.Application.DTO;
 /// <param name="AssignedUserId"></param>
 /// <param name="CreatedAt"></param>
 /// <param name="UpdatedAt"></param>
-public record TaskDto(Guid Id, string Title, string? Description, DateTime? DueDate, Domain.Enums.TaskStatus Status, Priority Priority, DateTime? CompletedAt, Guid ProjectId, string? AssignedUserId, DateTime CreatedAt, DateTime UpdatedAt);
+public record TaskDto(Guid Id, string Title, string? Description, DateTime? DueDate, Domain.Enums.ProjectTaskStatus Status, Priority Priority, DateTime? CompletedAt, Guid ProjectId, string? AssignedUserId, DateTime CreatedAt, DateTime UpdatedAt);

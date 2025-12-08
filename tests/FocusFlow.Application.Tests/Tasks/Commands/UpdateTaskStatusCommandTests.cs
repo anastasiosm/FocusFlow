@@ -4,7 +4,6 @@ using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Enums;
 using FocusFlow.Domain.Exceptions;
 using Moq;
-using TaskStatus = FocusFlow.Domain.Enums.TaskStatus;
 
 namespace FocusFlow.Application.Tests.Tasks.Commands;
 
@@ -34,14 +33,14 @@ public class UpdateTaskStatusCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(task);
 
-		var command = new UpdateTaskStatusCommand(taskId, TaskStatus.InProgress);
+		var command = new UpdateTaskStatusCommand(taskId, ProjectTaskStatus.InProgress);
 
 		// Act
 		var result = await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		result.Should().NotBeNull();
-		result.Status.Should().Be(TaskStatus.InProgress);
+		result.Status.Should().Be(ProjectTaskStatus.InProgress);
 		result.Id.Should().Be(taskId);
 
 		MockTaskRepository.Verify(
@@ -61,7 +60,7 @@ public class UpdateTaskStatusCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync((ProjectTask?)null);
 
-		var command = new UpdateTaskStatusCommand(taskId, TaskStatus.Done);
+		var command = new UpdateTaskStatusCommand(taskId, ProjectTaskStatus.Done);
 
 		// Act
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -91,13 +90,13 @@ public class UpdateTaskStatusCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(task);
 
-		var command = new UpdateTaskStatusCommand(taskId, TaskStatus.Done);
+		var command = new UpdateTaskStatusCommand(taskId, ProjectTaskStatus.Done);
 
 		// Act
 		var result = await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		result.Status.Should().Be(TaskStatus.Done);
+		result.Status.Should().Be(ProjectTaskStatus.Done);
 		result.CompletedAt.Should().NotBeNull();
 		result.CompletedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
 	}
@@ -112,13 +111,13 @@ public class UpdateTaskStatusCommandTests : TestBase
 		var idProperty = typeof(ProjectTask).GetProperty("Id");
 		idProperty!.SetValue(task, taskId);
 
-		task.SetStatus(TaskStatus.Done); // Mark as completed
+		task.SetStatus(ProjectTaskStatus.Done); // Mark as completed
 
 		MockTaskRepository
 			.Setup(repo => repo.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(task);
 
-		var command = new UpdateTaskStatusCommand(taskId, TaskStatus.Todo);
+		var command = new UpdateTaskStatusCommand(taskId, ProjectTaskStatus.Todo);
 
 		// Act
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -131,12 +130,12 @@ public class UpdateTaskStatusCommandTests : TestBase
 	}
 
 	[Theory]
-	[InlineData(TaskStatus.Todo, TaskStatus.InProgress)]
-	[InlineData(TaskStatus.InProgress, TaskStatus.Done)]
-	[InlineData(TaskStatus.Todo, TaskStatus.Done)]
+	[InlineData(ProjectTaskStatus.Todo, ProjectTaskStatus.InProgress)]
+	[InlineData(ProjectTaskStatus.InProgress, ProjectTaskStatus.Done)]
+	[InlineData(ProjectTaskStatus.Todo, ProjectTaskStatus.Done)]
 	public async Task Handle_WithValidStatusTransition_ShouldSucceed(
-		TaskStatus initialStatus,
-		TaskStatus newStatus)
+		ProjectTaskStatus initialStatus,
+		ProjectTaskStatus newStatus)
 	{
 		// Arrange
 		var taskId = Guid.NewGuid();
@@ -145,7 +144,7 @@ public class UpdateTaskStatusCommandTests : TestBase
 		var idProperty = typeof(ProjectTask).GetProperty("Id");
 		idProperty!.SetValue(task, taskId);
 
-		if (initialStatus != TaskStatus.Todo)
+		if (initialStatus != ProjectTaskStatus.Todo)
 			task.SetStatus(initialStatus);
 
 		MockTaskRepository

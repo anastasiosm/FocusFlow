@@ -1,5 +1,5 @@
-﻿using FocusFlow.Domain.Exceptions;
-using TaskStatus = FocusFlow.Domain.Enums.TaskStatus;
+﻿using FocusFlow.Domain.Enums;
+using FocusFlow.Domain.Exceptions;
 
 namespace FocusFlow.Domain.Entities;
 
@@ -15,7 +15,7 @@ public class ProjectTask
 	public string Title { get; private set; } = string.Empty;
 	public string? Description { get; private set; }
 	public DateTime? DueDate { get; private set; }
-	public TaskStatus Status { get; private set; }
+	public ProjectTaskStatus Status { get; private set; }
 	public Enums.Priority Priority { get; private set; }
 	public DateTime? CompletedAt { get; private set; }
 
@@ -47,7 +47,7 @@ public class ProjectTask
 		ProjectId = projectId;
 		DueDate = dueDate?.ToUniversalTime();
 		Priority = priority;
-		Status = TaskStatus.Todo;
+		Status = ProjectTaskStatus.Todo;
 		AssignedUserId = assignedUserId;
 	}
 
@@ -67,13 +67,13 @@ public class ProjectTask
 		UpdatedAt = DateTime.UtcNow;
 	}
 
-	public void SetStatus(TaskStatus status)
+	public void SetStatus(ProjectTaskStatus status)
 	{
-		if (Status == TaskStatus.Done && status != TaskStatus.Done)
+		if (Status == ProjectTaskStatus.Done && status != ProjectTaskStatus.Done)
 			throw new FocusFlowBusinessRuleException("Cannot reopen a completed task");
 
 		Status = status;
-		CompletedAt = status == TaskStatus.Done ? DateTime.UtcNow : null;
+		CompletedAt = status == ProjectTaskStatus.Done ? DateTime.UtcNow : null;
 		UpdatedAt = DateTime.UtcNow;
 	}
 
@@ -92,5 +92,5 @@ public class ProjectTask
 		UpdatedAt = DateTime.UtcNow;
 	}
 
-	public bool IsOverdue() => DueDate.HasValue && DueDate.Value < DateTime.UtcNow && Status != TaskStatus.Done;
+	public bool IsOverdue() => DueDate.HasValue && DueDate.Value < DateTime.UtcNow && Status != ProjectTaskStatus.Done;
 }

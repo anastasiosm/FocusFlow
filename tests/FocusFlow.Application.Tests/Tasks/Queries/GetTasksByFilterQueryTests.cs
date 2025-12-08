@@ -3,7 +3,6 @@ using FocusFlow.Application.Tasks.Queries;
 using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Enums;
 using Moq;
-using TaskStatus = FocusFlow.Domain.Enums.TaskStatus;
 
 namespace FocusFlow.Application.Tests.Tasks.Queries;
 
@@ -51,22 +50,22 @@ public class GetTasksByFilterQueryTests : TestBase
 			new("Task 2", null, Guid.NewGuid()),
 			new("Task 3", null, Guid.NewGuid())
 		};
-		tasks[0].SetStatus(TaskStatus.Todo);
-		tasks[1].SetStatus(TaskStatus.InProgress);
-		tasks[2].SetStatus(TaskStatus.Todo);
+		tasks[0].SetStatus(ProjectTaskStatus.Todo);
+		tasks[1].SetStatus(ProjectTaskStatus.InProgress);
+		tasks[2].SetStatus(ProjectTaskStatus.Todo);
 
 		MockTaskRepository
 			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
 			.ReturnsAsync(tasks);
 
-		var query = new GetTasksByFilterQuery(Status: TaskStatus.Todo);
+		var query = new GetTasksByFilterQuery(Status: ProjectTaskStatus.Todo);
 
 		// Act
 		var result = await _handler.Handle(query, CancellationToken.None);
 
 		// Assert
 		result.Should().HaveCount(2);
-		result.Should().AllSatisfy(t => t.Status.Should().Be(TaskStatus.Todo));
+		result.Should().AllSatisfy(t => t.Status.Should().Be(ProjectTaskStatus.Todo));
 	}
 
 	[Fact]
@@ -155,7 +154,7 @@ public class GetTasksByFilterQueryTests : TestBase
 		{
 			new("Task 1", null, Guid.NewGuid(), DateTime.UtcNow.AddDays(-1)) // Past due date
 		};
-		tasks[0].SetStatus(TaskStatus.Done); // But completed
+		tasks[0].SetStatus(ProjectTaskStatus.Done); // But completed
 
 		MockTaskRepository
 			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -180,16 +179,16 @@ public class GetTasksByFilterQueryTests : TestBase
 			new("Task 2", null, Guid.NewGuid(), null, Priority.High),
 			new("Task 3", null, Guid.NewGuid(), null, Priority.Medium)
 		};
-		tasks[0].SetStatus(TaskStatus.Todo);
-		tasks[1].SetStatus(TaskStatus.InProgress);
-		tasks[2].SetStatus(TaskStatus.Todo);
+		tasks[0].SetStatus(ProjectTaskStatus.Todo);
+		tasks[1].SetStatus(ProjectTaskStatus.InProgress);
+		tasks[2].SetStatus(ProjectTaskStatus.Todo);
 
 		MockTaskRepository
 			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
 			.ReturnsAsync(tasks);
 
 		var query = new GetTasksByFilterQuery(
-			Status: TaskStatus.Todo,
+			Status: ProjectTaskStatus.Todo,
 			Priority: Priority.High);
 
 		// Act
@@ -198,7 +197,7 @@ public class GetTasksByFilterQueryTests : TestBase
 		// Assert
 		result.Should().HaveCount(1);
 		result.First().Title.Should().Be("Task 1");
-		result.First().Status.Should().Be(TaskStatus.Todo);
+		result.First().Status.Should().Be(ProjectTaskStatus.Todo);
 		result.First().Priority.Should().Be(Priority.High);
 	}
 
@@ -212,16 +211,16 @@ public class GetTasksByFilterQueryTests : TestBase
 			new("Task 2", null, Guid.NewGuid(), DateTime.UtcNow.AddDays(-1), Priority.High),
 			new("Task 3", null, Guid.NewGuid(), DateTime.UtcNow.AddDays(1), Priority.High)
 		};
-		tasks[0].SetStatus(TaskStatus.Todo);   // Overdue, High, Todo
-		tasks[1].SetStatus(TaskStatus.InProgress); // Overdue, High, InProgress
-		tasks[2].SetStatus(TaskStatus.Todo);   // Not overdue, High, Todo
+		tasks[0].SetStatus(ProjectTaskStatus.Todo);   // Overdue, High, Todo
+		tasks[1].SetStatus(ProjectTaskStatus.InProgress); // Overdue, High, InProgress
+		tasks[2].SetStatus(ProjectTaskStatus.Todo);   // Not overdue, High, Todo
 
 		MockTaskRepository
 			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
 			.ReturnsAsync(tasks);
 
 		var query = new GetTasksByFilterQuery(
-			Status: TaskStatus.Todo,
+			Status: ProjectTaskStatus.Todo,
 			Priority: Priority.High,
 			IsOverdue: true);
 
@@ -263,7 +262,7 @@ public class GetTasksByFilterQueryTests : TestBase
 			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new List<ProjectTask>());
 
-		var query = new GetTasksByFilterQuery(Status: TaskStatus.Todo);
+		var query = new GetTasksByFilterQuery(Status: ProjectTaskStatus.Todo);
 
 		// Act
 		var result = await _handler.Handle(query, CancellationToken.None);

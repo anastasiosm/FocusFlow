@@ -2,7 +2,6 @@
 using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Enums;
 using FocusFlow.Domain.Exceptions;
-using TaskStatus = FocusFlow.Domain.Enums.TaskStatus;
 
 namespace FocusFlow.Domain.Tests;
 
@@ -85,7 +84,7 @@ public class ProjectTaskTests
 		var task = new ProjectTask("Title", null, Guid.NewGuid());
 
 		// Assert
-		task.Status.Should().Be(TaskStatus.Todo);
+		task.Status.Should().Be(ProjectTaskStatus.Todo);
 		task.Priority.Should().Be(Priority.Medium);
 		task.DueDate.Should().BeNull();
 		task.AssignedUserId.Should().BeNull();
@@ -251,10 +250,10 @@ public class ProjectTaskTests
 		var task = new ProjectTask("Task", null, Guid.NewGuid());
 
 		// Act
-		task.SetStatus(TaskStatus.InProgress);
+		task.SetStatus(ProjectTaskStatus.InProgress);
 
 		// Assert
-		task.Status.Should().Be(TaskStatus.InProgress);
+		task.Status.Should().Be(ProjectTaskStatus.InProgress);
 		task.CompletedAt.Should().BeNull();
 	}
 
@@ -263,13 +262,13 @@ public class ProjectTaskTests
 	{
 		// Arrange
 		var task = new ProjectTask("Task", null, Guid.NewGuid());
-		task.SetStatus(TaskStatus.InProgress);
+		task.SetStatus(ProjectTaskStatus.InProgress);
 
 		// Act
-		task.SetStatus(TaskStatus.Done);
+		task.SetStatus(ProjectTaskStatus.Done);
 
 		// Assert
-		task.Status.Should().Be(TaskStatus.Done);
+		task.Status.Should().Be(ProjectTaskStatus.Done);
 		task.CompletedAt.Should().NotBeNull();
 		task.CompletedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
 	}
@@ -279,10 +278,10 @@ public class ProjectTaskTests
 	{
 		// Arrange
 		var task = new ProjectTask("Task", null, Guid.NewGuid());
-		task.SetStatus(TaskStatus.Done);
+		task.SetStatus(ProjectTaskStatus.Done);
 
 		// Act
-		Action act = () => task.SetStatus(TaskStatus.Todo);
+		Action act = () => task.SetStatus(ProjectTaskStatus.Todo);
 
 		// Assert
 		act.Should().Throw<FocusFlowBusinessRuleException>()
@@ -294,10 +293,10 @@ public class ProjectTaskTests
 	{
 		// Arrange
 		var task = new ProjectTask("Task", null, Guid.NewGuid());
-		task.SetStatus(TaskStatus.Done);
+		task.SetStatus(ProjectTaskStatus.Done);
 
 		// Act
-		Action act = () => task.SetStatus(TaskStatus.InProgress);
+		Action act = () => task.SetStatus(ProjectTaskStatus.InProgress);
 
 		// Assert
 		act.Should().Throw<FocusFlowBusinessRuleException>()
@@ -311,7 +310,7 @@ public class ProjectTaskTests
 		var task = new ProjectTask("Task", null, Guid.NewGuid());
 
 		// Act
-		task.SetStatus(TaskStatus.InProgress);
+		task.SetStatus(ProjectTaskStatus.InProgress);
 
 		// Assert
 		task.CompletedAt.Should().BeNull();
@@ -326,7 +325,7 @@ public class ProjectTaskTests
 		Thread.Sleep(10);
 
 		// Act
-		task.SetStatus(TaskStatus.InProgress);
+		task.SetStatus(ProjectTaskStatus.InProgress);
 
 		// Assert
 		task.UpdatedAt.Should().BeAfter(originalUpdatedAt);
@@ -461,9 +460,9 @@ public class ProjectTaskTests
 	public void IsOverdue_WithPastDueDateButCompleted_ShouldReturnFalse()
 	{
 		// Arrange
-		var pastDueDate = DateTime.UtcNow.AddDays(-1);
-		var task = new ProjectTask("Task", null, Guid.NewGuid(), pastDueDate);
-		task.SetStatus(TaskStatus.Done);
+	var pastDueDate = DateTime.UtcNow.AddDays(-1);
+	var task = new ProjectTask("Task", null, Guid.NewGuid(), pastDueDate);
+	task.SetStatus(ProjectTaskStatus.Done);
 
 		// Act
 		var isOverdue = task.IsOverdue();

@@ -4,7 +4,6 @@ using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Enums;
 using FocusFlow.Domain.Exceptions;
 using Moq;
-using TaskStatus = FocusFlow.Domain.Enums.TaskStatus;
 
 namespace FocusFlow.Application.Tests.Tasks.Commands;
 
@@ -52,7 +51,7 @@ public class CreateTaskCommandTests : TestBase
 		result.Title.Should().Be("Test Task");
 		result.Description.Should().Be("Task Description");
 		result.Priority.Should().Be(Priority.High);
-		result.Status.Should().Be(TaskStatus.Todo);
+		result.Status.Should().Be(ProjectTaskStatus.Todo);
 		result.ProjectId.Should().Be(projectId);
 		result.AssignedUserId.Should().Be("user123");
 		result.DueDate.Should().BeCloseTo(dueDate, TimeSpan.FromSeconds(1));
@@ -122,7 +121,7 @@ public class CreateTaskCommandTests : TestBase
 		var result = await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		result.Status.Should().Be(TaskStatus.Todo);
+		result.Status.Should().Be(ProjectTaskStatus.Todo);
 		result.Priority.Should().Be(Priority.Medium);
 		result.DueDate.Should().BeNull();
 		result.AssignedUserId.Should().BeNull();
@@ -165,10 +164,10 @@ public class CreateTaskCommandTests : TestBase
 		// Assert
 		await act.Should().ThrowAsync<FocusFlowValidationException>()
 			.WithMessage("*title cannot be empty*");
-		
+
 		MockTaskRepository.Verify(
 			repo => repo.AddAsync(It.IsAny<ProjectTask>(), It.IsAny<CancellationToken>()),
 			Times.Never);
 		VerifyUnitOfWorkSaveChanges(Times.Never());
-	}	
+	}
 }
