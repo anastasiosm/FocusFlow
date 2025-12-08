@@ -270,4 +270,79 @@ public class ProjectTests
 	}
 
 	#endregion
+
+	#region Task Collection Tests
+
+	[Fact]
+	public void Tasks_ShouldBeReadOnlyCollection()
+	{
+		// Arrange
+		var project = new Project("Project", "Description", "user123");
+
+		// Assert
+		project.Tasks.Should().BeAssignableTo<IReadOnlyCollection<ProjectTask>>();
+	}
+
+	[Fact]
+	public void AddTask_MultipleTasks_ShouldMaintainOrder()
+	{
+		// Arrange
+		var project = new Project("Project", "Description", "user123");
+		var task1 = new ProjectTask("Task 1", "Desc 1", project.Id);
+		var task2 = new ProjectTask("Task 2", "Desc 2", project.Id);
+		var task3 = new ProjectTask("Task 3", "Desc 3", project.Id);
+
+		// Act
+		project.AddTask(task1);
+		project.AddTask(task2);
+		project.AddTask(task3);
+
+		// Assert
+		project.Tasks.Should().HaveCount(3);
+		project.Tasks.Should().ContainInOrder(task1, task2, task3);
+	}
+
+	[Fact]
+	public void AddTask_DuplicateTask_ShouldHandleAppropriately()
+	{
+		// Arrange
+		var project = new Project("Project", "Description", "user123");
+		var task = new ProjectTask("Task 1", "Description", project.Id);
+		project.AddTask(task);
+
+		// Act
+		Action act = () => project.AddTask(task);
+
+		// Assert - Decide behavior: throw or allow duplicates
+		act.Should().NotThrow(); // Or .Throw<FocusFlowBusinessRuleException>()
+	}
+
+	#endregion
+
+	#region Edge Cases
+
+	[Fact]
+	public void Update_WithNullDescription_ShouldAllowNull()
+	{
+		// Arrange
+		var project = new Project("Project", "Original", "user123");
+
+		// Act
+		project.Update("Updated", null);
+
+		// Assert
+		project.Description.Should().BeNull();
+	}
+
+	[Fact]
+	public void Constructor_WithNullDescription_ShouldCreateProject()
+	{
+		// Arrange & Act
+		var project = new Project("Project", null, "user123");
+
+		// Assert
+		project.Description.Should().BeNull();
+	}
+
+	#endregion
 }
