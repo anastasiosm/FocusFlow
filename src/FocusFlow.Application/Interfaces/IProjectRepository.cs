@@ -8,6 +8,7 @@ namespace FocusFlow.Application.Interfaces;
 public interface IProjectRepository
 {
 	Task<Project?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+	Task<Project?> GetByIdWithTasksAsync(Guid id, CancellationToken cancellationToken = default);
 	Task<List<Project>> GetAllAsync(CancellationToken cancellationToken = default);
 	Task<List<Project>> GetByOwnerIdAsync(string ownerId, CancellationToken cancellationToken = default);
 	Task AddAsync(Project project, CancellationToken cancellationToken = default);
