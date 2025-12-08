@@ -131,6 +131,17 @@ public class ProjectTaskTests
 		task.AssignedUserId.Should().Be("user456");
 	}
 
+	[Fact]
+	public void Constructor_WithEmptyProjectId_ShouldThrowException()
+	{
+		// Act
+		Action act = () => new ProjectTask("Valid Title", "Description", Guid.Empty);
+
+		// Assert
+		act.Should().Throw<FocusFlowValidationException>()
+			.WithMessage("*Project ID cannot be empty*");
+	}
+
 	#endregion
 
 	#region Update Tests
@@ -200,6 +211,33 @@ public class ProjectTaskTests
 		// Assert
 		act.Should().Throw<FocusFlowValidationException>()
 			.WithMessage("*cannot exceed 2000 characters*");
+	}
+
+	[Fact]
+	public void Update_WithNullDueDate_ShouldClearDueDate()
+	{
+		// Arrange
+		var originalDueDate = DateTime.UtcNow.AddDays(7);
+		var task = new ProjectTask("Task", null, Guid.NewGuid(), originalDueDate);
+
+		// Act
+		task.Update("Updated Task", "Updated Description", null, Priority.Low);
+
+		// Assert
+		task.DueDate.Should().BeNull();
+	}
+
+	[Fact]
+	public void Update_WithNullDescription_ShouldAllowNull()
+	{
+		// Arrange
+		var task = new ProjectTask("Task", "Original Description", Guid.NewGuid());
+
+		// Act
+		task.Update("Updated Task", null, null, Priority.Medium);
+
+		// Assert
+		task.Description.Should().BeNull();
 	}
 
 	#endregion

@@ -33,6 +33,8 @@ public class ProjectTask
 
 	public ProjectTask(string title, string? description, Guid projectId, DateTime? dueDate = null, Enums.Priority priority = Enums.Priority.Medium, string? assignedUserId = null) : this()
 	{
+		if (projectId == Guid.Empty)
+			throw new FocusFlowValidationException("Project ID cannot be empty");
 		if (string.IsNullOrWhiteSpace(title))
 			throw new FocusFlowValidationException("Task title cannot be empty");
 		if (title.Length > 200)
