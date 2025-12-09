@@ -4,6 +4,11 @@ using MediatR;
 
 namespace FocusFlow.Application.Common.Behaviours;
 
+/// <summary>
+/// this class is a MediatR pipeline behavior that handles validation for requests using FluentValidation.
+/// </summary>
+/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TResponse"></typeparam>
 public class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
