@@ -13,7 +13,7 @@ public class FocusFlowDbContext : DbContext
 	{
 	}
 
-	public DbSet<Project> Projects => Set<Project>();
+	public DbSet<Project> Projects => Set<Project>(); // TODO: check this new style.
 	public DbSet<ProjectTask> Tasks => Set<ProjectTask>();
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -24,6 +24,6 @@ public class FocusFlowDbContext : DbContext
 		modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
 		// TODO: check if needed
-		// modelBuilder.HasDefaultSchema(Schemas.Application);
+		modelBuilder.HasDefaultSchema(Schemas.Application);
 	}
 }

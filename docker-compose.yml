@@ -1,0 +1,27 @@
+services:
+  focusflow-api:
+    build:
+      context: .
+      dockerfile: src/FocusFlow.WebApi/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings:DefaultConnection=Host=postgres-db;Port=5432;Database=FocusFlowDb;Username=user;Password=password"
+    depends_on:
+      - postgres-db
+
+  postgres-db:
+    image: postgres:17.2 # or latest
+    environment:
+      POSTGRES_DB: FocusFlowDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres  
+    ports:
+      - "5432:5432"    
+    volumes:
+      - focusflow-db-data:/var/lib/postgresql/data
+
+volumes:
+  focusflow-db-data:
