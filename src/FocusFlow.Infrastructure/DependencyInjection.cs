@@ -35,7 +35,7 @@ public static class DependencyInjection
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 		// Database seeder
-		//services.AddScoped<DatabaseSeeder>();
+		services.AddScoped<DatabaseSeeder>();
 
 		return services;
 	}

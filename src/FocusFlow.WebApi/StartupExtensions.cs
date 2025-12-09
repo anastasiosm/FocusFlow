@@ -37,5 +37,5 @@ public static class StartupExtensions
 		app.MapControllers();
 
 		return app;
-	}
+	}	
 }

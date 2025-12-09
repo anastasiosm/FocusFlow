@@ -4,3 +4,6 @@ GET {{FocusFlow.WebApi_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+GET https://localhost:8081/api/Projects
+Accept: application/json

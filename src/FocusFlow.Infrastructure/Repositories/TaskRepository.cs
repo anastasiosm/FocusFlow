@@ -14,24 +14,10 @@ public class TaskRepository : Repository<ProjectTask>, ITaskRepository
 	{
 	}
 
-	public override async Task<ProjectTask?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-	{
-		return await _dbSet
-			.Include(t => t.Project)
-			.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
-	}
-
-	public override async Task<List<ProjectTask>> GetAllAsync(CancellationToken cancellationToken = default)
-	{
-		return await _dbSet
-			.Include(t => t.Project)
-			.OrderBy(t => t.DueDate)
-			.ToListAsync(cancellationToken);
-	}
-
 	public async Task<List<ProjectTask>> GetByProjectIdAsync(Guid projectId, CancellationToken cancellationToken = default)
 	{
-		return await _dbSet
+		return await _context.Tasks
+			.Include(t => t.Project)
 			.Where(t => t.ProjectId == projectId)
 			.OrderBy(t => t.DueDate)
 			.ToListAsync(cancellationToken);
@@ -39,7 +25,7 @@ public class TaskRepository : Repository<ProjectTask>, ITaskRepository
 
 	public async Task<List<ProjectTask>> GetByAssignedUserIdAsync(string userId, CancellationToken cancellationToken = default)
 	{
-		return await _dbSet
+		return await _context.Tasks
 			.Include(t => t.Project)
 			.Where(t => t.AssignedUserId == userId)
 			.OrderBy(t => t.DueDate)

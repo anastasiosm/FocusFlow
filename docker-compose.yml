@@ -8,7 +8,7 @@ services:
       - "8081:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - "ConnectionStrings:DefaultConnection=Host=postgres-db;Port=5432;Database=FocusFlowDb;Username=user;Password=password"
+      - "ConnectionStrings:DefaultConnection=Host=postgres-db;Port=5432;Database=FocusFlowDb;Username=postgres;Password=postgres"
     depends_on:
       - postgres-db
 
