@@ -5,13 +5,9 @@ namespace FocusFlow.Domain.Entities;
 /// <summary>
 /// Represents a project that contains tasks
 /// </summary>
-public class Project
+public class Project : BaseEntity
 {
 	private readonly List<ProjectTask> _tasks = new();
-
-	public Guid Id { get; private set; }
-	public DateTime CreatedAt { get; private set; }
-	public DateTime UpdatedAt { get; private set; }
 
 	public string Name { get; private set; } = string.Empty;
 	public string? Description { get; private set; }
@@ -20,14 +16,9 @@ public class Project
 	// with this approach, the tasks can only be modified through methods on the Project entity.
 	public IReadOnlyCollection<ProjectTask> Tasks => _tasks.AsReadOnly();
 
-	private Project()
-	{
-		Id = Guid.NewGuid();
-		CreatedAt = DateTime.UtcNow;
-		UpdatedAt = DateTime.UtcNow;
-	}
+	private Project() { }
 
-	public Project(string name, string? description, string ownerId) : this()
+	public Project(string name, string? description, string ownerId)
 	{
 		if (string.IsNullOrWhiteSpace(name))
 			throw new FocusFlowValidationException("Project name cannot be empty");

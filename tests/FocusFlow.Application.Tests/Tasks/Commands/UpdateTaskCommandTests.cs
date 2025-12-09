@@ -84,7 +84,7 @@ public class UpdateTaskCommandTests
 			Priority.Medium);
 
 		_taskRepositoryMock.Setup(x => x.GetByIdAsync(command.TaskId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync((ProjectTask)null);
+			.ReturnsAsync((ProjectTask)null!);
 
 		// Act & Assert
 		await Assert.ThrowsAsync<FocusFlowNotFoundException>(() => _handler.Handle(command, CancellationToken.None));

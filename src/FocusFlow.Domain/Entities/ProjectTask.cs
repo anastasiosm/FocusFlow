@@ -6,12 +6,8 @@ namespace FocusFlow.Domain.Entities;
 /// <summary>
 /// Represents a task within a project
 /// </summary>
-public class ProjectTask
+public class ProjectTask : BaseEntity
 {
-	public Guid Id { get; private set; }
-	public DateTime CreatedAt { get; private set; }
-	public DateTime UpdatedAt { get; private set; }
-
 	public string Title { get; private set; } = string.Empty;
 	public string? Description { get; private set; }
 	public DateTime? DueDate { get; private set; }
@@ -24,14 +20,9 @@ public class ProjectTask
 
 	public string? AssignedUserId { get; private set; }
 
-	private ProjectTask()
-	{
-		Id = Guid.NewGuid();
-		CreatedAt = DateTime.UtcNow;
-		UpdatedAt = DateTime.UtcNow;
-	}
+	private ProjectTask() { }
 
-	public ProjectTask(string title, string? description, Guid projectId, DateTime? dueDate = null, Enums.Priority priority = Enums.Priority.Medium, string? assignedUserId = null) : this()
+	public ProjectTask(string title, string? description, Guid projectId, DateTime? dueDate = null, Enums.Priority priority = Enums.Priority.Medium, string? assignedUserId = null)
 	{
 		if (projectId == Guid.Empty)
 			throw new FocusFlowValidationException("Project ID cannot be empty");
