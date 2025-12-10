@@ -1,4 +1,4 @@
-﻿using FocusFlow.Application.DTOs;
+﻿using FocusFlow.Application.DTO;
 using FocusFlow.Application.Interfaces;
 using MediatR;
 

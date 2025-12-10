@@ -1,6 +1,4 @@
-﻿using FocusFlow.Application.DTO;
-
-namespace FocusFlow.Application.DTOs;
+﻿namespace FocusFlow.Application.DTO;
 
 /// <summary>
 /// Project with tasks response DTO

@@ -1,5 +1,4 @@
-﻿using FocusFlow.Application.DTOs;
-using FocusFlow.Application.Interfaces;
+﻿using FocusFlow.Application.DTO;
 using MediatR;
 
 namespace FocusFlow.Application.Projects.Queries;

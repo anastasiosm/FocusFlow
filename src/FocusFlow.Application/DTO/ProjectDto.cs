@@ -1,4 +1,4 @@
-﻿namespace FocusFlow.Application.DTOs;
+﻿namespace FocusFlow.Application.DTO;
 
 /// <summary>
 /// Project response DTO

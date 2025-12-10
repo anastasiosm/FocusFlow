@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enable incremental build -->
+    <UseIncrementalBuild>true</UseIncrementalBuild>
+    
+    <!-- Enable deterministic builds for better caching -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>false</ContinuousIntegrationBuild>
+    
+    <!-- Disable unnecessary analyzers during dev -->
+    <RunAnalyzersDuringBuild Condition="'$(Configuration)' == 'Debug'">false</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+</Project>

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using FocusFlow.Application.DTOs;
+using FocusFlow.Application.DTO;
 using FocusFlow.Domain.Entities;
 
 namespace FocusFlow.Application.Mappings;

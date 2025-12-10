@@ -1,160 +1,235 @@
 using FocusFlow.Application.DTO;
+using FocusFlow.Application.Projects.Queries;
 using FocusFlow.Application.Tasks.Commands;
 using FocusFlow.Application.Tasks.Queries;
 using FocusFlow.Domain.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FocusFlow.WebApi.Controllers;
 
 /// <summary>
-/// Tasks management endpoints
+/// Controller for managing tasks
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
+[Produces("application/json")]
 public class TasksController : ControllerBase
 {
 	private readonly IMediator _mediator;
+	private readonly ILogger<TasksController> _logger;
 
-	public TasksController(IMediator mediator)
+	public TasksController(IMediator mediator, ILogger<TasksController> logger)
 	{
 		_mediator = mediator;
+		_logger = logger;
 	}
 
 	/// <summary>
-	/// Get tasks with optional filters
+	/// Create a new task in a project
 	/// </summary>
-	[HttpGet]
-	[ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<TaskDto>>> GetFiltered(
-		[FromQuery] ProjectTaskStatus? status,
-		[FromQuery] Priority? priority,
-		[FromQuery] bool? isOverdue,
-		CancellationToken cancellationToken)
-	{
-		var query = new GetTasksByFilterQuery(status, priority, isOverdue);
-		var result = await _mediator.Send(query, cancellationToken);
-		return Ok(result);
-	}
-
-	/// <summary>
-	/// Get tasks by project ID
-	/// </summary>
-	[HttpGet("project/{projectId:guid}")]
-	[ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<TaskDto>>> GetByProject(Guid projectId, CancellationToken cancellationToken)
-	{
-		var query = new GetTasksByProjectQuery(projectId);
-		var result = await _mediator.Send(query, cancellationToken);
-		return Ok(result);
-	}
-
-	/// <summary>
-	/// Get tasks assigned to a user
-	/// </summary>
-	[HttpGet("user/{userId}")]
-	[ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<TaskDto>>> GetByUser(string userId, CancellationToken cancellationToken)
-	{
-		var query = new GetTasksByUserQuery(userId);
-		var result = await _mediator.Send(query, cancellationToken);
-		return Ok(result);
-	}
-
-	/// <summary>
-	/// Create a new task
-	/// </summary>
+	/// <param name="projectId">Project ID</param>
+	/// <param name="dto">Task creation data</param>
+	/// <returns>Created task</returns>
 	[HttpPost]
 	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status201Created)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<TaskDto>> Create([FromBody] CreateTaskDto dto, CancellationToken cancellationToken)
+	public async Task<ActionResult<TaskDto>> Create([FromQuery] Guid projectId, [FromBody] CreateTaskDto dto)
 	{
+		// Verify user owns the project
+		var projectQuery = new GetProjectByIdQuery(projectId);
+		var project = await _mediator.Send(projectQuery);
+
+		var userId = GetCurrentUserId();
+		if (project.OwnerId != userId)
+		{
+			_logger.LogWarning("User {UserId} attempted to create task in project {ProjectId} owned by {OwnerId}",
+				userId, projectId, project.OwnerId);
+			return Forbid();
+		}
+
 		var command = new CreateTaskCommand(
-			dto.ProjectId,
+			projectId,
 			dto.Title,
 			dto.Description,
 			dto.DueDate,
 			dto.Priority,
 			dto.AssignedUserId);
-		
-		var result = await _mediator.Send(command, cancellationToken);
-		
-		return CreatedAtAction(nameof(GetByProject), new { projectId = result.ProjectId }, result);
+
+		var result = await _mediator.Send(command);
+
+		_logger.LogInformation("User {UserId} created task {TaskId} in project {ProjectId}",
+			userId, result.Id, projectId);
+
+		return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
 	}
 
 	/// <summary>
-	/// Update an existing task
+	/// Get a specific task by ID
 	/// </summary>
-	[HttpPut("{id:guid}")]
+	/// <param name="id">Task ID</param>
+	/// <returns>Task details</returns>
+	[HttpGet("{id}")]
 	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<TaskDto>> Update(Guid id, [FromBody] UpdateTaskDto dto, CancellationToken cancellationToken)
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	public async Task<ActionResult<TaskDto>> GetById(Guid id)
 	{
-		var command = new UpdateTaskCommand(
-			id,
-			dto.Title,
-			dto.Description,
-			dto.DueDate,
-			dto.Priority);
-		
-		var result = await _mediator.Send(command, cancellationToken);
-		return Ok(result);
+		var task = await _mediator.Send(new GetTaskByIdQuery(id));
+		var userId = GetCurrentUserId();
+
+		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
+		if (project.OwnerId != userId)
+		{
+			_logger.LogWarning("User {UserId} attempted to access task {TaskId} in project {ProjectId} owned by {OwnerId}",
+				userId, id, task.ProjectId, project.OwnerId);
+			return Forbid();
+		}
+
+		return Ok(task);
 	}
 
 	/// <summary>
 	/// Update task status
 	/// </summary>
-	[HttpPatch("{id:guid}/status")]
+	/// <param name="id">Task ID</param>
+	/// <param name="request">New status</param>
+	/// <returns>Updated task</returns>
+	[HttpPatch("{id}/status")]
 	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<TaskDto>> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusDto dto, CancellationToken cancellationToken)
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	public async Task<ActionResult<TaskDto>> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusRequest request)
 	{
-		var command = new UpdateTaskStatusCommand(id, dto.Status);
-		var result = await _mediator.Send(command, cancellationToken);
-		return Ok(result);
-	}
+		var task = await _mediator.Send(new GetTaskByIdQuery(id));
+		var userId = GetCurrentUserId();
 
-	/// <summary>
-	/// Assign task to a user
-	/// </summary>
-	[HttpPatch("{id:guid}/assign")]
-	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<TaskDto>> Assign(Guid id, [FromBody] AssignTaskDto dto, CancellationToken cancellationToken)
-	{
-		var command = new AssignTaskCommand(id, dto.UserId);
-		var result = await _mediator.Send(command, cancellationToken);
-		return Ok(result);
-	}
+		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
+		if (project.OwnerId != userId)
+		{
+			_logger.LogWarning("User {UserId} attempted to update task {TaskId} in project {ProjectId} owned by {OwnerId}",
+				userId, id, task.ProjectId, project.OwnerId);
+			return Forbid();
+		}
 
-	/// <summary>
-	/// Unassign task from user
-	/// </summary>
-	[HttpPatch("{id:guid}/unassign")]
-	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<TaskDto>> Unassign(Guid id, CancellationToken cancellationToken)
-	{
-		var command = new UnassignTaskCommand(id);
-		var result = await _mediator.Send(command, cancellationToken);
+		var command = new UpdateTaskStatusCommand(id, request.Status);
+		var result = await _mediator.Send(command);
+
+		_logger.LogInformation("User {UserId} updated task {TaskId} status to {Status}",
+			userId, id, request.Status);
+
 		return Ok(result);
 	}
 
 	/// <summary>
 	/// Delete a task
 	/// </summary>
-	[HttpDelete("{id:guid}")]
+	/// <param name="id">Task ID</param>
+	/// <returns>No content</returns>
+	[HttpDelete("{id}")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	public async Task<IActionResult> Delete(Guid id)
 	{
-		var command = new DeleteTaskCommand(id);
-		await _mediator.Send(command, cancellationToken);
-		
+		var task = await _mediator.Send(new GetTaskByIdQuery(id));
+		var userId = GetCurrentUserId();
+
+		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
+		if (project.OwnerId != userId)
+		{
+			_logger.LogWarning("User {UserId} attempted to delete task {TaskId} in project {ProjectId} owned by {OwnerId}",
+				userId, id, task.ProjectId, project.OwnerId);
+			return Forbid();
+		}
+
+		await _mediator.Send(new DeleteTaskCommand(id));
+
+		_logger.LogInformation("User {UserId} deleted task {TaskId}", userId, id);
 		return NoContent();
 	}
+
+	/// <summary>
+	/// Assign task to a user
+	/// </summary>
+	/// <param name="id">Task ID</param>
+	/// <param name="request">User assignment data</param>
+	/// <returns>Updated task</returns>
+	[HttpPatch("{id}/assign")]
+	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	public async Task<ActionResult<TaskDto>> AssignTask(Guid id, [FromBody] AssignTaskRequest request)
+	{
+		var task = await _mediator.Send(new GetTaskByIdQuery(id));
+		var userId = GetCurrentUserId();
+
+		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
+		if (project.OwnerId != userId)
+		{
+			_logger.LogWarning("User {UserId} attempted to assign task {TaskId} in project {ProjectId} owned by {OwnerId}",
+				userId, id, task.ProjectId, project.OwnerId);
+			return Forbid();
+		}
+
+		var result = await _mediator.Send(new AssignTaskCommand(id, request.UserId));
+
+		_logger.LogInformation("User {UserId} assigned task {TaskId} to user {AssignedUserId}",
+			userId, id, request.UserId);
+
+		return Ok(result);
+	}
+
+	/// <summary>
+	/// Get tasks filtered by criteria
+	/// </summary>
+	/// <param name="status">Filter by status</param>
+	/// <param name="priority">Filter by priority</param>
+	/// <param name="isOverdue">Filter overdue tasks</param>
+	/// <returns>Filtered tasks</returns>
+	[HttpGet]
+	[ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
+	public async Task<ActionResult<List<TaskDto>>> GetFiltered(
+		[FromQuery] ProjectTaskStatus? status = null,
+		[FromQuery] Priority? priority = null,
+		[FromQuery] bool? isOverdue = null)
+	{
+		var userId = GetCurrentUserId();
+
+		var query = new GetTasksByOwnerAndFilterQuery(userId, status, priority, isOverdue);
+		var userTasks = await _mediator.Send(query);
+
+		_logger.LogInformation("Retrieved {Count} filtered tasks for user {UserId}", userTasks.Count, userId);
+
+		return Ok(userTasks);
+	}
+
+	private string GetCurrentUserId()
+	{
+		return User.FindFirstValue(ClaimTypes.NameIdentifier)
+			?? throw new UnauthorizedAccessException("User ID not found in token");
+	}
+}
+
+/// <summary>
+/// Request model for updating task status
+/// </summary>
+public class UpdateTaskStatusRequest
+{
+	public ProjectTaskStatus Status { get; set; }
+}
+
+/// <summary>
+/// Request model for assigning task to user
+/// </summary>
+public class AssignTaskRequest
+{
+	public string UserId { get; set; } = string.Empty;
 }

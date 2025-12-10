@@ -18,32 +18,12 @@ public class GetTasksByFilterQueryHandler : IRequestHandler<GetTasksByFilterQuer
 
 	public async Task<List<TaskDto>> Handle(GetTasksByFilterQuery request, CancellationToken cancellationToken)
 	{
-		var allTasks = await _taskRepository.GetAllAsync(cancellationToken);
+		var filteredTasks = await _taskRepository.GetByFilterAsync(
+			request.Status,
+			request.Priority,
+			request.IsOverdue,
+			cancellationToken);
 
-		var filteredTasks = allTasks.AsQueryable();
-
-		if (request.Status.HasValue)
-		{
-			filteredTasks = filteredTasks.Where(t => t.Status == request.Status.Value);
-		}
-
-		if (request.Priority.HasValue)
-		{
-			filteredTasks = filteredTasks.Where(t => t.Priority == request.Priority.Value);
-		}
-
-		if (request.IsOverdue.HasValue)
-		{
-			if (request.IsOverdue.Value)
-			{
-				filteredTasks = filteredTasks.Where(t => t.IsOverdue());
-			}
-			else
-			{
-				filteredTasks = filteredTasks.Where(t => !t.IsOverdue());
-			}
-		}
-
-		return _mapper.Map<List<TaskDto>>(filteredTasks.ToList());
+		return _mapper.Map<List<TaskDto>>(filteredTasks);
 	}
 }
