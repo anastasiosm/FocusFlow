@@ -28,7 +28,7 @@ public class GetTasksByFilterQueryTests : TestBase
 		};
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.GetByFilterAsync(null, null, null, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(tasks);
 
 		var query = new GetTasksByFilterQuery();
@@ -55,8 +55,8 @@ public class GetTasksByFilterQueryTests : TestBase
 		tasks[2].SetStatus(ProjectTaskStatus.Todo);
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(tasks);
+			.Setup(repo => repo.GetByFilterAsync(ProjectTaskStatus.Todo, null, null, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(tasks.Where(t => t.Status == ProjectTaskStatus.Todo).ToList());
 
 		var query = new GetTasksByFilterQuery(Status: ProjectTaskStatus.Todo);
 
@@ -80,8 +80,8 @@ public class GetTasksByFilterQueryTests : TestBase
 		};
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(tasks);
+			.Setup(repo => repo.GetByFilterAsync(null, Priority.High, null, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(tasks.Where(t => t.Priority == Priority.High).ToList());
 
 		var query = new GetTasksByFilterQuery(Priority: Priority.High);
 
@@ -106,8 +106,8 @@ public class GetTasksByFilterQueryTests : TestBase
 		};
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(tasks);
+			.Setup(repo => repo.GetByFilterAsync(null, null, true, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(tasks.Where(t => t.IsOverdue()).ToList());
 
 		var query = new GetTasksByFilterQuery(IsOverdue: true);
 
@@ -132,8 +132,8 @@ public class GetTasksByFilterQueryTests : TestBase
 		};
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(tasks);
+			.Setup(repo => repo.GetByFilterAsync(null, null, false, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(tasks.Where(t => !t.IsOverdue()).ToList());
 
 		var query = new GetTasksByFilterQuery(IsOverdue: false);
 
@@ -157,8 +157,8 @@ public class GetTasksByFilterQueryTests : TestBase
 		tasks[0].SetStatus(ProjectTaskStatus.Done); // But completed
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(tasks);
+			.Setup(repo => repo.GetByFilterAsync(null, null, true, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new List<ProjectTask>()); // Repository filters out completed tasks
 
 		var query = new GetTasksByFilterQuery(IsOverdue: true);
 
@@ -184,8 +184,8 @@ public class GetTasksByFilterQueryTests : TestBase
 		tasks[2].SetStatus(ProjectTaskStatus.Todo);
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(tasks);
+			.Setup(repo => repo.GetByFilterAsync(ProjectTaskStatus.Todo, Priority.High, null, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(tasks.Where(t => t.Status == ProjectTaskStatus.Todo && t.Priority == Priority.High).ToList());
 
 		var query = new GetTasksByFilterQuery(
 			Status: ProjectTaskStatus.Todo,
@@ -216,8 +216,8 @@ public class GetTasksByFilterQueryTests : TestBase
 		tasks[2].SetStatus(ProjectTaskStatus.Todo);   // Not overdue, High, Todo
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(tasks);
+			.Setup(repo => repo.GetByFilterAsync(ProjectTaskStatus.Todo, Priority.High, true, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(tasks.Where(t => t.Status == ProjectTaskStatus.Todo && t.Priority == Priority.High && t.IsOverdue()).ToList());
 
 		var query = new GetTasksByFilterQuery(
 			Status: ProjectTaskStatus.Todo,
@@ -242,8 +242,8 @@ public class GetTasksByFilterQueryTests : TestBase
 		};
 
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(tasks);
+			.Setup(repo => repo.GetByFilterAsync(null, Priority.Critical, null, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new List<ProjectTask>()); // No tasks match Critical priority
 
 		var query = new GetTasksByFilterQuery(Priority: Priority.Critical);
 
@@ -259,7 +259,7 @@ public class GetTasksByFilterQueryTests : TestBase
 	{
 		// Arrange
 		MockTaskRepository
-			.Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.GetByFilterAsync(ProjectTaskStatus.Todo, null, null, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new List<ProjectTask>());
 
 		var query = new GetTasksByFilterQuery(Status: ProjectTaskStatus.Todo);

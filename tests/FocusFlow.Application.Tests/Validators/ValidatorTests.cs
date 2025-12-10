@@ -225,4 +225,241 @@ public class ValidatorTests
 		// Assert
 		result.ShouldNotHaveValidationErrorFor(c => c.DueDate);
 	}
+
+	[Fact]
+	public void UpdateTaskCommandValidator_WithValidCommand_ShouldNotHaveValidationErrors()
+	{
+		// Arrange
+		var validator = new UpdateTaskCommandValidator();
+		var command = new UpdateTaskCommand(
+			Guid.NewGuid(),
+			"Valid Title",
+			"Valid Description",
+			DateTime.UtcNow.AddDays(1),
+			Priority.High);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldNotHaveAnyValidationErrors();
+	}
+
+	[Fact]
+	public void UpdateTaskCommandValidator_WithEmptyId_ShouldHaveValidationError()
+	{
+		// Arrange
+		var validator = new UpdateTaskCommandValidator();
+		var command = new UpdateTaskCommand(
+			Guid.Empty,
+			"Valid Title",
+			null,
+			null,
+			Priority.Low);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.TaskId);
+	}
+
+	[Theory]
+	[InlineData("")]
+	[InlineData("   ")]
+	[InlineData(null)]
+	public void UpdateTaskCommandValidator_WithEmptyTitle_ShouldHaveValidationError(string invalidTitle)
+	{
+		// Arrange
+		var validator = new UpdateTaskCommandValidator();
+		var command = new UpdateTaskCommand(
+			Guid.NewGuid(),
+			invalidTitle,
+			null,
+			null,
+			Priority.Low);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.Title)
+			.WithErrorMessage("Task title is required");
+	}
+
+	[Fact]
+	public void UpdateTaskCommandValidator_WithTitleTooLong_ShouldHaveValidationError()
+	{
+		// Arrange
+		var validator = new UpdateTaskCommandValidator();
+		var longTitle = new string('a', 201);
+		var command = new UpdateTaskCommand(
+			Guid.NewGuid(),
+			longTitle,
+			null,
+			null,
+			Priority.Low);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.Title)
+			.WithErrorMessage("Task title cannot exceed 200 characters");
+	}
+
+	[Fact]
+	public void UpdateTaskCommandValidator_WithPastDueDate_ShouldHaveValidationError()
+	{
+		// Arrange
+		var validator = new UpdateTaskCommandValidator();
+		var pastDate = DateTime.UtcNow.AddDays(-2);
+		var command = new UpdateTaskCommand(
+			Guid.NewGuid(),
+			"Task",
+			null,
+			pastDate,
+			Priority.Medium);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.DueDate)
+			.WithErrorMessage("Due date cannot be in the past");
+	}
+
+	[Fact]
+	public void DeleteProjectCommandValidator_WithValidCommand_ShouldNotHaveValidationErrors()
+	{
+		// Arrange
+		var validator = new DeleteProjectCommandValidator();
+		var command = new DeleteProjectCommand(Guid.NewGuid());
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldNotHaveAnyValidationErrors();
+	}
+
+	[Fact]
+	public void DeleteProjectCommandValidator_WithEmptyId_ShouldHaveValidationError()
+	{
+		// Arrange
+		var validator = new DeleteProjectCommandValidator();
+		var command = new DeleteProjectCommand(Guid.Empty);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.Id)
+			.WithErrorMessage("Project ID is required");
+	}
+
+	[Fact]
+	public void DeleteTaskCommandValidator_WithValidCommand_ShouldNotHaveValidationErrors()
+	{
+		// Arrange
+		var validator = new DeleteTaskCommandValidator();
+		var command = new DeleteTaskCommand(Guid.NewGuid());
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldNotHaveAnyValidationErrors();
+	}
+
+	[Fact]
+	public void DeleteTaskCommandValidator_WithEmptyId_ShouldHaveValidationError()
+	{
+		// Arrange
+		var validator = new DeleteTaskCommandValidator();
+		var command = new DeleteTaskCommand(Guid.Empty);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.TaskId)
+			.WithErrorMessage("Task ID is required");
+	}
+
+	[Fact]
+	public void AssignTaskCommandValidator_WithValidCommand_ShouldNotHaveValidationErrors()
+	{
+		// Arrange
+		var validator = new AssignTaskCommandValidator();
+		var command = new AssignTaskCommand(Guid.NewGuid(), "user123");
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldNotHaveAnyValidationErrors();
+	}
+
+	[Fact]
+	public void AssignTaskCommandValidator_WithEmptyTaskId_ShouldHaveValidationError()
+	{
+		// Arrange
+		var validator = new AssignTaskCommandValidator();
+		var command = new AssignTaskCommand(Guid.Empty, "user123");
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.TaskId)
+			.WithErrorMessage("Task ID is required");
+	}
+
+	[Theory]
+	[InlineData("")]
+	[InlineData("   ")]
+	[InlineData(null)]
+	public void AssignTaskCommandValidator_WithEmptyUserId_ShouldHaveValidationError(string invalidUserId)
+	{
+		// Arrange
+		var validator = new AssignTaskCommandValidator();
+		var command = new AssignTaskCommand(Guid.NewGuid(), invalidUserId);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.UserId)
+			.WithErrorMessage("User ID is required");
+	}
+
+	[Fact]
+	public void UpdateTaskStatusCommandValidator_WithValidCommand_ShouldNotHaveValidationErrors()
+	{
+		// Arrange
+		var validator = new UpdateTaskStatusCommandValidator();
+		var command = new UpdateTaskStatusCommand(Guid.NewGuid(), ProjectTaskStatus.InProgress);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldNotHaveAnyValidationErrors();
+	}
+
+	[Fact]
+	public void UpdateTaskStatusCommandValidator_WithEmptyTaskId_ShouldHaveValidationError()
+	{
+		// Arrange
+		var validator = new UpdateTaskStatusCommandValidator();
+		var command = new UpdateTaskStatusCommand(Guid.Empty, ProjectTaskStatus.InProgress);
+
+		// Act
+		var result = validator.TestValidate(command);
+
+		// Assert
+		result.ShouldHaveValidationErrorFor(c => c.TaskId)
+			.WithErrorMessage("Task ID is required");
+	}
 }
