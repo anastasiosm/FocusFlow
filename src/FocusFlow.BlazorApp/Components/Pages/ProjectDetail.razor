@@ -1,0 +1,40 @@
+@page "/projects/{id:guid}"
+@using FocusFlow.Application.Features.Projects.GetProjectById
+
+<PageTitle>Project Detail - FocusFlow</PageTitle>
+
+@if (Project != null)
+{
+    <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+        <MudText Typo="Typo.h3">@Project.Name</MudText>
+        <MudText Typo="Typo.subtitle1" Class="mb-4">@Project.Description</MudText>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Typo="Typo.h5">Tasks</MudText>
+                @* Task list will go here *@
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    // This would be a DTO for a single project with its tasks
+    private ProjectDetailDto? Project { get; set; } 
+
+    protected override async Task OnInitializedAsync()
+    {
+        // In a real app, you would fetch the project details from an API
+        // For now, we'll just simulate a delay
+        await Task.Delay(500);
+        Project = new ProjectDetailDto(Id, "Sample Project", "This is a sample project detail page.", "user-123", DateTime.UtcNow, DateTime.UtcNow, new List<Application.Features.Tasks.Common.TaskDto>());
+    }
+}

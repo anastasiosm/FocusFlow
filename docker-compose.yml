@@ -1,19 +1,43 @@
 services:
   focusflow-api:
-    build:
-      context: .
-      dockerfile: src/FocusFlow.WebApi/Dockerfile
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    pull_policy: "never"
     ports:
       - "8080:8080"
-      - "8081:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
       - "ConnectionStrings:DefaultConnection=Host=postgres-db;Port=5432;Database=FocusFlowDb;Username=postgres;Password=postgres"
+      # (Development) API serves HTTP only inside Docker to avoid HTTPS redirect name-mismatch
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+    tmpfs:
+      - /tmp
+    # no certificate mount for API in dev
+
+  focusflow-blazor:
+    image: mcr.microsoft.com/dotnet/aspnet:8.0
+    pull_policy: "never"
+    ports:
+      - "5000:8080"   # HTTP
+      - "5001:8081"   # HTTPS
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080;https://+:8081
+      - ApiBaseUrl=http://focusflow-api:8080
+      # Kestrel certificate (mount a .pfx into /https and set password in .env as CERT_PASSWORD)
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=MyPfxPassword123!
+    depends_on:
+      - focusflow-api
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./certs:/https:ro
 
   postgres-db:
-    image: postgres:17.2 # or latest
+    image: postgres:17.2
     environment:
       POSTGRES_DB: FocusFlowDb
       POSTGRES_USER: postgres
@@ -22,6 +46,11 @@ services:
       - "5432:5432"    
     volumes:
       - focusflow-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   focusflow-db-data:

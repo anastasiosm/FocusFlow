@@ -1,0 +1,185 @@
+﻿@page "/projects"
+@using FocusFlow.Application.Features.Projects.Common
+@using FocusFlow.Application.Features.Projects.CreateProject
+@using FocusFlow.BlazorApp.Services
+@inject IApiService ApiService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@*@attribute [Authorize]*@
+
+<PageTitle>Projects - FocusFlow</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" Class="mb-4">My Projects</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_projects == null || !_projects.Any())
+    {
+        <MudAlert Severity="Severity.Info">
+            No projects found. Create your first project to get started!
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var project in _projects)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="2" Class="pa-4">
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6">@project.Name</MudText>
+                            <MudText Typo="Typo.body2" Class="mb-2">
+                                @project.Description
+                            </MudText>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Info">
+                                @project.TaskCount tasks
+                            </MudChip>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton 
+                                Variant="Variant.Text" 
+                                Color="Color.Primary"
+                                OnClick="@(() => ViewProject(project.Id))">
+                                View
+                            </MudButton>
+                            <MudButton 
+                                Variant="Variant.Text" 
+                                Color="Color.Secondary"
+                                OnClick="@(() => EditProject(project.Id))">
+                                Edit
+                            </MudButton>
+                            <MudButton 
+                                Variant="Variant.Text" 
+                                Color="Color.Error"
+                                OnClick="@(() => DeleteProject(project.Id))">
+                                Delete
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    <MudFab 
+        Color="Color.Primary" 
+        StartIcon="@Icons.Material.Filled.Add" 
+        Label="New Project"
+        Class="mt-4"
+        OnClick="OpenCreateDialog" />
+</MudContainer>
+
+<!-- Create Project Dialog -->
+<MudDialog @bind-Visible="_showCreateDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Create New Project</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField T="string"
+            @bind-value="_newProjectName" 
+            Label="Project Name" 
+            Required="true"
+            Variant="Variant.Outlined" />
+        <MudTextField T="string"
+            @bind-value="_newProjectDescription" 
+            Label="Description" 
+            Lines="3"
+            Variant="Variant.Outlined"
+            Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseCreateDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateProject">
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ProjectDto> _projects = new();
+    private bool _loading = true;
+    private bool _showCreateDialog = false;
+    private string _newProjectName = "";
+    private string _newProjectDescription = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjects();
+    }
+
+    private async Task LoadProjects()
+    {
+        try
+        {
+            _loading = true;
+            _projects = await ApiService.GetProjectsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading projects: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OpenCreateDialog()
+    {
+        _newProjectName = "";
+        _newProjectDescription = "";
+        _showCreateDialog = true;
+    }
+
+    private void CloseCreateDialog()
+    {
+        _showCreateDialog = false;
+    }
+
+    private async Task CreateProject()
+    {
+        try
+        {
+            var dto = new CreateProjectDto(_newProjectName, _newProjectDescription);
+
+            await ApiService.CreateProjectAsync(dto);
+            Snackbar.Add("Project created successfully!", Severity.Success);
+            
+            CloseCreateDialog();
+            await LoadProjects();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating project: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void ViewProject(Guid id)
+    {
+        Navigation.NavigateTo($"/projects/{id}");
+    }
+
+    private void EditProject(Guid id)
+    {
+        // TODO: Implement edit dialog
+        Snackbar.Add("Edit functionality coming soon!", Severity.Info);
+    }
+
+    private async Task DeleteProject(Guid id)
+    {
+        // TODO: Add confirmation dialog
+        try
+        {
+            await ApiService.DeleteProjectAsync(id);
+            Snackbar.Add("Project deleted successfully!", Severity.Success);
+            await LoadProjects();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting project: {ex.Message}", Severity.Error);
+        }
+    }
+}

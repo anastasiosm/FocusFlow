@@ -1,0 +1,18 @@
+@page "/register"
+
+<PageTitle>Register - FocusFlow</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h4" GutterBottom="true">Register</MudText>
+            <MudTextField T="string" Label="Full Name" Variant="Variant.Outlined" Class="mb-4" />
+            <MudTextField T="string" Label="Email" Variant="Variant.Outlined" Class="mb-4" />
+            <MudTextField T="string" Label="Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
+            <MudTextField T="string" Label="Confirm Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
