@@ -1,8 +1,8 @@
 using AutoMapper;
 using FluentAssertions;
-using FocusFlow.Application.DTO;
+using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Interfaces;
-using FocusFlow.Application.Tasks.Commands;
+using FocusFlow.Application.Features.Tasks.AssignTask;
 using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Enums;
 using FocusFlow.Domain.Exceptions;

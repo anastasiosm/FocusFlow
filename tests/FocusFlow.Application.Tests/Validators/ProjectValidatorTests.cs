@@ -1,7 +1,8 @@
 using FluentAssertions;
 using FluentValidation.TestHelper;
-using FocusFlow.Application.Projects.Commands;
-using FocusFlow.Application.Validators;
+using FocusFlow.Application.Features.Projects.CreateProject;
+using FocusFlow.Application.Features.Projects.UpdateProject;
+using FocusFlow.Application.Features.Projects.DeleteProject;
 
 namespace FocusFlow.Application.Tests.Validators;
 

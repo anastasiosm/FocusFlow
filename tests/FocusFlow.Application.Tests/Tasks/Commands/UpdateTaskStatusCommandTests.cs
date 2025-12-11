@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using FocusFlow.Application.Tasks.Commands;
+using FocusFlow.Application.Features.Tasks.UpdateTaskStatus;
 using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Enums;
 using FocusFlow.Domain.Exceptions;

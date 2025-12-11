@@ -1,7 +1,10 @@
 using FluentAssertions;
 using FluentValidation.TestHelper;
-using FocusFlow.Application.Tasks.Commands;
-using FocusFlow.Application.Validators;
+using FocusFlow.Application.Features.Tasks.CreateTask;
+using FocusFlow.Application.Features.Tasks.UpdateTask;
+using FocusFlow.Application.Features.Tasks.DeleteTask;
+using FocusFlow.Application.Features.Tasks.AssignTask;
+using FocusFlow.Application.Features.Tasks.UpdateTaskStatus;
 using FocusFlow.Domain.Enums;
 
 namespace FocusFlow.Application.Tests.Validators;

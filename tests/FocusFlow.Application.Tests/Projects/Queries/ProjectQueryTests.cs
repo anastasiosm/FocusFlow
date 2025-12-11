@@ -1,5 +1,7 @@
 ﻿using FluentAssertions;
-using FocusFlow.Application.Projects.Queries;
+using FocusFlow.Application.Features.Projects.GetAllProjects;
+using FocusFlow.Application.Features.Projects.GetProjectById;
+using FocusFlow.Application.Features.Projects.GetProjectsByOwner;
 using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Exceptions;
 using Moq;

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
+using FocusFlow.Application.Features.Projects.Common;
+using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Interfaces;
-using FocusFlow.Application.Mappings;
 using Moq;
 
 namespace FocusFlow.Application.Tests;

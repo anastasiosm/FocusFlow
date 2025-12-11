@@ -1,5 +1,5 @@
 using FocusFlow.Application.Interfaces;
-using FocusFlow.Application.Tasks.Commands;
+using FocusFlow.Application.Features.Tasks.DeleteTask;
 using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Exceptions;
 using MediatR;

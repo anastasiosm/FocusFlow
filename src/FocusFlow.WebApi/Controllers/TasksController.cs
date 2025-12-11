@@ -1,7 +1,11 @@
-using FocusFlow.Application.DTO;
-using FocusFlow.Application.Projects.Queries;
-using FocusFlow.Application.Tasks.Commands;
-using FocusFlow.Application.Tasks.Queries;
+using FocusFlow.Application.Features.Tasks.Common;
+using FocusFlow.Application.Features.Projects.GetProjectById;
+using FocusFlow.Application.Features.Tasks.CreateTask;
+using FocusFlow.Application.Features.Tasks.GetTaskById;
+using FocusFlow.Application.Features.Tasks.UpdateTaskStatus;
+using FocusFlow.Application.Features.Tasks.DeleteTask;
+using FocusFlow.Application.Features.Tasks.AssignTask;
+using FocusFlow.Application.Features.Tasks.GetTasksByOwnerAndFilter;
 using FocusFlow.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

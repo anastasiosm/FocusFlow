@@ -1,6 +1,10 @@
-using FocusFlow.Application.DTO;
-using FocusFlow.Application.Projects.Commands;
-using FocusFlow.Application.Projects.Queries;
+using FocusFlow.Application.Features.Projects.Common;
+using FocusFlow.Application.Features.Projects.GetProjectById;
+using FocusFlow.Application.Features.Projects.GetProjectsByOwner;
+using FocusFlow.Application.Features.Projects.CreateProject;
+using FocusFlow.Application.Features.Projects.UpdateProject;
+using FocusFlow.Application.Features.Projects.DeleteProject;
+using FocusFlow.Application.Features.Tasks.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

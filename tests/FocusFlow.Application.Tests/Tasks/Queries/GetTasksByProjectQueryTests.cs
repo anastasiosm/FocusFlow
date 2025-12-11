@@ -1,5 +1,5 @@
 using FluentAssertions;
-using FocusFlow.Application.Tasks.Queries;
+using FocusFlow.Application.Features.Tasks.GetTasksByProject;
 using FocusFlow.Domain.Entities;
 using Moq;
 
