@@ -22,4 +22,9 @@
     <Using Include="FocusFlow.Domain.Enums" />
   </ItemGroup>
 
+  <!-- Add this to ensure static assets are copied -->
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
 </Project>

@@ -11,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add Razor Pages so _Host.cshtml tag helpers work
+builder.Services.AddRazorPages();
+
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
@@ -39,8 +42,14 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// IMPORTANT: Serve static files from wwwroot AND _content (for Razor Class Libraries like MudBlazor)
 app.UseStaticFiles();
+
 app.UseAntiforgery();
+
+// Map Razor Pages so _Host.cshtml is served
+app.MapRazorPages();
 
 app.MapRazorComponents<App>()
 	.AddInteractiveServerRenderMode();
