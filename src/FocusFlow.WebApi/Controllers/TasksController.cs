@@ -6,6 +6,9 @@ using FocusFlow.Application.Features.Tasks.UpdateTaskStatus;
 using FocusFlow.Application.Features.Tasks.DeleteTask;
 using FocusFlow.Application.Features.Tasks.AssignTask;
 using FocusFlow.Application.Features.Tasks.GetTasksByOwnerAndFilter;
+using FocusFlow.Application.Features.Tasks.UpdateTask;
+using FocusFlow.Application.Features.Tasks.UnassignTask;
+using FocusFlow.Application.Features.Tasks.GetTasksByUser;
 using FocusFlow.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -71,6 +74,70 @@ public class TasksController : ControllerBase
 			userId, result.Id, projectId);
 
 		return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+	}
+
+	/// <summary>
+	/// Update an existing task
+	/// </summary>
+	[HttpPut("{id}")]
+	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	public async Task<ActionResult<TaskDto>> Update(Guid id, [FromBody] UpdateTaskRequest request)
+	{
+		var task = await _mediator.Send(new GetTaskByIdQuery(id));
+		var userId = GetCurrentUserId();
+
+		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
+		if (project.OwnerId != userId)
+		{
+			_logger.LogWarning("User {UserId} attempted to update task {TaskId} in project {ProjectId} owned by {OwnerId}",
+				userId, id, task.ProjectId, project.OwnerId);
+			return Forbid();
+		}
+
+		var command = new UpdateTaskCommand(id, request.Title, request.Description, request.DueDate, request.Priority);
+		var result = await _mediator.Send(command);
+
+		_logger.LogInformation("User {UserId} updated task {TaskId}", userId, id);
+		return Ok(result);
+	}
+
+	/// <summary>
+	/// Unassign a task
+	/// </summary>
+	[HttpPatch("{id}/unassign")]
+	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	public async Task<ActionResult<TaskDto>> Unassign(Guid id)
+	{
+		var task = await _mediator.Send(new GetTaskByIdQuery(id));
+		var userId = GetCurrentUserId();
+
+		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
+		if (project.OwnerId != userId)
+		{
+			_logger.LogWarning("User {UserId} attempted to unassign task {TaskId} in project {ProjectId} owned by {OwnerId}",
+				userId, id, task.ProjectId, project.OwnerId);
+			return Forbid();
+		}
+
+		var result = await _mediator.Send(new UnassignTaskCommand(id));
+		_logger.LogInformation("User {UserId} unassigned task {TaskId}", userId, id);
+		return Ok(result);
+	}
+
+	/// <summary>
+	/// Get tasks assigned to a specific user
+	/// </summary>
+	[HttpGet("user/{userId}")]
+	[ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
+	public async Task<ActionResult<List<TaskDto>>> GetByUser(string userId)
+	{
+		var result = await _mediator.Send(new GetTasksByUserQuery(userId));
+		return Ok(result);
 	}
 
 	/// <summary>
@@ -236,4 +303,15 @@ public class UpdateTaskStatusRequest
 public class AssignTaskRequest
 {
 	public string UserId { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request model for updating a task
+/// </summary>
+public class UpdateTaskRequest
+{
+	public string Title { get; set; } = string.Empty;
+	public string? Description { get; set; }
+	public DateTime? DueDate { get; set; }
+	public Priority Priority { get; set; }
 }

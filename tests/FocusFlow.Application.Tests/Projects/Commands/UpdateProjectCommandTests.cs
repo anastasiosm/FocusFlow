@@ -32,7 +32,7 @@ public class UpdateProjectCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingProject);
 
-		var command = new UpdateProjectCommand(projectId, "Updated Name", "Updated Description");
+		var command = new UpdateProjectCommand(projectId, "Updated Name", "Updated Description", "user123");
 
 		// Act
 		var result = await _handler.Handle(command, CancellationToken.None);
@@ -59,7 +59,7 @@ public class UpdateProjectCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync((Project?)null);
 
-		var command = new UpdateProjectCommand(projectId, "Updated Name", null);
+		var command = new UpdateProjectCommand(projectId, "Updated Name", null, "user123");
 
 		// Act
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -73,6 +73,34 @@ public class UpdateProjectCommandTests : TestBase
 			Times.Never);
 
 		VerifyUnitOfWorkSaveChanges(Times.Never());
+	}
+
+	[Fact]
+	public async Task Handle_WithDifferentOwner_ShouldThrowUnauthorizedException()
+	{
+		// Arrange
+		var projectId = Guid.NewGuid();
+		var existingProject = new Project("Original Name", "Original Description", "ownerUser");
+
+		var idProperty = typeof(Project).GetProperty("Id");
+		idProperty!.SetValue(existingProject, projectId);
+
+		MockProjectRepository
+			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(existingProject);
+
+		var command = new UpdateProjectCommand(projectId, "Updated Name", "Updated Description", "otherUser");
+
+		// Act
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<FocusFlowUnauthorizedException>()
+			.WithMessage("*do not have permission*");
+			
+		MockProjectRepository.Verify(
+			repo => repo.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()),
+			Times.Never);
 	}
 
 	[Theory]
@@ -92,7 +120,7 @@ public class UpdateProjectCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingProject);
 
-		var command = new UpdateProjectCommand(projectId, invalidName, "Description");
+		var command = new UpdateProjectCommand(projectId, invalidName, "Description", "user123");
 
 		// Act
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -118,7 +146,7 @@ public class UpdateProjectCommandTests : TestBase
 			.ReturnsAsync(existingProject);
 
 		var longDescription = new string('a', 2001);
-		var command = new UpdateProjectCommand(projectId, "Valid Name", longDescription);
+		var command = new UpdateProjectCommand(projectId, "Valid Name", longDescription, "user123");
 
 		// Act
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);

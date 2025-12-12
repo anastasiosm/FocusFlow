@@ -3,18 +3,22 @@ using FocusFlow.Application.Features.Projects.CreateProject;
 using FocusFlow.Application.Features.Projects.GetProjectById;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Features.Tasks.CreateTask;
+using FocusFlow.BlazorApp.Models;
 
 namespace FocusFlow.BlazorApp.Services;
 
 public interface IApiService
 {
+	// Auth
+    Task<string> LoginAsync(LoginRequest request);
+    Task RegisterAsync(RegisterRequest request);
+
 	// Projects
 	Task<List<ProjectDto>> GetProjectsAsync();
 	Task<ProjectDetailDto> GetProjectByIdAsync(Guid id);
 	Task<ProjectDto> CreateProjectAsync(CreateProjectDto dto);
+    Task DeleteProjectAsync(Guid id);
 	Task<ProjectDto> UpdateProjectAsync(Guid id, string name, string? description);
-	Task DeleteProjectAsync(Guid id);
-
 	// Tasks
 	Task<List<TaskDto>> GetTasksAsync(Guid projectId);
 	Task<TaskDto> CreateTaskAsync(CreateTaskDto dto);

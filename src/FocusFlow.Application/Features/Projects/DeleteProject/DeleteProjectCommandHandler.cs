@@ -27,6 +27,9 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand>
 		if (project == null)
 			throw new FocusFlowNotFoundException("Project", request.Id);
 
+		if (project.OwnerId != request.UserId)
+			throw new FocusFlowUnauthorizedException("You do not have permission to delete this project");
+
 		await _projectRepository.DeleteAsync(project, cancellationToken);
 		await _unitOfWork.SaveChangesAsync(cancellationToken);
 	}

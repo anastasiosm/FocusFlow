@@ -20,8 +20,11 @@ public static class DatabaseExtensions
 
 		try
 		{
-			await dbContext.Database.MigrateAsync();
-			logger.LogInformation("Database migrations applied successfully.");
+			if (dbContext.Database.IsRelational())
+			{
+				await dbContext.Database.MigrateAsync();
+				logger.LogInformation("Database migrations applied successfully.");
+			}
 		}
 		catch (Exception e)
 		{

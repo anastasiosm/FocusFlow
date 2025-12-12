@@ -1,18 +1,57 @@
 @page "/register"
-
-<PageTitle>Register - FocusFlow</PageTitle>
+@using FocusFlow.BlazorApp.Models
+@using FocusFlow.BlazorApp.Services
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
-    <MudCard>
-        <MudCardContent>
-            <MudText Typo="Typo.h4" GutterBottom="true">Register</MudText>
-            <MudTextField T="string" Label="Full Name" Variant="Variant.Outlined" Class="mb-4" />
-            <MudTextField T="string" Label="Email" Variant="Variant.Outlined" Class="mb-4" />
-            <MudTextField T="string" Label="Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
-            <MudTextField T="string" Label="Confirm Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
-        </MudCardContent>
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-        </MudCardActions>
-    </MudCard>
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h5" GutterBottom="true" Align="Align.Center">Register</MudText>
+        <EditForm Model="@_registerRequest" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudTextField Label="Email" @bind-Value="_registerRequest.Email" For="@(() => _registerRequest.Email)" />
+            <MudTextField Label="Username" @bind-Value="_registerRequest.Username" For="@(() => _registerRequest.Username)" />
+            <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="_registerRequest.Password" For="@(() => _registerRequest.Password)" />
+            
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@_loading">
+                @if (_loading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                    <MudText Class="ms-2">Registering...</MudText>
+                }
+                else
+                {
+                    <MudText>Register</MudText>
+                }
+            </MudButton>
+        </EditForm>
+        <MudText Typo="Typo.body2" Class="mt-4" Align="Align.Center">
+            Already have an account? <MudLink Href="/login">Login here</MudLink>
+        </MudText>
+    </MudPaper>
 </MudContainer>
+
+@code {
+    private RegisterRequest _registerRequest = new();
+    private bool _loading = false;
+
+    private async Task OnValidSubmit()
+    {
+        _loading = true;
+        try
+        {
+            await ApiService.RegisterAsync(_registerRequest);
+            Snackbar.Add("Registration successful! Please login.", Severity.Success);
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

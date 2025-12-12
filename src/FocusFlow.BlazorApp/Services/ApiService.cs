@@ -4,6 +4,7 @@ using FocusFlow.Application.Features.Projects.GetProjectById;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Features.Tasks.CreateTask;
 using System.Net.Http.Json;
+using FocusFlow.BlazorApp.Models; // Added
 
 namespace FocusFlow.BlazorApp.Services;
 
@@ -18,7 +19,42 @@ public class ApiService : IApiService
 		_logger = logger;
 	}
 
-	// Projects
+	    // Auth
+    public async Task<string> LoginAsync(LoginRequest request)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/auth/login", request);
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<LoginResponse>(); 
+            // Assuming the API returns { "token": "..." } or similar structure. 
+            // Based on AuthControllerTests, it returns { "token": "..." }.
+            // Let's check AuthControllerTests to be sure.
+            
+            return result?.Token ?? throw new InvalidOperationException("Login failed: No token received");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error logging in");
+            throw;
+        }
+    }
+
+    public async Task RegisterAsync(RegisterRequest request)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/auth/register", request);
+            response.EnsureSuccessStatusCode();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error registering");
+            throw;
+        }
+    }
+
+    // Projects
 	public async Task<List<ProjectDto>> GetProjectsAsync()
 	{
 		try

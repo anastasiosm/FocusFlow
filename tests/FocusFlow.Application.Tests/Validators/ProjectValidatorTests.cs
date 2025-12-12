@@ -78,7 +78,7 @@ public class ProjectValidatorTests
 	public void UpdateProjectCommandValidator_WithValidCommand_ShouldNotHaveValidationErrors()
 	{
 		var validator = new UpdateProjectCommandValidator();
-		var command = new UpdateProjectCommand(Guid.NewGuid(), "Valid Name", "Description");
+		var command = new UpdateProjectCommand(Guid.NewGuid(), "Valid Name", "Description", "user123");
 
 		var result = validator.TestValidate(command);
 
@@ -89,7 +89,7 @@ public class ProjectValidatorTests
 	public void UpdateProjectCommandValidator_WithEmptyId_ShouldHaveValidationError()
 	{
 		var validator = new UpdateProjectCommandValidator();
-		var command = new UpdateProjectCommand(Guid.Empty, "Name", null);
+		var command = new UpdateProjectCommand(Guid.Empty, "Name", null, "user123");
 
 		var result = validator.TestValidate(command);
 
@@ -100,7 +100,7 @@ public class ProjectValidatorTests
 	public void DeleteProjectCommandValidator_WithValidCommand_ShouldNotHaveValidationErrors()
 	{
 		var validator = new DeleteProjectCommandValidator();
-		var command = new DeleteProjectCommand(Guid.NewGuid());
+		var command = new DeleteProjectCommand(Guid.NewGuid(), "user123");
 
 		var result = validator.TestValidate(command);
 
@@ -111,7 +111,7 @@ public class ProjectValidatorTests
 	public void DeleteProjectCommandValidator_WithEmptyId_ShouldHaveValidationError()
 	{
 		var validator = new DeleteProjectCommandValidator();
-		var command = new DeleteProjectCommand(Guid.Empty);
+		var command = new DeleteProjectCommand(Guid.Empty, "user123");
 
 		var result = validator.TestValidate(command);
 

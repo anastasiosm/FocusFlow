@@ -1,6 +1,7 @@
 using FocusFlow.Application.Features.Projects.Common;
 using FocusFlow.Application.Features.Projects.GetProjectById;
 using FocusFlow.Application.Features.Projects.GetProjectsByOwner;
+using FocusFlow.Application.Features.Projects.GetAllProjects;
 using FocusFlow.Application.Features.Projects.CreateProject;
 using FocusFlow.Application.Features.Projects.UpdateProject;
 using FocusFlow.Application.Features.Projects.DeleteProject;
@@ -44,6 +45,18 @@ public class ProjectsController : ControllerBase
 		var result = await _mediator.Send(query);
 
 		_logger.LogInformation("Retrieved {Count} projects for user {UserId}", result.Count, userId);
+		return Ok(result);
+	}
+
+	/// <summary>
+	/// Get all projects (admin/dev)
+	/// </summary>
+	[HttpGet("all")]
+	[ProducesResponseType(typeof(List<ProjectDto>), StatusCodes.Status200OK)]
+	public async Task<ActionResult<List<ProjectDto>>> GetAllProjects()
+	{
+		var result = await _mediator.Send(new GetAllProjectsQuery());
+		_logger.LogInformation("Retrieved {Count} total projects", result.Count);
 		return Ok(result);
 	}
 
@@ -98,29 +111,20 @@ public class ProjectsController : ControllerBase
 	/// <param name="dto">Updated project data</param>
 	/// <returns>Updated project</returns>
 	[HttpPut("{id}")]
-	[ProducesResponseType(typeof(ProjectDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<ActionResult<ProjectDto>> Update(Guid id, [FromBody] UpdateProjectDto dto)
+	public async Task<IActionResult> Update(Guid id, [FromBody] UpdateProjectDto dto)
 	{
-		// First check if project exists and user owns it
-		var existingQuery = new GetProjectByIdQuery(id);
-		var existing = await _mediator.Send(existingQuery);
-
 		var userId = GetCurrentUserId();
-		if (existing.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to update project {ProjectId} owned by {OwnerId}",
-				userId, id, existing.OwnerId);
-			return Forbid();
-		}
-
-		var command = new UpdateProjectCommand(id, dto.Name, dto.Description);
-		var result = await _mediator.Send(command);
+		var command = new UpdateProjectCommand(id, dto.Name, dto.Description, userId);
+		
+		await _mediator.Send(command);
 
 		_logger.LogInformation("User {UserId} updated project {ProjectId}", userId, id);
-		return Ok(result);
+		
+		return NoContent();
 	}
 
 	/// <summary>
@@ -134,19 +138,8 @@ public class ProjectsController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Delete(Guid id)
 	{
-		// First check if project exists and user owns it
-		var existingQuery = new GetProjectByIdQuery(id);
-		var existing = await _mediator.Send(existingQuery);
-
 		var userId = GetCurrentUserId();
-		if (existing.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to delete project {ProjectId} owned by {OwnerId}",
-				userId, id, existing.OwnerId);
-			return Forbid();
-		}
-
-		var command = new DeleteProjectCommand(id);
+		var command = new DeleteProjectCommand(id, userId);
 		await _mediator.Send(command);
 
 		_logger.LogInformation("User {UserId} deleted project {ProjectId}", userId, id);

@@ -1,16 +1,62 @@
 @page "/login"
-
-<PageTitle>Login - FocusFlow</PageTitle>
+@using FocusFlow.BlazorApp.Models
+@using FocusFlow.BlazorApp.Services
+@using FocusFlow.BlazorApp.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@using Blazored.LocalStorage
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
-    <MudCard>
-        <MudCardContent>
-            <MudText Typo="Typo.h4" GutterBottom="true">Login</MudText>
-            <MudTextField T="string" Label="Email" Variant="Variant.Outlined" Class="mb-4" />
-            <MudTextField T="string" Label="Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
-        </MudCardContent>
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Login</MudButton>
-        </MudCardActions>
-    </MudCard>
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h5" GutterBottom="true" Align="Align.Center">Login</MudText>
+        <EditForm Model="@_loginRequest" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudTextField Label="Email" @bind-Value="_loginRequest.Email" For="@(() => _loginRequest.Email)" />
+            <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="_loginRequest.Password" For="@(() => _loginRequest.Password)" />
+            
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@_loading">
+                @if (_loading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                    <MudText Class="ms-2">Logging in...</MudText>
+                }
+                else
+                {
+                    <MudText>Login</MudText>
+                }
+            </MudButton>
+        </EditForm>
+        <MudText Typo="Typo.body2" Class="mt-4" Align="Align.Center">
+            Don't have an account? <MudLink Href="/register">Register here</MudLink>
+        </MudText>
+    </MudPaper>
 </MudContainer>
+
+@code {
+    private LoginRequest _loginRequest = new();
+    private bool _loading = false;
+
+    private async Task OnValidSubmit()
+    {
+        _loading = true;
+        try
+        {
+            var token = await ApiService.LoginAsync(_loginRequest);
+            await LocalStorage.SetItemAsync("authToken", token);
+            ((CustomAuthenticationStateProvider)AuthStateProvider).MarkUserAsAuthenticated(_loginRequest.Email);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

@@ -31,7 +31,7 @@ public class DeleteProjectCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingProject);
 
-		var command = new DeleteProjectCommand(projectId);
+		var command = new DeleteProjectCommand(projectId, "user123");
 
 		// Act
 		await _handler.Handle(command, CancellationToken.None);
@@ -54,7 +54,7 @@ public class DeleteProjectCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync((Project?)null);
 
-		var command = new DeleteProjectCommand(projectId);
+		var command = new DeleteProjectCommand(projectId, "user123");
 
 		// Act
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -71,6 +71,34 @@ public class DeleteProjectCommandTests : TestBase
 	}
 
 	[Fact]
+	public async Task Handle_WithDifferentOwner_ShouldThrowUnauthorizedException()
+	{
+		// Arrange
+		var projectId = Guid.NewGuid();
+		var existingProject = new Project("Project to Delete", null, "ownerUser");
+
+		var idProperty = typeof(Project).GetProperty("Id");
+		idProperty!.SetValue(existingProject, projectId);
+
+		MockProjectRepository
+			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(existingProject);
+
+		var command = new DeleteProjectCommand(projectId, "otherUser");
+
+		// Act
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<FocusFlowUnauthorizedException>()
+			.WithMessage("*do not have permission*");
+			
+		MockProjectRepository.Verify(
+			repo => repo.DeleteAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()),
+			Times.Never);
+	}
+
+	[Fact]
 	public async Task Handle_ShouldCallRepositoryWithCorrectProject()
 	{
 		// Arrange
@@ -84,7 +112,7 @@ public class DeleteProjectCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingProject);
 
-		var command = new DeleteProjectCommand(projectId);
+		var command = new DeleteProjectCommand(projectId, "user123");
 
 		// Act
 		await _handler.Handle(command, CancellationToken.None);
@@ -107,7 +135,7 @@ public class DeleteProjectCommandTests : TestBase
 			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new InvalidOperationException("Database error"));
 
-		var command = new DeleteProjectCommand(projectId);
+		var command = new DeleteProjectCommand(projectId, "user123");
 
 		// Act
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -135,7 +163,7 @@ public class DeleteProjectCommandTests : TestBase
 			.Setup(repo => repo.DeleteAsync(existingProject, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new InvalidOperationException("Delete failed"));
 
-		var command = new DeleteProjectCommand(projectId);
+		var command = new DeleteProjectCommand(projectId, "user123");
 
 		// Act
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);

@@ -24,6 +24,9 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
 		if (project == null)
 			throw new FocusFlowNotFoundException("Project", request.Id);
 
+		if (project.OwnerId != request.UserId)
+			throw new FocusFlowUnauthorizedException("You do not have permission to update this project");
+
 		project.Update(request.Name, request.Description);
 
 		await _projectRepository.UpdateAsync(project, cancellationToken);
