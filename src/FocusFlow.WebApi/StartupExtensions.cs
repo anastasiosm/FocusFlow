@@ -104,16 +104,24 @@ public static class StartupExtensions
 
 		if (app.Environment.IsDevelopment())
 		{
-			// Swagger/OpenAPI (JSON generation)
-			app.UseSwagger();
+			// Swagger/OpenAPI (JSON generation) - published at /openapi/v1.json for Scalar
+			app.UseSwagger(options =>
+			{
+				options.RouteTemplate = "openapi/{documentName}.json";
+			});
 
-			// Scalar API Reference (UI)
-			app.MapScalarApiReference();
+			app.MapScalarApiReference(options =>
+			{
+				options
+					.WithTitle("FocusFlow API")
+					.WithTheme(ScalarTheme.Purple)
+					.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+			});
 		}
 
 		app.UseAuthentication();
 		app.UseAuthorization();
-		app.UseHttpsRedirection();
+		//app.UseHttpsRedirection();
 		app.MapControllers();
 
 		return app;

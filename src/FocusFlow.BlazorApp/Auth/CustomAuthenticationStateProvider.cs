@@ -18,7 +18,17 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var savedToken = await _localStorage.GetItemAsync<string>("authToken");
+        string savedToken = null;
+
+        try
+        {
+            savedToken = await _localStorage.GetItemAsync<string>("authToken");
+        }
+        catch (InvalidOperationException)
+        {
+            // This happens during server-side pre-rendering when JS interop is not available.
+            // We can safely ignore this and assume no token is present.
+        }
 
         if (string.IsNullOrWhiteSpace(savedToken))
         {

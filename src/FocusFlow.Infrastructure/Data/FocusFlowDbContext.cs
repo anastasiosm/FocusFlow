@@ -45,17 +45,17 @@ public class FocusFlowDbContext : IdentityDbContext<ApplicationUser>
 
 		modelBuilder.Entity<ApplicationUser>(entity =>
 		{
-			entity.ToTable("AspNetUsers", Schemas.Identity);
+			entity.ToTable("asp_net_users", Schemas.Identity);
 		});
 
 		modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityRole>(entity =>
 		{
-			entity.ToTable("AspNetRoles", Schemas.Identity);
+			entity.ToTable("asp_net_roles", Schemas.Identity);
 		});
 
 		modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserRole<string>>(entity =>
 		{
-			entity.ToTable("AspNetUserRoles", Schemas.Identity);
+			entity.ToTable("asp_net_user_roles", Schemas.Identity);
 		});
 
 		// Ignore unused tables for simple identity (Users + Roles only)

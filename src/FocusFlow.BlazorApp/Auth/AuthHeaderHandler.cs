@@ -14,7 +14,16 @@ public class AuthHeaderHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var token = await _localStorage.GetItemAsync<string>("authToken", cancellationToken);
+        string token = null;
+
+        try
+        {
+            token = await _localStorage.GetItemAsync<string>("authToken", cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            // Ignored during pre-rendering
+        }
 
         if (!string.IsNullOrWhiteSpace(token))
         {

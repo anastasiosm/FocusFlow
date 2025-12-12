@@ -1,13 +1,18 @@
 services:
   focusflow-api:
-    image: mcr.microsoft.com/dotnet/sdk:8.0
-    pull_policy: "never"
+    pull_policy: if_not_present
+    build:
+      context: .
+      dockerfile: src/FocusFlow.WebApi/Dockerfile
     ports:
       - "8080:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - "ConnectionStrings:DefaultConnection=Host=postgres-db;Port=5432;Database=FocusFlowDb;Username=postgres;Password=postgres"
+      - "Jwt:Key=YourSuperSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm"
+      - "Jwt:Issuer=FocusFlowAPI"
+      - "Jwt:Audience=FocusFlowClients"
       # (Development) API serves HTTP only inside Docker to avoid HTTPS redirect name-mismatch
     depends_on:
       postgres-db:
@@ -17,11 +22,13 @@ services:
     # no certificate mount for API in dev
 
   focusflow-blazor:
-    image: mcr.microsoft.com/dotnet/aspnet:8.0
-    pull_policy: "never"
+    pull_policy: if_not_present
+    build:
+      context: .
+      dockerfile: src/FocusFlow.BlazorApp/Dockerfile
     ports:
-      - "5000:8080"   # HTTP
-      - "5001:8081"   # HTTPS
+      - "5000:8080" # HTTP
+      - "5001:8081" # HTTPS
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
@@ -41,13 +48,13 @@ services:
     environment:
       POSTGRES_DB: FocusFlowDb
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres  
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"    
+      - "5432:5432"
     volumes:
       - focusflow-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5

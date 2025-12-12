@@ -99,25 +99,25 @@ namespace FocusFlow.Infrastructure.Migrations
                 name: "ix_tasks_status",
                 schema: "focus_flow",
                 table: "Tasks",
-                newName: "IX_Tasks_Status");
+                newName: "ix_tasks_status");
 
             migrationBuilder.RenameIndex(
                 name: "ix_tasks_project_id",
                 schema: "focus_flow",
                 table: "Tasks",
-                newName: "IX_Tasks_ProjectId");
+                newName: "ix_tasks_project_id");
 
             migrationBuilder.RenameIndex(
                 name: "ix_tasks_due_date",
                 schema: "focus_flow",
                 table: "Tasks",
-                newName: "IX_Tasks_DueDate");
+                newName: "ix_tasks_due_date");
 
             migrationBuilder.RenameIndex(
                 name: "ix_tasks_created_at",
                 schema: "focus_flow",
                 table: "Tasks",
-                newName: "IX_Tasks_CreatedAt");
+                newName: "ix_tasks_created_at");
 
             migrationBuilder.RenameColumn(
                 name: "name",
@@ -159,28 +159,28 @@ namespace FocusFlow.Infrastructure.Migrations
                 name: "ix_projects_owner_id",
                 schema: "focus_flow",
                 table: "Projects",
-                newName: "IX_Projects_OwnerId");
+                newName: "ix_projects_owner_id");
 
             migrationBuilder.RenameIndex(
                 name: "ix_projects_created_at",
                 schema: "focus_flow",
                 table: "Projects",
-                newName: "IX_Projects_CreatedAt");
+                newName: "ix_projects_created_at");
 
             migrationBuilder.AddPrimaryKey(
-                name: "PK_Tasks",
+                name: "pk_tasks",
                 schema: "focus_flow",
                 table: "Tasks",
                 column: "Id");
 
             migrationBuilder.AddPrimaryKey(
-                name: "PK_Projects",
+                name: "pk_projects",
                 schema: "focus_flow",
                 table: "Projects",
                 column: "Id");
 
             migrationBuilder.CreateTable(
-                name: "AspNetUsers",
+                name: "asp_net_users", 
                 schema: "public",
                 columns: table => new
                 {
@@ -205,30 +205,30 @@ namespace FocusFlow.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                    table.PrimaryKey("pk_asp_net_users", x => x.Id);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_NormalizedEmail",
+                name: "ix_asp_net_users_normalized_email", 
                 schema: "public",
-                table: "AspNetUsers",
+                table: "asp_net_users",
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_NormalizedUserName",
+                name: "ix_asp_net_users_normalized_user_name",
                 schema: "public",
-                table: "AspNetUsers",
+                table: "asp_net_users",
                 column: "NormalizedUserName",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_CreatedAt",
+                name: "ix_asp_net_users_created_at",
                 schema: "public",
-                table: "AspNetUsers",
+                table: "asp_net_users",
                 column: "CreatedAt");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Tasks_Projects_ProjectId",
+                name: "fk_tasks_projects_project_id",
                 schema: "focus_flow",
                 table: "Tasks",
                 column: "ProjectId",
@@ -242,21 +242,21 @@ namespace FocusFlow.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_Tasks_Projects_ProjectId",
+                name: "fk_tasks_projects_project_id",
                 schema: "focus_flow",
                 table: "Tasks");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers",
+                name: "asp_net_users",
                 schema: "public");
 
             migrationBuilder.DropPrimaryKey(
-                name: "PK_Tasks",
+                name: "pk_tasks",
                 schema: "focus_flow",
                 table: "Tasks");
 
             migrationBuilder.DropPrimaryKey(
-                name: "PK_Projects",
+                name: "pk_projects",
                 schema: "focus_flow",
                 table: "Projects");
 
@@ -327,25 +327,25 @@ namespace FocusFlow.Infrastructure.Migrations
                 newName: "assigned_user_id");
 
             migrationBuilder.RenameIndex(
-                name: "IX_Tasks_Status",
+                name: "ix_tasks_status",
                 schema: "focus_flow",
                 table: "Tasks",
                 newName: "ix_tasks_status");
 
             migrationBuilder.RenameIndex(
-                name: "IX_Tasks_ProjectId",
+                name: "ix_tasks_project_id",
                 schema: "focus_flow",
                 table: "Tasks",
                 newName: "ix_tasks_project_id");
 
             migrationBuilder.RenameIndex(
-                name: "IX_Tasks_DueDate",
+                name: "ix_tasks_due_date",
                 schema: "focus_flow",
                 table: "Tasks",
                 newName: "ix_tasks_due_date");
 
             migrationBuilder.RenameIndex(
-                name: "IX_Tasks_CreatedAt",
+                name: "ix_tasks_created_at",
                 schema: "focus_flow",
                 table: "Tasks",
                 newName: "ix_tasks_created_at");
@@ -387,13 +387,13 @@ namespace FocusFlow.Infrastructure.Migrations
                 newName: "created_at");
 
             migrationBuilder.RenameIndex(
-                name: "IX_Projects_OwnerId",
+                name: "ix_projects_owner_id",
                 schema: "focus_flow",
                 table: "Projects",
                 newName: "ix_projects_owner_id");
 
             migrationBuilder.RenameIndex(
-                name: "IX_Projects_CreatedAt",
+                name: "ix_projects_created_at",
                 schema: "focus_flow",
                 table: "Projects",
                 newName: "ix_projects_created_at");
