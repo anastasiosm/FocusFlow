@@ -24,11 +24,6 @@ FocusFlow follows **Onion Architecture** with clear separation of concerns:
 
 ### Key Architectural Decisions
 
-**No BaseEntity Inheritance**
-- Each entity (Project, ProjectTask) manages its own properties explicitly
-- Simpler code, easier to understand
-- Follows YAGNI principle - only 2 entities don't justify abstraction
-
 **FocusFlow-Branded Exceptions**
 - `FocusFlowException` (base)
 - `FocusFlowValidationException` - Invalid input
@@ -43,13 +38,13 @@ FocusFlow follows **Onion Architecture** with clear separation of concerns:
 
 ## 🚀 Features
 
-- ✅ User authentication & authorization
-- ✅ Project management (CRUD)
-- ✅ Task management with priorities & statuses
-- ✅ Progress dashboards & statistics
-- ✅ Real-time updates (SignalR)
+- ✅ User authentication & authorization (UI + handlers)
+- ✅ Project management (CRUD) — Create / Update forms and validators present
+- 🚧 Task management with priorities & statuses
+- 🚧 Progress dashboards & statistics
+- ✅ Real-time updates (SignalR) — integration planned; scaffolding available
 - ✅ RESTful API with OpenAPI documentation
-- ✅ Containerized deployment (Docker & Kubernetes)
+- ✅ Containerized deployment (Docker) — Dockerfiles and docker-compose present
 
 ## 🛠️ Tech Stack
 
@@ -90,7 +85,7 @@ FocusFlow follows **Onion Architecture** with clear separation of concerns:
 
 ### Local Development
 
-```bash
+```
 # Clone repository
 git clone https://github.com/YOUR_USERNAME/FocusFlow.git
 cd FocusFlow
@@ -101,20 +96,20 @@ dotnet restore
 # Run tests
 dotnet test
 
-# Run application (coming soon)
-# dotnet run --project src/FocusFlow.WebApi
+# Run application (Web UI via Blazor project)
+# dotnet run --project src/FocusFlow.BlazorApp
 ```
 
-### Docker Compose (coming soon)
+### Docker Compose
 
-```bash
+```
 # Build and run all services
 docker compose up -d
 
 # Application will be available at:
 # - Web UI: http://localhost:5000
-# - API: http://localhost:5001
-# - Swagger: http://localhost:5001/swagger
+# - API: http://localhost:8080
+# - Swagger: http://localhost:8080/swagger
 
 # Stop services
 docker compose down
@@ -122,7 +117,7 @@ docker compose down
 
 ## 🧪 Testing
 
-```bash
+```
 # Run all tests
 dotnet test
 
@@ -178,14 +173,14 @@ FocusFlow/
 │   │       └── MappingProfiles.cs
 │   ├── FocusFlow.Infrastructure/      # 🚧 EF Core, Identity, Repos
 │   ├── FocusFlow.WebApi/              # 🚧 REST API controllers
-│   ├── FocusFlow.BlazorApp/           # 🚧 Blazor UI
+│   ├── FocusFlow.BlazorApp/           # ✅ Blazor UI (projects, auth, components present)
 │   └── FocusFlow.Shared/              # 🚧 Common constants
 ├── tests/
 │   ├── FocusFlow.Domain.Tests/        # ✅ 50 unit tests
 │   ├── FocusFlow.Application.Tests/   # 🚧 Coming soon
 │   ├── FocusFlow.Infrastructure.Tests/# 🚧 Coming soon
 │   └── FocusFlow.Integration.Tests/   # 🚧 Coming soon
-├── docker/                            # 🚧 Docker configuration
+├── docker/                            # ✅ Docker configuration & compose
 ├── k8s/                               # 🚧 Kubernetes manifests
 ├── docs/                              # 🚧 Documentation
 └── README.md
@@ -223,10 +218,10 @@ FocusFlow/
 - [ ] Error handling middleware
 - [ ] Integration tests
 
-### Phase 5: Frontend ⏳
-- [ ] Blazor project setup
-- [ ] Authentication pages
-- [ ] Project management UI
+### Phase 5: Frontend 🚧 IN PROGRESS
+- [x] Blazor project setup
+- [x] Authentication pages
+- [x] Project management UI
 - [ ] Task management UI
 - [ ] Dashboard with statistics
 
@@ -236,9 +231,9 @@ FocusFlow/
 - [ ] Overdue task detection
 - [ ] Serilog logging
 
-### Phase 7: Containerization ⏳
-- [ ] Dockerfiles
-- [ ] docker-compose.yml
+### Phase 7: Containerization ✅
+- [x] Dockerfiles
+- [x] docker-compose.yml
 - [ ] Kubernetes manifests
 - [ ] CI/CD pipeline
 
@@ -253,11 +248,6 @@ FocusFlow/
 **Decision:** Implement Command/Query separation using MediatR  
 **Rationale:** Clearer use cases, easier testing, single responsibility  
 **Consequences:** More classes but more maintainable and testable
-
-### ADR-003: No BaseEntity
-**Decision:** No abstract BaseEntity class  
-**Rationale:** Only 2 entities, explicit is better than implicit, YAGNI principle  
-**Consequences:** Slight duplication but simpler, more understandable code
 
 ### ADR-004: FocusFlow Exception Naming
 **Decision:** Prefix all domain exceptions with "FocusFlow"  
