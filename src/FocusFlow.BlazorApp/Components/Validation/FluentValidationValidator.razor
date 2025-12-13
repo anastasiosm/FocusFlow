@@ -1,0 +1,70 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using FluentValidation
+@using FluentValidation.Internal
+@using FluentValidation.Results
+@inject IServiceProvider ServiceProvider
+
+@code {
+    private ValidationMessageStore _messageStore;
+
+    [CascadingParameter]
+    private EditContext EditContext { get; set; } = default!;
+
+    [Parameter]
+    public IValidator Validator { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        if (EditContext == null)
+        {
+            throw new InvalidOperationException($"{nameof(FluentValidationValidator)} requires a cascading " +
+                $"parameter of type {nameof(EditContext)}. For example, you can use {nameof(FluentValidationValidator)} " +
+                $"inside an {nameof(EditForm)}.");
+        }
+
+        _messageStore = new ValidationMessageStore(EditContext);
+
+        EditContext.OnValidationRequested += OnValidationRequested;
+        EditContext.OnFieldChanged += OnFieldChanged;
+    }
+
+    private async void OnValidationRequested(object? sender, ValidationRequestedEventArgs e)
+    {
+        _messageStore.Clear();
+        var validationContext = new ValidationContext<object>(EditContext.Model);
+        var result = await Validator.ValidateAsync(validationContext);
+
+        AddValidationResult(EditContext, result);
+    }
+
+    private async void OnFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        _messageStore.Clear(e.FieldIdentifier);
+
+        var properties = new[] { e.FieldIdentifier.FieldName };
+        var validationContext = new ValidationContext<object>(
+            EditContext.Model, 
+            new PropertyChain(), 
+            new MemberNameValidatorSelector(properties)
+        );
+        var result = await Validator.ValidateAsync(validationContext);
+        
+        AddValidationResult(EditContext, result);
+    }
+
+    private void AddValidationResult(EditContext editContext, ValidationResult validationResult)
+    {
+        foreach (var error in validationResult.Errors)
+        {
+            _messageStore.Add(editContext.Field(error.PropertyName), error.ErrorMessage);
+        }
+        editContext.NotifyValidationStateChanged();
+    }
+
+    public void Dispose()
+    {
+        EditContext.OnValidationRequested -= OnValidationRequested;
+        EditContext.OnFieldChanged -= OnFieldChanged;
+    }
+}

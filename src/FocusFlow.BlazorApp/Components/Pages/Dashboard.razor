@@ -2,33 +2,40 @@
 
 <PageTitle>Dashboard - FocusFlow</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h3" Class="mb-4">Dashboard</MudText>
+<AuthorizeView>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+            <MudText Typo="Typo.h3" Class="mb-4">Dashboard</MudText>
 
-    <MudGrid>
-        <MudItem xs="12" sm="6" md="4">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Active Projects</MudText>
-                    <MudText Typo="Typo.h3">5</MudText>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Tasks Due Soon</MudText>
-                    <MudText Typo="Typo.h3">3</MudText>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Completed Tasks</MudText>
-                    <MudText Typo="Typo.h3">12</MudText>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
-</MudContainer>
+            <MudGrid>
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6">Active Projects</MudText>
+                            <MudText Typo="Typo.h3">5</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6">Tasks Due Soon</MudText>
+                            <MudText Typo="Typo.h3">3</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6">Completed Tasks</MudText>
+                            <MudText Typo="Typo.h3">12</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="MudBlazor.Severity.Warning">Please login to view the dashboard.</MudAlert>
+    </NotAuthorized>
+</AuthorizeView>

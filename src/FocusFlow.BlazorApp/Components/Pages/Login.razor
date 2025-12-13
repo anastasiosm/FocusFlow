@@ -4,22 +4,28 @@
 @using FocusFlow.BlazorApp.Auth
 @using Microsoft.AspNetCore.Components.Authorization
 @using Blazored.LocalStorage
-@inject IApiService ApiService
+@using FocusFlow.BlazorApp.Components.Validation
+@using FocusFlow.BlazorApp.Models.Validators
+@using FocusFlow.BlazorApp.Store.Auth 
+@using Fluxor 
+@using Fluxor.Blazor.Web
+@using FluentValidation 
 @inject NavigationManager NavigationManager
-@inject ILocalStorageService LocalStorage
-@inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject IValidator<LoginRequest> _loginRequestValidator
+@inject IDispatcher Dispatcher 
+@inject IState<AuthState> AuthState 
 
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
     <MudPaper Class="pa-4">
         <MudText Typo="Typo.h5" GutterBottom="true" Align="Align.Center">Login</MudText>
         <EditForm Model="@_loginRequest" OnValidSubmit="OnValidSubmit">
-            <DataAnnotationsValidator />
+            <FluentValidationValidator Validator="@_loginRequestValidator" /> @* Replaced DataAnnotationsValidator *@
             <MudTextField Label="Email" @bind-Value="_loginRequest.Email" For="@(() => _loginRequest.Email)" />
             <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="_loginRequest.Password" For="@(() => _loginRequest.Password)" />
             
-            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@_loading">
-                @if (_loading)
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@AuthState.Value.IsLoading"> @* Updated Disabled *@
+                @if (AuthState.Value.IsLoading) @* Updated conditional *@
                 {
                     <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
                     <MudText Class="ms-2">Logging in...</MudText>
@@ -29,6 +35,11 @@
                     <MudText>Login</MudText>
                 }
             </MudButton>
+
+            @if (!string.IsNullOrWhiteSpace(AuthState.Value.Error))
+            {
+                <MudAlert Severity="MudBlazor.Severity.Error" Class="mt-4">@AuthState.Value.Error</MudAlert>
+            }
         </EditForm>
         <MudText Typo="Typo.body2" Class="mt-4" Align="Align.Center">
             Don't have an account? <MudLink Href="/register">Register here</MudLink>
@@ -38,25 +49,10 @@
 
 @code {
     private LoginRequest _loginRequest = new();
-    private bool _loading = false;
+    // Removed _loading, now using AuthState.Value.IsLoading
 
-    private async Task OnValidSubmit()
+    private void OnValidSubmit() // Changed to not async Task
     {
-        _loading = true;
-        try
-        {
-            var token = await ApiService.LoginAsync(_loginRequest);
-            await LocalStorage.SetItemAsync("authToken", token);
-            ((CustomAuthenticationStateProvider)AuthStateProvider).MarkUserAsAuthenticated(_loginRequest.Email);
-            NavigationManager.NavigateTo("/");
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-        finally
-        {
-            _loading = false;
-        }
+        Dispatcher.Dispatch(new LoginAction(_loginRequest)); // Dispatch action
     }
 }

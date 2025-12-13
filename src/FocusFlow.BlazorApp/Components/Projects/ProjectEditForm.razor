@@ -1,0 +1,89 @@
+@using FocusFlow.Application.Features.Projects.Common
+@using FluentValidation
+@using FocusFlow.BlazorApp.Models
+@using FocusFlow.BlazorApp.Components.Validation
+@using FocusFlow.BlazorApp.Models.Validators
+@using FocusFlow.BlazorApp.Store.Projects
+@using Fluxor
+@using Microsoft.AspNetCore.Components.Forms
+@inject ISnackbar Snackbar
+@inject IValidator<ProjectUpdateFormModel> _updateProjectFormModelValidator
+@inject IDispatcher Dispatcher
+@inject IState<ProjectsState> ProjectsState
+
+<MudDialog @bind-Visible="Visible">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Project</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@_updateProjectFormModel" OnValidSubmit="HandleValidSubmit">
+            <FluentValidationValidator Validator="@_updateProjectFormModelValidator" />
+            <MudTextField T="string"
+                @bind-value="_updateProjectFormModel.Name" 
+                Label="Project Name" 
+                Required="true"
+                For="@(() => _updateProjectFormModel.Name)"
+                Variant="Variant.Outlined" />
+            <MudTextField T="string"
+                @bind-value="_updateProjectFormModel.Description" 
+                Label="Description" 
+                Lines="3"
+                For="@(() => _updateProjectFormModel.Description)"
+                Variant="Variant.Outlined"
+                Class="mt-3" />
+             <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@ProjectsState.Value.IsLoading">
+                @if (ProjectsState.Value.IsLoading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                    <MudText Class="ms-2">Updating...</MudText>
+                }
+                else
+                {
+                    <MudText>Update</MudText>
+                }
+            </MudButton>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+
+    [Parameter]
+    public ProjectDto? Project { get; set; }
+
+    private ProjectUpdateFormModel _updateProjectFormModel = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Project != null)
+        {
+            _updateProjectFormModel = new ProjectUpdateFormModel
+            {
+                Id = Project.Id,
+                Name = Project.Name,
+                Description = Project.Description
+            };
+        }
+    }
+
+    private void HandleValidSubmit()
+    {
+        if (Project is null) return;
+        Dispatcher.Dispatch(new UpdateProjectAction(Project.Id, _updateProjectFormModel));
+    }
+
+    private async Task Cancel()
+    {
+        Visible = false;
+        await VisibleChanged.InvokeAsync(Visible);
+        _updateProjectFormModel = new(); // Reset form model
+    }
+}

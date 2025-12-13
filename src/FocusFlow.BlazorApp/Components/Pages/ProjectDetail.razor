@@ -1,40 +1,74 @@
 @page "/projects/{id:guid}"
 @using FocusFlow.Application.Features.Projects.GetProjectById
+@using FocusFlow.BlazorApp.Store.ProjectDetail
+@using Fluxor
+@inject IDispatcher Dispatcher
+@inject IState<ProjectDetailState> ProjectDetailState
 
 <PageTitle>Project Detail - FocusFlow</PageTitle>
 
-@if (Project != null)
-{
-    <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-        <MudText Typo="Typo.h3">@Project.Name</MudText>
-        <MudText Typo="Typo.subtitle1" Class="mb-4">@Project.Description</MudText>
+<AuthorizeView>
+    <Authorized>
+        @if (ProjectDetailState.Value.IsLoading)
+        {
+            <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+                <MudSkeleton Width="50%" Height="3rem" Animation="Animation.Wave" Class="mb-4" />
+                <MudSkeleton Width="80%" Height="1.5rem" Animation="Animation.Wave" Class="mb-6" />
 
-        <MudGrid>
-            <MudItem xs="12">
-                <MudText Typo="Typo.h5">Tasks</MudText>
-                @* Task list will go here *@
-            </MudItem>
-        </MudGrid>
-    </MudContainer>
-}
-else
-{
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-}
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudSkeleton Width="30%" Height="2rem" Animation="Animation.Wave" Class="mb-4" />
+                        @* Skeleton for tasks if needed, for now just a placeholder *@
+                        <MudSkeleton Width="100%" Height="5rem" Animation="Animation.Wave" />
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+        else if (!string.IsNullOrEmpty(ProjectDetailState.Value.Error))
+        {
+            <MudAlert Severity="MudBlazor.Severity.Error">@ProjectDetailState.Value.Error</MudAlert>
+        }
+        else if (ProjectDetailState.Value.Project is not null)
+        {
+            var project = ProjectDetailState.Value.Project;
+            <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+                <MudText Typo="Typo.h3">@project.Name</MudText>
+                <MudText Typo="Typo.subtitle1" Class="mb-4">@project.Description</MudText>
 
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h5">Tasks</MudText>
+                        @* Task list will go here *@
+                        @if (!project.Tasks.Any())
+                        {
+                            <MudAlert Severity="MudBlazor.Severity.Info" Class="mt-4">This project doesn't have any tasks yet.</MudAlert>
+                        }
+                        else
+                        {
+                            @* TODO: Render task list *@
+                        }
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="MudBlazor.Severity.Warning">Please login to view this project.</MudAlert>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     [Parameter]
     public Guid Id { get; set; }
 
-    // This would be a DTO for a single project with its tasks
-    private ProjectDetailDto? Project { get; set; } 
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnParametersSet()
     {
-        // In a real app, you would fetch the project details from an API
-        // For now, we'll just simulate a delay
-        await Task.Delay(500);
-        Project = new ProjectDetailDto(Id, "Sample Project", "This is a sample project detail page.", "user-123", DateTime.UtcNow, DateTime.UtcNow, new List<Application.Features.Tasks.Common.TaskDto>());
+        base.OnParametersSet();
+        // Dispatch the action to load the project if the ID has changed
+        // or if the project is not already loaded.
+        if (Id != Guid.Empty && Id != ProjectDetailState.Value.Project?.Id)
+        {
+            Dispatcher.Dispatch(new LoadProjectDetailAction(Id));
+        }
     }
 }

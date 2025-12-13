@@ -1,6 +1,25 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+﻿@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject NavigationManager NavigationManager
+
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="@typeof(Layout.MainLayout)">
+            <NotAuthorized>
+                <LayoutView Layout="@typeof(Layout.MainLayout)">
+                    <MudText Typo="Typo.h5" Class="mt-8">You are not authorized to view this page.</MudText>
+                    <MudText Typo="Typo.body1" Class="mt-2">Redirecting to login...</MudText>
+                    @{
+                        // Direct navigation outside of render tree for immediate redirect
+                        NavigationManager.NavigateTo("/login", true);
+                    }
+                </LayoutView>
+            </NotAuthorized>
+            <Authorizing>
+                <LayoutView Layout="@typeof(Layout.MainLayout)">
+                    <MudText Typo="Typo.h5" Class="mt-8">Authorizing...</MudText>
+                </LayoutView>
+            </Authorizing>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>

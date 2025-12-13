@@ -1,21 +1,30 @@
 @page "/register"
+@implements IDisposable
 @using FocusFlow.BlazorApp.Models
-@using FocusFlow.BlazorApp.Services
-@inject IApiService ApiService
+@using FocusFlow.BlazorApp.Components.Validation
+@using FocusFlow.BlazorApp.Models.Validators
+@using FocusFlow.BlazorApp.Store.Auth
+@using Fluxor
+@using Fluxor.Blazor.Web
+@using FluentValidation 
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ILogger<Register> Logger
+@inject IValidator<RegisterRequest> _registerRequestValidator
+@inject IDispatcher Dispatcher
+@inject IState<AuthState> AuthState
 
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
     <MudPaper Class="pa-4">
         <MudText Typo="Typo.h5" GutterBottom="true" Align="Align.Center">Register</MudText>
         <EditForm Model="@_registerRequest" OnValidSubmit="OnValidSubmit">
-            <DataAnnotationsValidator />
-            <MudTextField Label="Email" @bind-Value="_registerRequest.Email" For="@(() => _registerRequest.Email)" />
-            <MudTextField Label="Username" @bind-Value="_registerRequest.Username" For="@(() => _registerRequest.Username)" />
-            <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="_registerRequest.Password" For="@(() => _registerRequest.Password)" />
+            <FluentValidationValidator Validator="@_registerRequestValidator" /> @* Replaced DataAnnotationsValidator *@
+            <MudTextField T="string" InputType="InputType.Email" Label="Email" @bind-Value="_registerRequest.Email" For="@(() => _registerRequest.Email)" />
+            <MudTextField T="string" Label="Username" @bind-Value="_registerRequest.Username" For="@(() => _registerRequest.Username)" />
+            <MudTextField T="string" Label="Password" InputType="InputType.Password" @bind-Value="_registerRequest.Password" For="@(() => _registerRequest.Password)" />
             
-            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@_loading">
-                @if (_loading)
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@AuthState.Value.IsLoading"> @* Updated Disabled *@
+                @if (AuthState.Value.IsLoading) @* Updated conditional *@
                 {
                     <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
                     <MudText Class="ms-2">Registering...</MudText>
@@ -25,6 +34,11 @@
                     <MudText>Register</MudText>
                 }
             </MudButton>
+
+            @if (!string.IsNullOrWhiteSpace(AuthState.Value.Error))
+            {
+                <MudAlert Severity="MudBlazor.Severity.Error" Class="mt-4">@AuthState.Value.Error</MudAlert>
+            }
         </EditForm>
         <MudText Typo="Typo.body2" Class="mt-4" Align="Align.Center">
             Already have an account? <MudLink Href="/login">Login here</MudLink>
@@ -34,24 +48,59 @@
 
 @code {
     private RegisterRequest _registerRequest = new();
-    private bool _loading = false;
+    private bool _submitted;
+    // Removed _loading, now using AuthState.Value.IsLoading
 
-    private async Task OnValidSubmit()
+    protected override void OnInitialized()
     {
-        _loading = true;
-        try
+        AuthState.StateChanged += OnAuthStateChanged;
+    }
+
+    private void OnValidSubmit() // Changed to not async Task
+    {
+        _submitted = true;
+        Logger.LogInformation("Register: OnValidSubmit. Email='{Email}', Username='{Username}', PasswordLength={PasswordLength}",
+            _registerRequest.Email,
+            _registerRequest.Username,
+            _registerRequest.Password?.Length ?? 0);
+        Dispatcher.Dispatch(new RegisterAction(_registerRequest)); // Dispatch action
+        Logger.LogInformation("Register: RegisterAction dispatched. IsLoading={IsLoading}, Error='{Error}'",
+            AuthState.Value.IsLoading,
+            AuthState.Value.Error);
+    }
+
+    private void OnAuthStateChanged(object? sender, EventArgs e)
+    {
+        Logger.LogInformation("Register: AuthState changed. _submitted={Submitted}, IsLoading={IsLoading}, Error='{Error}'",
+            _submitted,
+            AuthState.Value.IsLoading,
+            AuthState.Value.Error);
+
+        if (!_submitted)
         {
-            await ApiService.RegisterAsync(_registerRequest);
-            Snackbar.Add("Registration successful! Please login.", Severity.Success);
+            return;
+        }
+
+        if (AuthState.Value.IsLoading)
+        {
+            return;
+        }
+
+        _submitted = false;
+
+        if (string.IsNullOrWhiteSpace(AuthState.Value.Error))
+        {
+            Logger.LogInformation("Register: Registration succeeded (no error). Navigating to /login");
             NavigationManager.NavigateTo("/login");
         }
-        catch (Exception ex)
+        else
         {
-            Snackbar.Add(ex.Message, Severity.Error);
+            Logger.LogWarning("Register: Registration finished with error: {Error}", AuthState.Value.Error);
         }
-        finally
-        {
-            _loading = false;
-        }
+    }
+
+    public void Dispose()
+    {
+        AuthState.StateChanged -= OnAuthStateChanged;
     }
 }

@@ -1,9 +1,12 @@
 using FocusFlow.BlazorApp.Components;
 using FocusFlow.BlazorApp.Services;
-using FocusFlow.BlazorApp.Auth; // Added
+using FocusFlow.BlazorApp.Auth; 
 using MudBlazor.Services;
-using Blazored.LocalStorage; // Added
-using Microsoft.AspNetCore.Components.Authorization; // Added
+using Blazored.LocalStorage; 
+using Microsoft.AspNetCore.Components.Authorization; 
+using FluentValidation; 
+using FocusFlow.BlazorApp.Models.Validators; 
+using Fluxor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,14 +26,36 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthHeaderHandler>();
 
-// Add HttpClient for API calls
-builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>(); 
+
+// Add Fluxor
+builder.Services.AddFluxor(options =>
 {
-    // Configure base address from appsettings or use default
-    var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
-    client.BaseAddress = new Uri(apiBaseUrl);
-})
-.AddHttpMessageHandler<AuthHeaderHandler>();
+    options.ScanAssemblies(typeof(Program).Assembly); 
+    // options.UseReduxDevTools(rdt => { rdt.Name = "FocusFlow Blazor App"; }); // Optional: For Fluxor DevTools integration - commented due to build error
+});
+
+// Add API service registration
+var useFakeApi = builder.Configuration.GetValue<bool>("UseFakeApi");
+
+if (useFakeApi)
+{
+    // Use the fake API service for local development without a running backend
+    builder.Services.AddSingleton<IApiService, FakeApiService>();
+    // Also add HttpClient for authentication components
+    builder.Services.AddHttpClient();
+}
+else
+{
+    // Use the real API service
+    builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+    {
+        var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
+        client.BaseAddress = new Uri(apiBaseUrl);
+    })
+    .AddHttpMessageHandler<AuthHeaderHandler>();
+}
 
 var app = builder.Build();
 
