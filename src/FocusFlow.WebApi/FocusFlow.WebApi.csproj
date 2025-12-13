@@ -29,4 +29,8 @@
     <ProjectReference Include="..\FocusFlow.Infrastructure\FocusFlow.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Authorization\TaskOwnership\" />
+  </ItemGroup>
+
 </Project>

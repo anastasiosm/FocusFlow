@@ -9,4 +9,5 @@ public interface IProjectRepository : IRepository<Project>
 {
 	Task<Project?> GetByIdWithTasksAsync(Guid id, CancellationToken cancellationToken = default);
 	Task<List<Project>> GetByOwnerIdAsync(string ownerId, CancellationToken cancellationToken = default);
+	Task<List<Project>> GetByOwnerIdWithTasksAsync(string ownerId, CancellationToken cancellationToken = default);
 }

@@ -6,6 +6,8 @@ using FocusFlow.Application.Features.Projects.GetProjectById;
 using FocusFlow.Application.Features.Projects.UpdateProject;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Features.Tasks.CreateTask;
+using FocusFlow.Application.Features.Dashboard.Common;
+using FocusFlow.Domain.Enums;
 using System.Net.Http.Json;
 using FocusFlow.BlazorApp.Models; 
 using System.Text.Json;
@@ -182,16 +184,47 @@ public class ApiService : IApiService
 			var result = await _httpClient.GetFromJsonAsync<List<TaskDto>>($"api/projects/{projectId}/tasks");
 			return ApiResult<List<TaskDto>>.Success(result ?? new List<TaskDto>());
 		}
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error fetching tasks for project {ProjectId}", projectId);
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult<List<TaskDto>>.Failure(error);
-        }
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error fetching tasks for project {ProjectId}", projectId);
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult<List<TaskDto>>.Failure(error);
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Error fetching tasks for project {ProjectId}", projectId);
 			return ApiResult<List<TaskDto>>.Failure($"An unexpected error occurred while fetching tasks for project {projectId}.");
+		}
+	}
+
+	public async Task<ApiResult<List<TaskDto>>> GetTasksFilteredAsync(ProjectTaskStatus? status = null, Priority? priority = null, bool? isOverdue = null)
+	{
+		try
+		{
+			var queryParams = new List<string>();
+			if (status.HasValue)
+				queryParams.Add($"status={status.Value}");
+			if (priority.HasValue)
+				queryParams.Add($"priority={priority.Value}");
+			if (isOverdue.HasValue)
+				queryParams.Add($"isOverdue={isOverdue.Value}");
+
+			var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+			var url = $"api/tasks{queryString}";
+
+			var result = await _httpClient.GetFromJsonAsync<List<TaskDto>>(url);
+			return ApiResult<List<TaskDto>>.Success(result ?? new List<TaskDto>());
+		}
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error fetching filtered tasks");
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult<List<TaskDto>>.Failure(error);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error fetching filtered tasks");
+			return ApiResult<List<TaskDto>>.Failure("An unexpected error occurred while fetching filtered tasks.");
 		}
 	}
 
@@ -223,14 +256,14 @@ public class ApiService : IApiService
 		{
 			var response = await _httpClient.DeleteAsync($"api/tasks/{id}");
 			response.EnsureSuccessStatusCode();
-            return ApiResult.Success();
+			return ApiResult.Success();
 		}
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error deleting task {TaskId}", id);
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult.Failure(error);
-        }
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error deleting task {TaskId}", id);
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult.Failure(error);
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Error deleting task {TaskId}", id);
@@ -238,14 +271,35 @@ public class ApiService : IApiService
 		}
 	}
 
-    private async Task<string> GetErrorMessage(HttpRequestException httpEx)
-    {
-        if (httpEx.StatusCode.HasValue)
-        {
-            return $"An HTTP error occurred: {(int)httpEx.StatusCode.Value} {httpEx.StatusCode.Value}";
-        }
-        return "An unexpected network error occurred.";
-    }
+	// Dashboard
+	public async Task<ApiResult<List<ProjectStatisticsDto>>> GetDashboardStatisticsAsync()
+	{
+		try
+		{
+			var result = await _httpClient.GetFromJsonAsync<List<ProjectStatisticsDto>>("api/dashboard/statistics");
+			return ApiResult<List<ProjectStatisticsDto>>.Success(result ?? new List<ProjectStatisticsDto>());
+		}
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error fetching dashboard statistics");
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult<List<ProjectStatisticsDto>>.Failure(error);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error fetching dashboard statistics");
+			return ApiResult<List<ProjectStatisticsDto>>.Failure("An unexpected error occurred while fetching dashboard statistics.");
+		}
+	}
+
+	private async Task<string> GetErrorMessage(HttpRequestException httpEx)
+	{
+		if (httpEx.StatusCode.HasValue)
+		{
+			return $"An HTTP error occurred: {(int)httpEx.StatusCode.Value} {httpEx.StatusCode.Value}";
+		}
+		return "An unexpected network error occurred.";
+	}
 }
 
 // ProblemDetails class for deserialization

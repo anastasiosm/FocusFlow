@@ -1,8 +1,11 @@
 ﻿using FocusFlow.Application;
 using FocusFlow.Infrastructure;
 using FocusFlow.Infrastructure.Identity;
+using FocusFlow.WebApi.Authorization.ProjectOwnership;
+using FocusFlow.WebApi.Authorization.TaskOwnership;
 using FocusFlow.WebApi.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -45,6 +48,19 @@ public static class StartupExtensions
 				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
 			};
 		});
+
+		// Authorization policies
+		builder.Services.AddHttpContextAccessor();
+		builder.Services.AddAuthorization(options =>
+		{
+			options.AddPolicy("ProjectOwner", policy =>
+				policy.Requirements.Add(new ProjectOwnershipRequirement()));
+
+			options.AddPolicy("TaskOwner", policy =>
+				policy.Requirements.Add(new TaskOwnershipRequirement()));
+		});
+		builder.Services.AddScoped<IAuthorizationHandler, ProjectOwnershipHandler>();
+		builder.Services.AddScoped<IAuthorizationHandler, TaskOwnershipHandler>();
 
 		builder.Services.AddControllers();
 

@@ -4,7 +4,9 @@ using FocusFlow.Application.Features.Projects.GetProjectById;
 using FocusFlow.Application.Features.Projects.UpdateProject;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Features.Tasks.CreateTask;
+using FocusFlow.Application.Features.Dashboard.Common;
 using FocusFlow.BlazorApp.Models;
+using FocusFlow.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using System.Text.Json;
@@ -193,6 +195,41 @@ public class FakeApiService : IApiService
         return Task.FromResult(ApiResult<List<TaskDto>>.Success(tasks));
     }
 
+    public Task<ApiResult<List<TaskDto>>> GetTasksFilteredAsync(ProjectTaskStatus? status = null, Priority? priority = null, bool? isOverdue = null)
+    {
+        try
+        {
+            var filteredTasks = _tasks.AsEnumerable();
+
+            if (status.HasValue)
+            {
+                filteredTasks = filteredTasks.Where(t => t.Status == status.Value);
+            }
+
+            if (priority.HasValue)
+            {
+                filteredTasks = filteredTasks.Where(t => t.Priority == priority.Value);
+            }
+
+            if (isOverdue.HasValue && isOverdue.Value)
+            {
+                filteredTasks = filteredTasks.Where(t => 
+                    t.DueDate.HasValue && 
+                    t.DueDate.Value < DateTime.UtcNow && 
+                    t.Status != ProjectTaskStatus.Done);
+            }
+
+            var result = filteredTasks.ToList();
+            _logger.LogInformation("FakeApiService: Retrieved {Count} filtered tasks", result.Count);
+            return Task.FromResult(ApiResult<List<TaskDto>>.Success(result));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in FakeApiService.GetTasksFilteredAsync");
+            return Task.FromResult(ApiResult<List<TaskDto>>.Failure("Failed to retrieve filtered tasks."));
+        }
+    }
+
     public Task<ApiResult<TaskDto>> CreateTaskAsync(CreateTaskDto dto)
     {
         var newTask = new TaskDto(
@@ -221,5 +258,38 @@ public class FakeApiService : IApiService
             return Task.FromResult(ApiResult.Success());
         }
         return Task.FromResult(ApiResult.Failure("Task not found."));
+    }
+
+    // Dashboard
+    public Task<ApiResult<List<ProjectStatisticsDto>>> GetDashboardStatisticsAsync()
+    {
+        try
+        {
+            var statistics = _projects.Select(project =>
+            {
+                var projectTasks = _tasks.Where(t => t.ProjectId == project.Id).ToList();
+                var totalTasks = projectTasks.Count;
+                var completedTasks = projectTasks.Count(t => t.Status == ProjectTaskStatus.Done);
+                var overdueTasks = projectTasks.Count(t => 
+                    t.DueDate.HasValue && 
+                    t.DueDate.Value < DateTime.UtcNow && 
+                    t.Status != ProjectTaskStatus.Done);
+
+                return new ProjectStatisticsDto(
+                    project.Id,
+                    project.Name,
+                    totalTasks,
+                    completedTasks,
+                    overdueTasks);
+            }).ToList();
+
+            _logger.LogInformation("FakeApiService: Retrieved {Count} project statistics", statistics.Count);
+            return Task.FromResult(ApiResult<List<ProjectStatisticsDto>>.Success(statistics));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in FakeApiService.GetDashboardStatisticsAsync");
+            return Task.FromResult(ApiResult<List<ProjectStatisticsDto>>.Failure("Failed to retrieve dashboard statistics."));
+        }
     }
 }

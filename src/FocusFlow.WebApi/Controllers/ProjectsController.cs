@@ -66,6 +66,7 @@ public class ProjectsController : ControllerBase
 	/// <param name="id">Project ID</param>
 	/// <returns>Project details with tasks</returns>
 	[HttpGet("{id}")]
+	[Authorize(Policy = "ProjectOwner")]
 	[ProducesResponseType(typeof(ProjectDetailDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -73,15 +74,6 @@ public class ProjectsController : ControllerBase
 	{
 		var query = new GetProjectByIdQuery(id);
 		var result = await _mediator.Send(query);
-
-		// Check if user owns this project
-		var userId = GetCurrentUserId();
-		if (result.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to access project {ProjectId} owned by {OwnerId}",
-				userId, id, result.OwnerId);
-			return Forbid();
-		}
 
 		return Ok(result);
 	}
@@ -111,6 +103,7 @@ public class ProjectsController : ControllerBase
 	/// <param name="dto">Updated project data</param>
 	/// <returns>Updated project</returns>
 	[HttpPut("{id}")]
+	[Authorize(Policy = "ProjectOwner")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -133,6 +126,7 @@ public class ProjectsController : ControllerBase
 	/// <param name="id">Project ID</param>
 	/// <returns>No content</returns>
 	[HttpDelete("{id}")]
+	[Authorize(Policy = "ProjectOwner")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -152,6 +146,7 @@ public class ProjectsController : ControllerBase
 	/// <param name="id">Project ID</param>
 	/// <returns>List of tasks</returns>
 	[HttpGet("{id}/tasks")]
+	[Authorize(Policy = "ProjectOwner")]
 	[ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -159,12 +154,6 @@ public class ProjectsController : ControllerBase
 	{
 		var query = new GetProjectByIdQuery(id);
 		var project = await _mediator.Send(query);
-
-		var userId = GetCurrentUserId();
-		if (project.OwnerId != userId)
-		{
-			return Forbid();
-		}
 
 		return Ok(project.Tasks);
 	}

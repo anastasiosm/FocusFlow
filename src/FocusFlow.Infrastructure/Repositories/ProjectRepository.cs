@@ -28,4 +28,13 @@ public class ProjectRepository : Repository<Project>, IProjectRepository
 			.OrderBy(p => p.Name)
 			.ToListAsync(cancellationToken);
 	}
+
+	public async Task<List<Project>> GetByOwnerIdWithTasksAsync(string ownerId, CancellationToken cancellationToken = default)
+	{
+		return await _context.Projects
+			.Include(p => p.Tasks)
+			.Where(p => p.OwnerId == ownerId)
+			.OrderBy(p => p.Name)
+			.ToListAsync(cancellationToken);
+	}
 }

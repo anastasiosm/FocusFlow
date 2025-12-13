@@ -80,27 +80,17 @@ public class TasksController : ControllerBase
 	/// Update an existing task
 	/// </summary>
 	[HttpPut("{id}")]
+	[Authorize(Policy = "TaskOwner")]
 	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> Update(Guid id, [FromBody] UpdateTaskRequest request)
 	{
-		var task = await _mediator.Send(new GetTaskByIdQuery(id));
-		var userId = GetCurrentUserId();
-
-		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
-		if (project.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to update task {TaskId} in project {ProjectId} owned by {OwnerId}",
-				userId, id, task.ProjectId, project.OwnerId);
-			return Forbid();
-		}
-
 		var command = new UpdateTaskCommand(id, request.Title, request.Description, request.DueDate, request.Priority);
 		var result = await _mediator.Send(command);
 
-		_logger.LogInformation("User {UserId} updated task {TaskId}", userId, id);
+		_logger.LogInformation("User {UserId} updated task {TaskId}", GetCurrentUserId(), id);
 		return Ok(result);
 	}
 
@@ -108,24 +98,14 @@ public class TasksController : ControllerBase
 	/// Unassign a task
 	/// </summary>
 	[HttpPatch("{id}/unassign")]
+	[Authorize(Policy = "TaskOwner")]
 	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> Unassign(Guid id)
 	{
-		var task = await _mediator.Send(new GetTaskByIdQuery(id));
-		var userId = GetCurrentUserId();
-
-		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
-		if (project.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to unassign task {TaskId} in project {ProjectId} owned by {OwnerId}",
-				userId, id, task.ProjectId, project.OwnerId);
-			return Forbid();
-		}
-
 		var result = await _mediator.Send(new UnassignTaskCommand(id));
-		_logger.LogInformation("User {UserId} unassigned task {TaskId}", userId, id);
+		_logger.LogInformation("User {UserId} unassigned task {TaskId}", GetCurrentUserId(), id);
 		return Ok(result);
 	}
 
@@ -146,22 +126,13 @@ public class TasksController : ControllerBase
 	/// <param name="id">Task ID</param>
 	/// <returns>Task details</returns>
 	[HttpGet("{id}")]
+	[Authorize(Policy = "TaskOwner")]
 	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> GetById(Guid id)
 	{
 		var task = await _mediator.Send(new GetTaskByIdQuery(id));
-		var userId = GetCurrentUserId();
-
-		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
-		if (project.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to access task {TaskId} in project {ProjectId} owned by {OwnerId}",
-				userId, id, task.ProjectId, project.OwnerId);
-			return Forbid();
-		}
-
 		return Ok(task);
 	}
 
@@ -172,28 +143,18 @@ public class TasksController : ControllerBase
 	/// <param name="request">New status</param>
 	/// <returns>Updated task</returns>
 	[HttpPatch("{id}/status")]
+	[Authorize(Policy = "TaskOwner")]
 	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusRequest request)
 	{
-		var task = await _mediator.Send(new GetTaskByIdQuery(id));
-		var userId = GetCurrentUserId();
-
-		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
-		if (project.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to update task {TaskId} in project {ProjectId} owned by {OwnerId}",
-				userId, id, task.ProjectId, project.OwnerId);
-			return Forbid();
-		}
-
 		var command = new UpdateTaskStatusCommand(id, request.Status);
 		var result = await _mediator.Send(command);
 
 		_logger.LogInformation("User {UserId} updated task {TaskId} status to {Status}",
-			userId, id, request.Status);
+			GetCurrentUserId(), id, request.Status);
 
 		return Ok(result);
 	}
@@ -204,25 +165,15 @@ public class TasksController : ControllerBase
 	/// <param name="id">Task ID</param>
 	/// <returns>No content</returns>
 	[HttpDelete("{id}")]
+	[Authorize(Policy = "TaskOwner")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Delete(Guid id)
 	{
-		var task = await _mediator.Send(new GetTaskByIdQuery(id));
-		var userId = GetCurrentUserId();
-
-		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
-		if (project.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to delete task {TaskId} in project {ProjectId} owned by {OwnerId}",
-				userId, id, task.ProjectId, project.OwnerId);
-			return Forbid();
-		}
-
 		await _mediator.Send(new DeleteTaskCommand(id));
 
-		_logger.LogInformation("User {UserId} deleted task {TaskId}", userId, id);
+		_logger.LogInformation("User {UserId} deleted task {TaskId}", GetCurrentUserId(), id);
 		return NoContent();
 	}
 
@@ -233,27 +184,17 @@ public class TasksController : ControllerBase
 	/// <param name="request">User assignment data</param>
 	/// <returns>Updated task</returns>
 	[HttpPatch("{id}/assign")]
+	[Authorize(Policy = "TaskOwner")]
 	[ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> AssignTask(Guid id, [FromBody] AssignTaskRequest request)
 	{
-		var task = await _mediator.Send(new GetTaskByIdQuery(id));
-		var userId = GetCurrentUserId();
-
-		var project = await _mediator.Send(new GetProjectByIdQuery(task.ProjectId));
-		if (project.OwnerId != userId)
-		{
-			_logger.LogWarning("User {UserId} attempted to assign task {TaskId} in project {ProjectId} owned by {OwnerId}",
-				userId, id, task.ProjectId, project.OwnerId);
-			return Forbid();
-		}
-
 		var result = await _mediator.Send(new AssignTaskCommand(id, request.UserId));
 
 		_logger.LogInformation("User {UserId} assigned task {TaskId} to user {AssignedUserId}",
-			userId, id, request.UserId);
+			GetCurrentUserId(), id, request.UserId);
 
 		return Ok(result);
 	}
