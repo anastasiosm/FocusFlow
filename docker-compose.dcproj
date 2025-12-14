@@ -9,12 +9,18 @@
     <DockerServiceName>focusflow.webapi</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
+    <None Include=".env" />
     <None Include="Directory.Build.props" />
     <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
+    <None Include=".env.example" />
+    <None Include="E2E_SETUP_CHECKLIST.md" />
+    <None Include="E2E_TESTING_SETUP_SUMMARY.md" />
+    <None Include="scripts\setup-dev-certs.ps1" />
+    <None Include="tests\FocusFlow.E2E.Tests\run-e2e-tests.ps1" />
     <None Include="tests\Directory.Build.props" />
   </ItemGroup>
 </Project>

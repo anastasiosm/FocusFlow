@@ -133,6 +133,14 @@ public static class StartupExtensions
 					.WithTheme(ScalarTheme.Purple)
 					.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
 			});
+
+			// Swagger UI for interactive API documentation (available at /swagger)
+			app.UseSwaggerUI(c =>
+			{
+				c.RoutePrefix = "swagger";
+				c.SwaggerEndpoint("/openapi/v1.json", "FocusFlow API v1");
+				c.DocumentTitle = "FocusFlow API - Swagger";
+			});
 		}
 
 		app.UseAuthentication();

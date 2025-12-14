@@ -398,22 +398,33 @@ FodyWeavers.xsd
 
 # VS Code files for those working on multiple tools
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
 
-# Local History for Visual Studio Code
-.history/
+# ===========================
+# Docker & Certificates
+# ===========================
+certs/
+*.pfx
+*.crt
+*.key
+*.pem
+.env
+.env.local
+.env.production
 
-# Built Visual Studio Code Extensions
-*.vsix
+# ===========================
+# E2E Test Artifacts
+# ===========================
+**/videos/
+**/screenshots/
+**/test-results/
+**/playwright-report/
+**/TestResults/
+*.webm
+*.mp4
 
-# Windows Installer files from build outputs
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-/GEMINI.md
+# Playwright browsers (large downloads)
+**/ms-playwright/
+
+# Test coverage reports
+**/coverage-report/
+**/coverage/
