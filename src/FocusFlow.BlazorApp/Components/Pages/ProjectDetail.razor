@@ -1,9 +1,15 @@
 @page "/projects/{id:guid}"
 @using FocusFlow.Application.Features.Projects.GetProjectById
+@using FocusFlow.Application.Features.Tasks.CreateTask
+@using FocusFlow.BlazorApp.Components.Tasks
+@using FocusFlow.Application.Features.Tasks.Common
+@using FocusFlow.BlazorApp.Models
 @using FocusFlow.BlazorApp.Store.ProjectDetail
+@using FocusFlow.Domain.Enums
 @using Fluxor
 @inject IDispatcher Dispatcher
 @inject IState<ProjectDetailState> ProjectDetailState
+@inject IDialogService DialogService
 
 <PageTitle>Project Detail - FocusFlow</PageTitle>
 
@@ -32,20 +38,40 @@
         {
             var project = ProjectDetailState.Value.Project;
             <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-                <MudText Typo="Typo.h3">@project.Name</MudText>
-                <MudText Typo="Typo.subtitle1" Class="mb-4">@project.Description</MudText>
+                <div class="d-flex justify-space-between align-center mb-4">
+                    <div>
+                        <MudText Typo="Typo.h3">@project.Name</MudText>
+                        <MudText Typo="Typo.subtitle1" Class="mb-4">@project.Description</MudText>
+                    </div>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateTaskDialog">New Task</MudButton>
+                </div>
 
                 <MudGrid>
                     <MudItem xs="12">
                         <MudText Typo="Typo.h5">Tasks</MudText>
-                        @* Task list will go here *@
                         @if (!project.Tasks.Any())
                         {
                             <MudAlert Severity="MudBlazor.Severity.Info" Class="mt-4">This project doesn't have any tasks yet.</MudAlert>
                         }
                         else
                         {
-                            @* TODO: Render task list *@
+                            <MudList T="TaskDto">
+                                @foreach (var task in project.Tasks.OrderBy(t => t.Status))
+                                {
+                                    <MudListItem T="TaskDto">
+                                        <div class="d-flex">
+                                            <div class="flex-grow-1">
+                                                <MudText Typo="Typo.body1">@task.Title</MudText>
+                                                <MudText Typo="Typo.body2">@task.Description</MudText>
+                                            </div>
+                                            <div class="d-flex align-center">
+                                                <MudChip Size="Size.Small" Color="@GetPriorityColor(task.Priority)">@task.Priority</MudChip>
+                                                <MudChip Size="Size.Small" Color="@GetStatusColor(task.Status)" Class="ml-2">@task.Status</MudChip>
+                                            </div>
+                                        </div>
+                                    </MudListItem>
+                                }
+                            </MudList>
                         }
                     </MudItem>
                 </MudGrid>
@@ -64,11 +90,40 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        // Dispatch the action to load the project if the ID has changed
-        // or if the project is not already loaded.
         if (Id != Guid.Empty && Id != ProjectDetailState.Value.Project?.Id)
         {
             Dispatcher.Dispatch(new LoadProjectDetailAction(Id));
         }
     }
+
+    private async Task OpenCreateTaskDialog()
+    {
+        var parameters = new DialogParameters();
+        var dialog = DialogService.Show<CreateTaskDialog>("Create New Task", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is CreateTaskFormModel newTask)
+        {
+            var command = new CreateTaskCommand(Id, newTask.Title, newTask.Description, newTask.DueDate, newTask.Priority, newTask.AssignedUserId);
+            Dispatcher.Dispatch(new CreateTaskAction(command));
+        }
+    }
+
+    private Color GetPriorityColor(Priority priority) => priority switch
+    {
+        Priority.High => Color.Error,
+        Priority.Medium => Color.Warning,
+        Priority.Low => Color.Info,
+        _ => Color.Default
+    };
+
+    private Color GetStatusColor(ProjectTaskStatus status) => status switch
+    {
+        ProjectTaskStatus.Todo => Color.Default,
+        ProjectTaskStatus.InProgress => Color.Primary,
+        ProjectTaskStatus.Done => Color.Success,
+        _ => Color.Default
+    };
 }
+
+

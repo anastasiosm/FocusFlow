@@ -228,24 +228,24 @@ public class ApiService : IApiService
 		}
 	}
 
-	public async Task<ApiResult<TaskDto>> CreateTaskAsync(CreateTaskDto dto)
+	public async Task<ApiResult<TaskDto>> CreateTaskAsync(Guid projectId, CreateTaskDto dto)
 	{
 		try
 		{
-			var response = await _httpClient.PostAsJsonAsync($"api/tasks?projectId={dto.ProjectId}", dto);
+			var response = await _httpClient.PostAsJsonAsync($"api/tasks?projectId={projectId}", dto);
 			response.EnsureSuccessStatusCode();
 			var result = await response.Content.ReadFromJsonAsync<TaskDto>();
 			return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException("Failed to create task"));
 		}
         catch (HttpRequestException httpEx)
         {
-            _logger.LogError(httpEx, "HTTP Error creating task");
+            _logger.LogError(httpEx, "HTTP Error creating task for project {ProjectId}", projectId);
             string error = await GetErrorMessage(httpEx);
             return ApiResult<TaskDto>.Failure(error);
         }
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "Error creating task");
+			_logger.LogError(ex, "Error creating task for project {ProjectId}", projectId);
 			return ApiResult<TaskDto>.Failure("An unexpected error occurred during task creation.");
 		}
 	}

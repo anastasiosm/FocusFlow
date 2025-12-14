@@ -4,10 +4,11 @@ using FocusFlow.BlazorApp.Components.Pages;
 using FocusFlow.BlazorApp.Store.Dashboard;
 using Fluxor;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor;
 using NSubstitute;
 using FluentAssertions;
-using Microsoft.AspNetCore.Components.Authorization;
+using Bunit.TestDoubles;
 
 namespace FocusFlow.BlazorApp.Tests.Components.Pages;
 
@@ -30,18 +31,8 @@ public class DashboardTests : TestContextBase
 
         Services.AddSingleton(_mockDispatcher);
         Services.AddSingleton(_mockDashboardState);
-        
-        // Mock authentication
-        var authState = new AuthenticationState(new System.Security.Claims.ClaimsPrincipal(
-            new System.Security.Claims.ClaimsIdentity(new[]
-            {
-                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "testuser")
-            }, "test")));
-        
-        var mockAuthStateProvider = Substitute.For<AuthenticationStateProvider>();
-        mockAuthStateProvider.GetAuthenticationStateAsync().Returns(Task.FromResult(authState));
-        Services.AddSingleton(mockAuthStateProvider);
     }
+
 
     [Fact]
     public void Dashboard_ShouldRenderTitle()
@@ -143,7 +134,7 @@ public class DashboardTests : TestContextBase
 
         // Assert
         var cards = cut.FindComponents<MudCard>();
-        cards.Should().HaveCountGreaterOrEqualTo(statistics.Count);
+        cards.Should().HaveCount(2); // Changed from 1 to 2 because CreateTestStatistics returns 2 projects
         
         var firstProjectName = statistics[0].ProjectName;
         var projectNameElements = cut.FindAll(".mud-typography-h6");
@@ -165,13 +156,14 @@ public class DashboardTests : TestContextBase
         var cut = RenderComponent<Dashboard>();
 
         // Assert
-        var totalTasksText = $"Total Tasks: {statistics[0].TotalTasks}";
-        var completedTasksText = $"Completed: {statistics[0].CompletedTasks}";
-        var overdueTasksText = $"Overdue: {statistics[0].OverdueTasks}";
+        var totalTasksElement = cut.FindAll("p").First(p => p.TextContent.Contains("Total Tasks:"));
+        totalTasksElement.TextContent.Should().Contain($"Total Tasks: {statistics[0].TotalTasks}");
         
-        cut.Markup.Should().Contain(totalTasksText);
-        cut.Markup.Should().Contain(completedTasksText);
-        cut.Markup.Should().Contain(overdueTasksText);
+        var completedTasksElement = cut.FindAll("p").First(p => p.TextContent.Contains("Completed:"));
+        completedTasksElement.TextContent.Should().Contain($"Completed: {statistics[0].CompletedTasks}");
+        
+        var overdueTasksElement = cut.FindAll("p").First(p => p.TextContent.Contains("Overdue:"));
+        overdueTasksElement.TextContent.Should().Contain($"Overdue: {statistics[0].OverdueTasks}");
     }
 
     [Fact]

@@ -1,26 +1,41 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
+using Bunit.TestDoubles;
 
 namespace FocusFlow.BlazorApp.Tests;
 
 /// <summary>
-/// Base class ??? ??? ?? bUnit component tests.
-/// ??????? ????? ??????? ??? services ??? ??????????? ??? ?? tests.
+/// Base class for bUnit component tests.
+/// Provides common setup for services required by components under test.
 /// </summary>
 public abstract class TestContextBase : TestContext
 {
+    protected TestAuthorizationContext AuthContext { get; }
+
     protected TestContextBase()
     {
-        // ???????? MudBlazor services (?????????? ??? ??? ?? components ??? ????????????? MudBlazor)
+        // Add MudBlazor services (required for components that use MudBlazor)
         Services.AddMudServices();
+        
+        // Add TestAuthorizationContext and set a default authorized user
+        AuthContext = this.AddTestAuthorization();
+        AuthContext.SetAuthorized("testuser");
 
-        // ???????? ?? ??????????? ??? ???? ????? services ??? ??????????? ??? ?? tests
-        // ?.?. logging, configuration, ???.
+        // Setup common JSInterop calls for MudBlazor components
+        JSInterop.SetupVoid("mudPopover.initialize", _ => true);
+        JSInterop.SetupVoid("mudKeyInterceptor.connect", _ => true);
+        JSInterop.SetupVoid("mudOverlay.unlockScroll", _ => true);
+        JSInterop.SetupVoid("mudOverlay.lockScroll", _ => true);
+        JSInterop.SetupVoid("mudScrollManager.unlockScroll", _ => true);
+        JSInterop.SetupVoid("mudScrollManager.lockScroll", _ => true);
+
+        // Setup any other common services required by tests
+        // e.g. logging, configuration, etc.
     }
 
     /// <summary>
-    /// Helper method ??? ?? ?????????????? test GUIDs ?? consistent format
+    /// Helper method for generating test GUIDs in a consistent format
     /// </summary>
     protected static Guid CreateTestGuid(int seed = 1)
     {

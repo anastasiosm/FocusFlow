@@ -230,22 +230,34 @@ public class FakeApiService : IApiService
         }
     }
 
-    public Task<ApiResult<TaskDto>> CreateTaskAsync(CreateTaskDto dto)
+    public Task<ApiResult<TaskDto>> CreateTaskAsync(Guid projectId, CreateTaskDto dto)
     {
         var newTask = new TaskDto(
             Guid.NewGuid(),
             dto.Title,
             dto.Description,
             dto.DueDate,
-            ProjectTaskStatus.Todo, // Assuming new tasks start as Todo, as CreateTaskDto does not include Status
-            Priority.Medium, // Assuming new tasks have Medium priority
-            null, // CompletedAt
-            dto.ProjectId,
-            null, // AssignedUserId
-            DateTime.UtcNow, // CreatedAt
-            DateTime.UtcNow // UpdatedAt
+            ProjectTaskStatus.Todo,
+            dto.Priority,
+            null, 
+            projectId,
+            dto.AssignedUserId,
+            DateTime.UtcNow,
+            DateTime.UtcNow
         );
         _tasks.Add(newTask);
+        
+        // Also add it to the project's task list for consistency
+        var project = _projects.FirstOrDefault(p => p.Id == projectId);
+        if (project != null)
+        {
+            var updatedTasks = project.Tasks.ToList();
+            updatedTasks.Add(newTask);
+            var updatedProject = project with { Tasks = updatedTasks };
+            _projects.Remove(project);
+            _projects.Add(updatedProject);
+        }
+
         return Task.FromResult(ApiResult<TaskDto>.Success(newTask));
     }
 

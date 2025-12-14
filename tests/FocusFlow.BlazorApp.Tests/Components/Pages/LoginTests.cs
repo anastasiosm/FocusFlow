@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using NSubstitute;
 using FluentAssertions;
+using FluentAssertions.Collections; // Added this line
 
 namespace FocusFlow.BlazorApp.Tests.Components.Pages;
 
@@ -57,7 +58,7 @@ public class LoginTests : TestContextBase
 
         // Assert
         var textFields = cut.FindComponents<MudTextField<string>>();
-        textFields.Should().HaveCountGreaterOrEqualTo(2);
+        textFields.Should().HaveCount(2);
         
         var emailField = textFields.FirstOrDefault(tf => tf.Instance.Label == "Email");
         var passwordField = textFields.FirstOrDefault(tf => tf.Instance.Label == "Password");
