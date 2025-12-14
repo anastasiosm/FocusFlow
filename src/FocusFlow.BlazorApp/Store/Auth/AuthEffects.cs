@@ -43,7 +43,7 @@ public class AuthEffects
             await _localStorage.SetItemAsync("authToken", token);
             ((CustomAuthenticationStateProvider)_authStateProvider).MarkUserAsAuthenticated(username ?? action.Request.Email);
             dispatcher.Dispatch(new LoginSuccessAction(token, username ?? action.Request.Email));
-            _navigationManager.NavigateTo("/projects");
+            _navigationManager.NavigateTo("/dashboard");
         }
         else
         {

@@ -9,6 +9,7 @@
 @inject IValidator<ProjectCreateFormModel> _createProjectFormModelValidator
 @inject IDispatcher Dispatcher
 @inject IState<ProjectsState> ProjectsState
+@inject NavigationManager Navigation
 
 <MudDialog @bind-Visible="Visible">
     <TitleContent>
@@ -56,15 +57,46 @@
     public EventCallback<bool> VisibleChanged { get; set; }
 
     private ProjectCreateFormModel _createProjectFormModel = new();
+    private bool _submitted;
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
+        ProjectsState.StateChanged += OnProjectsStateChanged;
     }
 
     private void HandleValidSubmit()
     {
+        _submitted = true;
         Dispatcher.Dispatch(new CreateProjectAction(_createProjectFormModel));
+    }
+
+    private async void OnProjectsStateChanged(object? sender, EventArgs e)
+    {
+        if (!_submitted)
+        {
+            return;
+        }
+
+        if (ProjectsState.Value.IsLoading)
+        {
+            return;
+        }
+
+        _submitted = false;
+
+        if (string.IsNullOrWhiteSpace(ProjectsState.Value.Error))
+        {
+            Snackbar.Add("Project created successfully.", MudBlazor.Severity.Success);
+            Visible = false;
+            await VisibleChanged.InvokeAsync(Visible);
+            _createProjectFormModel = new();
+            Navigation.NavigateTo("/projects");
+        }
+        else
+        {
+            Snackbar.Add(ProjectsState.Value.Error, MudBlazor.Severity.Error);
+        }
     }
 
     private async Task Cancel()
@@ -72,5 +104,10 @@
         Visible = false;
         await VisibleChanged.InvokeAsync(Visible);
         _createProjectFormModel = new(); // Reset form model
+    }
+
+    public void Dispose()
+    {
+        ProjectsState.StateChanged -= OnProjectsStateChanged;
     }
 }

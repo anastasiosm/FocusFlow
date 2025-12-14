@@ -56,11 +56,21 @@
 /* ===== Base Styles ===== */
 html, body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    height: 100%;
+    margin: 0;
     background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+.mud-layout {
+    min-height: 100vh;
+}
+
+.mud-main-content {
+    min-height: 100vh;
 }
 
 * {
