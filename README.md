@@ -16,7 +16,7 @@ A production-ready task management application built with .NET 8, demonstrating 
 - [Key Design Decisions (ADR)](#-key-design-decisions-adr)
 - [Project Structure](#-project-structure)
 
----
+--- 
 
 ## 🎯 Prerequisites
 
@@ -55,6 +55,8 @@ docker-compose up --build
 # - API:        http://localhost:8080
 # - Swagger:    http://localhost:8080/swagger
 # - Scalar API: http://localhost:8080/scalar/v1
+# - OpenAPI JSON document: http://localhost:8080/openapi/v1.json
+(The API exposes an OpenAPI JSON document useful for tooling and client generation)
 
 # 5. Stop services
 docker-compose down
