@@ -12,7 +12,7 @@ public abstract class PageTest : IClassFixture<PlaywrightFixture>, IAsyncLifetim
 	private bool _testFailed = false;
 	private string? _videoPath;
 
-	protected virtual string BaseUrl => "http://localhost:5000";
+	protected virtual string BaseUrl => "http://localhost:5050";
 
 	protected PageTest(PlaywrightFixture playwrightFixture)
 	{

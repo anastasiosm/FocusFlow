@@ -19,7 +19,7 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ApiBaseUrl=http://focusflow-api:8080
     ports:
-      - "5000:8080"
+      - "5050:8080"
     # Override volumes to skip HTTPS in development
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro

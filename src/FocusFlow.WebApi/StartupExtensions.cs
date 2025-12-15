@@ -101,7 +101,7 @@ public static class StartupExtensions
 				policy => policy.WithOrigins([builder.Configuration["ApiUrl"] ??
 				"http://localhost:3000",
 					builder.Configuration["BlazorUrl"] ??
-					"http://localhost:5000"])
+					"http://localhost:5050"])
 				.AllowAnyMethod()
 				.SetIsOriginAllowed(pol => true) // this setting is to allow subdomains
 				.AllowAnyHeader()

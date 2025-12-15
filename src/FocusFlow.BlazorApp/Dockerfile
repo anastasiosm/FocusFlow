@@ -9,6 +9,10 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
+# Copy Directory.Build.props and Directory.Packages.props first (for CPM)
+COPY ["Directory.Build.props", "./"]
+COPY ["Directory.Packages.props", "./"]
 COPY ["src/FocusFlow.BlazorApp/FocusFlow.BlazorApp.csproj", "FocusFlow.BlazorApp/"]
 COPY ["src/FocusFlow.Application/FocusFlow.Application.csproj", "FocusFlow.Application/"]
 COPY ["src/FocusFlow.Domain/FocusFlow.Domain.csproj", "FocusFlow.Domain/"]

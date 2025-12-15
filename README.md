@@ -51,7 +51,7 @@ cp .env.example .env
 docker-compose up --build
 
 # 4. Access the application
-# - Blazor UI:  http://localhost:5000
+# - Blazor UI:  http://localhost:5050
 # - API:        http://localhost:8080
 # - Swagger:    http://localhost:8080/swagger
 # - Scalar API: http://localhost:8080/scalar/v1

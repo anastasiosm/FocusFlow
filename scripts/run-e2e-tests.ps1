@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
-$solutionRoot = Resolve-Path "$scriptDir/../.."
+$solutionRoot = Resolve-Path "$scriptDir/.."
 
 Write-Host "`n=== FocusFlow E2E Test Runner ===" -ForegroundColor Cyan
 Write-Host "Solution root: $solutionRoot`n" -ForegroundColor Gray
@@ -98,7 +98,7 @@ try {
 
     while (((Get-Date) - $connectivityStart).TotalSeconds -lt $connectivityTimeout) {
         try {
-            $bResp = Invoke-WebRequest -Uri "http://localhost:5000" -Method Get -TimeoutSec 5 -ErrorAction Stop
+            $bResp = Invoke-WebRequest -Uri "http://localhost:5050" -Method Get -TimeoutSec 5 -ErrorAction Stop
             if ($bResp.StatusCode -ge 200 -and $bResp.StatusCode -lt 500) {
                 Write-Host "  ? Blazor app responding (Status: $($bResp.StatusCode))" -ForegroundColor Green
                 $blazorReady = $true
@@ -191,7 +191,7 @@ try {
         docker-compose down
     } else {
         Write-Host "`nContainers still running:" -ForegroundColor Cyan
-        Write-Host "  Blazor: http://localhost:5000" -ForegroundColor Green
+        Write-Host "  Blazor: http://localhost:5050" -ForegroundColor Green
         Write-Host "  API: http://localhost:8080" -ForegroundColor Green
         Write-Host "`nTo stop: docker-compose down" -ForegroundColor Gray
     }

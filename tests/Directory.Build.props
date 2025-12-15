@@ -1,8 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <IsPackable>false</IsPackable>
-    <!-- Only build test projects when running tests -->
-    <BuildInParallel>true</BuildInParallel>
-    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
-  </PropertyGroup>
-</Project>

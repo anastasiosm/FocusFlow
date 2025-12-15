@@ -7,6 +7,8 @@
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}/swagger</DockerServiceUrl>
     <DockerServiceName>focusflow.webapi</DockerServiceName>
+    <!-- Skip compose generation during normal builds when Docker is not available -->
+    <SkipComposeBuildIfDockerUnavailable>true</SkipComposeBuildIfDockerUnavailable>
   </PropertyGroup>
   <ItemGroup>
     <None Include=".env" />
@@ -17,10 +19,7 @@
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
     <None Include=".env.example" />
-    <None Include="E2E_SETUP_CHECKLIST.md" />
-    <None Include="E2E_TESTING_SETUP_SUMMARY.md" />
     <None Include="scripts\setup-dev-certs.ps1" />
-    <None Include="tests\FocusFlow.E2E.Tests\run-e2e-tests.ps1" />
-    <None Include="tests\Directory.Build.props" />
+    <None Include="scripts\run-e2e-tests.ps1" />
   </ItemGroup>
 </Project>
