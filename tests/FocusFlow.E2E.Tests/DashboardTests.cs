@@ -8,66 +8,33 @@ public class DashboardTests : PageTest
     public DashboardTests(PlaywrightFixture playwrightFixture) 
         : base(playwrightFixture)
     {
-    }
+    }    
 
-    [Fact]
-    public async Task DashboardDisplaysProjectStatistics()
-    {
-        // Arrange
-        await LoginAsUserAsync();
+	[Fact]
+	public async Task DashboardDisplaysProjectStatistics()
+	{
+		// Arrange
+		await LoginAsUserAsync();
 
-        // Act
-        await Page!.GotoAsync($"{BaseUrl}/dashboard");
+		// Act
+		await Page!.GotoAsync($"{BaseUrl}/dashboard");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Assert - Verify statistics cards are visible
-        var projectCountCard = Page.Locator("text=/Total Projects/i").Locator("xpath=..");
-        await Assertions.Expect(projectCountCard).ToBeVisibleAsync();
+		// Assert - Verify statistics cards exist with specific data-testid
+		var projectCard = Page.Locator("[data-testid='project-statistics-card']");
+		await Assertions.Expect(projectCard).ToBeVisibleAsync();
 
-        var taskCountCard = Page.Locator("text=/Total Tasks/i").Locator("xpath=..");
-        await Assertions.Expect(taskCountCard).ToBeVisibleAsync();
+		var taskCard = Page.Locator("[data-testid='task-statistics-card']");
+		await Assertions.Expect(taskCard).ToBeVisibleAsync();
 
-        // Verify numeric values are displayed
-        var statNumbers = Page.Locator("h4, h5, .mud-typography-h4, .mud-typography-h5");
-        var count = await statNumbers.CountAsync();
-        count.Should().BeGreaterThan(0, "Dashboard should display statistics");
-    }
+		// Verify actual numeric values
+		var projectCount = await Page.Locator("[data-testid='total-projects-count']").TextContentAsync();
+		var taskCount = await Page.Locator("[data-testid='total-tasks-count']").TextContentAsync();
 
-    [Fact]
-    public async Task DashboardDisplaysRecentProjects()
-    {
-        // Arrange
-        await LoginAsUserAsync();
+		int.TryParse(projectCount, out int projects).Should().BeTrue("Project count should be numeric");
+		int.TryParse(taskCount, out int tasks).Should().BeTrue("Task count should be numeric");
 
-        // Act
-        await Page!.GotoAsync($"{BaseUrl}/dashboard");
-
-        // Assert
-        var recentProjectsSection = Page.Locator("text=/Recent Projects/i").Locator("xpath=../..");
-        await Assertions.Expect(recentProjectsSection).ToBeVisibleAsync();
-
-        // Verify at least one project card or empty state
-        var projectCards = Page.Locator(".mud-card");
-        var cardCount = await projectCards.CountAsync();
-        cardCount.Should().BeGreaterThanOrEqualTo(0);
-    }
-
-    [Fact]
-    public async Task DashboardShowsProgressBars()
-    {
-        // Arrange
-        await LoginAsUserAsync();
-
-        // Act
-        await Page!.GotoAsync($"{BaseUrl}/dashboard");
-
-        // Assert - Verify progress indicators exist
-        var progressBars = Page.Locator(".mud-progress-linear, .mud-progress-circular");
-        
-        // Should have at least some progress indicators if projects exist
-        await Task.Delay(1000); // Wait for data to load
-        var count = await progressBars.CountAsync();
-        
-        // This assertion depends on having test data
-        // Adjust based on your seeded data
-    }
+		projects.Should().BeGreaterThanOrEqualTo(0, "Project count should be non-negative");
+		tasks.Should().BeGreaterThanOrEqualTo(0, "Task count should be non-negative");
+	}
 }

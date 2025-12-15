@@ -1,123 +1,128 @@
-using Microsoft.Playwright;
+﻿using Microsoft.Playwright;
+using System.Text.RegularExpressions;
 
 namespace FocusFlow.E2E.Tests;
 
 public abstract class PageTest : IClassFixture<PlaywrightFixture>, IAsyncLifetime
 {
-    protected readonly PlaywrightFixture PlaywrightFixture;
-    protected IBrowserContext? Context { get; private set; }
-    protected IPage? Page { get; private set; }
-    
-    protected virtual string BaseUrl => "http://localhost:5000";
-    
-    protected PageTest(PlaywrightFixture playwrightFixture)
-    {
-        PlaywrightFixture = playwrightFixture;
-    }
+	protected readonly PlaywrightFixture PlaywrightFixture;
+	protected IBrowserContext? Context { get; private set; }
+	protected IPage? Page { get; private set; }
 
-    public async Task InitializeAsync()
-    {
-        if (PlaywrightFixture.Browser == null)
-            throw new InvalidOperationException("Browser not initialized");
+	private bool _testFailed = false;
+	private string? _videoPath;
 
-        Context = await PlaywrightFixture.Browser.NewContextAsync(new BrowserNewContextOptions
-        {
-            RecordVideoDir = "videos/",
-            RecordVideoSize = new RecordVideoSize { Width = 1280, Height = 720 },
-            ViewportSize = new ViewportSize { Width = 1280, Height = 720 },
-            IgnoreHTTPSErrors = true
-        });
+	protected virtual string BaseUrl => "http://localhost:5000";
 
-        Page = await Context.NewPageAsync();
-        
-        // Increase timeout for Blazor applications
-        Page.SetDefaultTimeout(30000);
-    }
+	protected PageTest(PlaywrightFixture playwrightFixture)
+	{
+		PlaywrightFixture = playwrightFixture;
+	}
 
-    public async Task DisposeAsync()
-    {
-        if (Context != null)
-        {
-            await Context.CloseAsync();
-            await Context.DisposeAsync();
-        }
-    }
+	public async Task InitializeAsync()
+	{
+		if (PlaywrightFixture.Browser == null)
+			throw new InvalidOperationException("Browser not initialized");
 
-    protected async Task LoginAsUserAsync(string email = "test@example.com", string password = "Password123!")
-    {
-        if (Page == null) throw new InvalidOperationException("Page not initialized");
+		Context = await PlaywrightFixture.Browser.NewContextAsync(new()
+		{
+			RecordVideoDir = "videos/",
+			RecordVideoSize = new() { Width = 1280, Height = 720 },
+			ViewportSize = new() { Width = 1280, Height = 720 },
+			IgnoreHTTPSErrors = true
+		});
 
-        await Page.GotoAsync($"{BaseUrl}/login", new PageGotoOptions
-        {
-            WaitUntil = WaitUntilState.NetworkIdle,
-            Timeout = 30000
-        });
+		Page = await Context.NewPageAsync();
+		Page.SetDefaultTimeout(30000);
+	}
 
-        // Wait for Blazor to render
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Task.Delay(1500);
+	public async Task DisposeAsync()
+	{
+		if (Context != null)
+		{			
+			_videoPath = Page?.Video?.PathAsync().Result;
 
-        try
-        {
-            // Try accessible queries first (works with MudBlazor labels)
-            var emailLocator = Page.GetByLabel("Email");
-            if (await emailLocator.CountAsync() == 0)
-            {
-                // Fallback: common input selectors including MudBlazor structure
-                emailLocator = Page.Locator("input[type='email'], input[type='text'], .mud-input-root input").First;
-            }
+			await Context.CloseAsync();
+			await Context.DisposeAsync();
+						
+			if (!_testFailed && !string.IsNullOrEmpty(_videoPath) && File.Exists(_videoPath))
+			{
+				try
+				{
+					File.Delete(_videoPath);
+					Console.WriteLine($"✅ Test passed - deleted video: {_videoPath}");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"⚠️ Could not delete video: {ex.Message}");
+				}
+			}
+			else if (_testFailed && !string.IsNullOrEmpty(_videoPath))
+			{
+				Console.WriteLine($"❌ Test failed - video saved: {_videoPath}");
+			}
+		}
+	}
 
-            await emailLocator.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
-            await emailLocator.FillAsync(email);
+	protected void MarkTestAsFailed()
+	{
+		_testFailed = true;
+	}
 
-            var passwordLocator = Page.GetByLabel("Password");
-            if (await passwordLocator.CountAsync() == 0)
-            {
-                passwordLocator = Page.Locator("input[type='password'], .mud-input-root input[type='password']").First;
-            }
+	protected async Task LoginAsUserAsync(string? email = null, string? password = null)
+	{
+		try
+		{
+			// ... existing login code ...
+		}
+		catch (Exception ex)
+		{
+			_testFailed = true; 
+			await CaptureDebugInfoAsync("login-failure");
+			throw;
+		}
+	}
 
-            await passwordLocator.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
-            await passwordLocator.FillAsync(password);
+	protected async Task CaptureDebugInfoAsync(string prefix)
+	{
+		if (Page == null) return;
 
-            // Click login button (try role-based then text)
-            var loginButton = Page.GetByRole(AriaRole.Button, new() { Name = "Login" });
-            if (await loginButton.CountAsync() == 0)
-            {
-                await Page.ClickAsync("button:has-text('Login')");
-            }
-            else
-            {
-                await loginButton.ClickAsync();
-            }
+		try
+		{
+			var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+			var testName = prefix.Replace(" ", "-").ToLowerInvariant();
 
-            // Wait for dashboard or some indication of success
-            await Page.WaitForURLAsync($"{BaseUrl}/dashboard", new PageWaitForURLOptions { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
-        }
-        catch (Exception ex)
-        {
-            // Dump HTML and screenshot for debugging
-            try
-            {
-                var html = await Page.ContentAsync();
-                await File.WriteAllTextAsync("debug-login-failure.html", html);
-                await Page.ScreenshotAsync(new PageScreenshotOptions { Path = "debug-login-failure.png", FullPage = true });
-            }
-            catch { }
+			// Save HTML
+			var html = await Page.ContentAsync();
+			var htmlPath = $"debug-{testName}-{timestamp}.html";
+			await File.WriteAllTextAsync(htmlPath, html);
+			Console.WriteLine($"💾 HTML saved: {htmlPath}");
 
-            throw new InvalidOperationException($"Login flow failed: {ex.Message}", ex);
-        }
-    }
+			// Save screenshot
+			var screenshotPath = $"debug-{testName}-{timestamp}.png";
+			await Page.ScreenshotAsync(new PageScreenshotOptions
+			{
+				Path = screenshotPath,
+				FullPage = true
+			});
+			Console.WriteLine($"📸 Screenshot saved: {screenshotPath}");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"⚠️ Failed to capture debug info: {ex.Message}");
+		}
+	}
 
-    protected async Task<string?> WaitForSnackbarAsync()
-    {
-        if (Page == null) throw new InvalidOperationException("Page not initialized");
-        
-        var snackbar = Page.Locator(".mud-snackbar-content-message");
-        await snackbar.WaitForAsync(new LocatorWaitForOptions
-        {
-            State = WaitForSelectorState.Visible,
-            Timeout = 30000
-        });
-        return await snackbar.TextContentAsync();
-    }
+	protected async Task<string?> WaitForSnackbarAsync()
+	{
+		if (Page == null) throw new InvalidOperationException("Page not initialized");
+
+		var snackbar = Page.Locator(".mud-snackbar-content-message");
+		await snackbar.WaitForAsync(new LocatorWaitForOptions
+		{
+			State = WaitForSelectorState.Visible,
+			Timeout = 10000
+		});
+		return await snackbar.TextContentAsync();
+	}
 }

@@ -9,77 +9,63 @@ public class AuthenticationFlowTests : PageTest
     public AuthenticationFlowTests(PlaywrightFixture playwrightFixture) 
         : base(playwrightFixture)
     {
-    }
+    }    
 
-    // [Fact]
-    // public async Task UserCanLoginSuccessfully()
-    // {
-    //     // Arrange & Act
-    //     await Page!.GotoAsync($"{BaseUrl}/login");
-    //     await Page.FillAsync("input[type='email']", "test@example.com");
-    //     await Page.FillAsync("input[type='password']", "Password123!");
-    //     await Page.ClickAsync("button[type='submit']");
+	[Fact]
+	public async Task UserCanLoginSuccessfully()
+	{
+		// Arrange
+		await Page!.GotoAsync($"{BaseUrl}/login");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-    //     // Assert
-    //     await Assertions.Expect(Page).ToHaveURLAsync($"{BaseUrl}/dashboard");
-        
-    //     // Verify user is logged in (check for user menu or indicator)
-    //     var userIndicator = Page.Locator("text=/test@example.com/i");
-    //     await Assertions.Expect(userIndicator).ToBeVisibleAsync();
-    // }
+		// Act
+		await Page.GetByLabel("Email").FillAsync("test@example.com"); 
+		await Page.GetByLabel("Password").FillAsync("Password123!");
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Login" }).ClickAsync();
 
-    [Fact]
-public async Task UserCanLoginSuccessfully()
-{
-    // Arrange
-    await Page!.GotoAsync($"{BaseUrl}/login");
-    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		// Assert
+		await Assertions.Expect(Page).ToHaveURLAsync(new Regex(".*/dashboard$"));
+		await Assertions.Expect(
+			Page.GetByText("test@example.com", new() { Exact = false })
+		).ToBeVisibleAsync();
+	}
 
-    // Act
-    await Page.GetByLabel("Email").FillAsync("test@example.com");
-    await Page.GetByLabel("Password").FillAsync("Password123!");
+	[Fact]
+	public async Task UserCannotLoginWithInvalidCredentials()
+	{
+		// Arrange
+		await Page!.GotoAsync($"{BaseUrl}/login");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-    await Page.GetByRole(AriaRole.Button, new() { Name = "Login" }).ClickAsync();
+		// Act
+		await Page.GetByLabel("Email").FillAsync("wrong@example.com");
+		await Page.GetByLabel("Password").FillAsync("WrongPassword!");
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Login" }).ClickAsync();
 
-    // Assert - περιμένουμε redirect
-    await Page.WaitForURLAsync($"{BaseUrl}/dashboard");
+		// Assert - Wait for error to appear (NOT Task.Delay!)
+		var errorMessage = Page.Locator("[data-testid='login-error'], .mud-alert-message").First;
+		await Assertions.Expect(errorMessage).ToBeVisibleAsync(new() { Timeout = 5000 });
 
-    // Assert - logged-in indicator
-    await Assertions.Expect(
-        Page.GetByText("test@example.com", new() { Exact = false })
-    ).ToBeVisibleAsync();
-}
+		// Verify still on login page
+		await Assertions.Expect(Page).ToHaveURLAsync(new Regex(".*/login"));
+	}
 
+	[Fact]
+	public async Task UserCanLogout()
+	{
+		// Arrange
+		await LoginAsUserAsync();
 
-    [Fact]
-    public async Task UserCannotLoginWithInvalidCredentials()
-    {
-        // Arrange & Act
-        await Page!.GotoAsync($"{BaseUrl}/login");
-        await Page.FillAsync("input[type='email']", "wrong@example.com");
-        await Page.FillAsync("input[type='password']", "WrongPassword!");
-        await Page.ClickAsync("button[type='submit']");
+		// Act
+		var logoutButton = Page.GetByRole(AriaRole.Button, new() { Name = "Logout" })
+			.Or(Page.GetByRole(AriaRole.Link, new() { Name = "Logout" }));
 
-        // Assert - should remain on login page
-        await Task.Delay(1000); // Wait for any validation
-        var currentUrl = Page.Url;
-        currentUrl.Should().Contain("/login");
-        
-        // Check for error message (adjust selector based on your UI)
-        var errorMessage = Page.Locator(".mud-alert-message, .validation-message");
-        await Assertions.Expect(errorMessage).ToBeVisibleAsync();
-    }
+		await logoutButton.ClickAsync();
 
-    [Fact]
-    public async Task UserCanLogout()
-    {
-        // Arrange
-        await LoginAsUserAsync();
+		// Assert - Wait for navigation
+		await Assertions.Expect(Page).ToHaveURLAsync(new Regex(".*/login"), new() { Timeout = 10000 });
 
-        // Act - Click logout button (adjust selector based on your UI)
-        await Page!.ClickAsync("button:has-text('Logout'), a:has-text('Logout')");
-
-        // Assert
-        await Assertions.Expect(Page).ToHaveURLAsync(new Regex(".*/login.*"));
-    }
+		// Verify login form is visible
+		await Assertions.Expect(Page.GetByLabel("Email")).ToBeVisibleAsync();
+	}
 }
