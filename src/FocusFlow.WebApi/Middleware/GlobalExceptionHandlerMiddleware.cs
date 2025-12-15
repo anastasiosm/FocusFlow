@@ -1,71 +1,74 @@
 using FocusFlow.Domain.Exceptions;
+using Microsoft.AspNetCore.Diagnostics;
 using System.Net;
 using System.Text.Json;
 
 namespace FocusFlow.WebApi.Middleware;
 
-public class GlobalExceptionHandlerMiddleware
+public class GlobalExceptionHandler : IExceptionHandler
 {
-	private readonly RequestDelegate _next;
-	private readonly ILogger<GlobalExceptionHandlerMiddleware> _logger;
+	private readonly ILogger<GlobalExceptionHandler> _logger;
+	private readonly IWebHostEnvironment _env;
 
-	public GlobalExceptionHandlerMiddleware(RequestDelegate next, ILogger<GlobalExceptionHandlerMiddleware> logger)
+	public GlobalExceptionHandler(
+		ILogger<GlobalExceptionHandler> logger,
+		IWebHostEnvironment env)
 	{
-		_next = next;
 		_logger = logger;
+		_env = env;
 	}
 
-	public async Task InvokeAsync(HttpContext context)
+	public async ValueTask<bool> TryHandleAsync(
+		HttpContext httpContext,
+		Exception exception,
+		CancellationToken cancellationToken)
 	{
-		try
-		{
-			await _next(context);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "An unhandled exception occurred");
-			await HandleExceptionAsync(context, ex);
-		}
-	}
+		_logger.LogError(exception,
+			"Unhandled exception. Path: {Path}, Method: {Method}, TraceId: {TraceId}",
+			httpContext.Request.Path,
+			httpContext.Request.Method,
+			httpContext.TraceIdentifier);
 
-	private static Task HandleExceptionAsync(HttpContext context, Exception exception)
-	{
-		var statusCode = HttpStatusCode.InternalServerError;
-		var message = "An error occurred while processing your request.";
+		var (statusCode, message) = GetStatusCodeAndMessage(exception);
 
-		switch (exception)
-		{
-			case FocusFlowNotFoundException:
-				statusCode = HttpStatusCode.NotFound;
-				message = exception.Message;
-				break;
-			case FocusFlowValidationException:
-				statusCode = HttpStatusCode.BadRequest;
-				message = exception.Message;
-				break;
-			case FocusFlowBusinessRuleException:
-				statusCode = HttpStatusCode.BadRequest;
-				message = exception.Message;
-				break;
-			case UnauthorizedAccessException:
-				statusCode = HttpStatusCode.Forbidden;
-				message = exception.Message;
-				break;
-			case InvalidOperationException:
-				statusCode = HttpStatusCode.BadRequest;
-				message = exception.Message;
-				break;
-		}
-
-		context.Response.ContentType = "application/json";
-		context.Response.StatusCode = (int)statusCode;
+		httpContext.Response.StatusCode = (int)statusCode;
+		httpContext.Response.ContentType = "application/json";
 
 		var response = new
 		{
 			error = message,
-			statusCode = (int)statusCode
+			statusCode = (int)statusCode,
+			traceId = httpContext.TraceIdentifier,
+			path = httpContext.Request.Path.Value,
+			stackTrace = _env.IsDevelopment() ? exception.StackTrace : null
 		};
 
-		return context.Response.WriteAsync(JsonSerializer.Serialize(response));
+		await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
+
+		return true; // Exception handled
+	}
+
+	private static (HttpStatusCode statusCode, string message) GetStatusCodeAndMessage(Exception exception)
+	{
+		return exception switch
+		{
+			FocusFlowNotFoundException =>
+				(HttpStatusCode.NotFound, exception.Message),
+
+			FocusFlowValidationException =>
+				(HttpStatusCode.BadRequest, exception.Message),
+
+			FocusFlowBusinessRuleException =>
+				(HttpStatusCode.BadRequest, exception.Message),
+
+			UnauthorizedAccessException =>
+				(HttpStatusCode.Forbidden, exception.Message),
+
+			InvalidOperationException =>
+				(HttpStatusCode.BadRequest, exception.Message),
+
+			_ => (HttpStatusCode.InternalServerError,
+				  "An error occurred while processing your request.")
+		};
 	}
 }

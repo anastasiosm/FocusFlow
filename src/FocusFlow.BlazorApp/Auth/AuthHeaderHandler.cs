@@ -1,35 +1,48 @@
-using Blazored.LocalStorage;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 
 namespace FocusFlow.BlazorApp.Auth;
 
 public class AuthHeaderHandler : DelegatingHandler
 {
-    private readonly ILocalStorageService _localStorage;
+	private readonly ITokenProvider _tokenProvider;
+	private readonly ILogger<AuthHeaderHandler> _logger;
 
-    public AuthHeaderHandler(ILocalStorageService localStorage)
-    {
-        _localStorage = localStorage;
-    }
+	public AuthHeaderHandler(ITokenProvider tokenProvider, ILogger<AuthHeaderHandler> logger)
+	{
+		_tokenProvider = tokenProvider;
+		_logger = logger;
+	}
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        string token = null;
+	protected override async Task<HttpResponseMessage> SendAsync(
+		HttpRequestMessage request,
+		CancellationToken cancellationToken)
+	{
+		_logger.LogWarning("🔥 AuthHeaderHandler CALLED for {Url}", request.RequestUri);
 
-        try
-        {
-            token = await _localStorage.GetItemAsync<string>("authToken", cancellationToken);
-        }
-        catch (InvalidOperationException)
-        {
-            // Ignored during pre-rendering
-        }
+		// Skip if Authorization header already exists
+		if (request.Headers.Authorization != null)
+		{
+			_logger.LogInformation("✅ Authorization header already exists");
+			return await base.SendAsync(request, cancellationToken);
+		}
 
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue("bearer", token);
-        }
+		// Get token from provider (synchronous, no localStorage needed)
+		var token = _tokenProvider.GetToken();
 
-        return await base.SendAsync(request, cancellationToken);
-    }
+		_logger.LogWarning("🔥 Token from provider: {HasToken}, Length: {Length}",
+			!string.IsNullOrWhiteSpace(token),
+			token?.Length ?? 0);
+
+		if (!string.IsNullOrWhiteSpace(token))
+		{
+			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+			_logger.LogWarning("🔥 Authorization header ADDED");
+		}
+		else
+		{
+			_logger.LogWarning("⚠️ No token available for request to {Url}", request.RequestUri);
+		}
+
+		return await base.SendAsync(request, cancellationToken);
+	}
 }

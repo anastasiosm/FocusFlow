@@ -20,12 +20,12 @@
     <MudPaper Class="pa-4">
         <MudText Typo="Typo.h5" GutterBottom="true" Align="Align.Center">Login</MudText>
         <EditForm Model="@_loginRequest" OnValidSubmit="OnValidSubmit">
-            <FluentValidationValidator Validator="@_loginRequestValidator" /> @* Replaced DataAnnotationsValidator *@
+            <FluentValidationValidator Validator="@_loginRequestValidator" />
             <MudTextField Label="Email" @bind-Value="_loginRequest.Email" For="@(() => _loginRequest.Email)" />
             <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="_loginRequest.Password" For="@(() => _loginRequest.Password)" />
             
-            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@AuthState.Value.IsLoading"> @* Updated Disabled *@
-                @if (AuthState.Value.IsLoading) @* Updated conditional *@
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@AuthState.Value.IsLoading">
+                @if (AuthState.Value.IsLoading)
                 {
                     <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
                     <MudText Class="ms-2">Logging in...</MudText>
@@ -35,7 +35,6 @@
                     <MudText>Login</MudText>
                 }
             </MudButton>
-
             @if (!string.IsNullOrWhiteSpace(AuthState.Value.Error))
             {
                 <MudAlert Severity="MudBlazor.Severity.Error" Class="mt-4">@AuthState.Value.Error</MudAlert>
@@ -49,10 +48,9 @@
 
 @code {
     private LoginRequest _loginRequest = new();
-    // Removed _loading, now using AuthState.Value.IsLoading
 
-    private void OnValidSubmit() // Changed to not async Task
+    private void OnValidSubmit()
     {
-        Dispatcher.Dispatch(new LoginAction(_loginRequest)); // Dispatch action
+        Dispatcher.Dispatch(new LoginAction(_loginRequest));
     }
 }

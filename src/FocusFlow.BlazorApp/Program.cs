@@ -1,4 +1,4 @@
-using FocusFlow.BlazorApp.Components;
+﻿using FocusFlow.BlazorApp.Components;
 using FocusFlow.BlazorApp.Services;
 using FocusFlow.BlazorApp.Auth; 
 using MudBlazor.Services;
@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+	.AddInteractiveServerComponents();
 
 // Add Razor Pages so _Host.cshtml tag helpers work
 builder.Services.AddRazorPages();
@@ -22,18 +22,24 @@ builder.Services.AddMudServices();
 
 // Add Auth services
 builder.Services.AddBlazoredLocalStorage();
-builder.Services.AddAuthorizationCore();
+
+// ✅ CRITICAL FIX: Singleton so the SAME instance is shared across ALL scopes
+// This ensures AuthHeaderHandler (transient) and AuthEffects (scoped) see the SAME token
+// ILocalStorageService is passed as parameter (can't inject Scoped into Singleton)
+builder.Services.AddSingleton<ITokenProvider, TokenProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
-builder.Services.AddScoped<AuthHeaderHandler>();
+builder.Services.AddAuthorizationCore();
+
+// Transient - New instance for each request
+builder.Services.AddTransient<AuthHeaderHandler>();
 
 // Add FluentValidation
-builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>(); 
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
 // Add Fluxor
 builder.Services.AddFluxor(options =>
 {
-    options.ScanAssemblies(typeof(Program).Assembly); 
-    // options.UseReduxDevTools(rdt => { rdt.Name = "FocusFlow Blazor App"; }); // Optional: For Fluxor DevTools integration - commented due to build error
+	options.ScanAssemblies(typeof(Program).Assembly);
 });
 
 // Add API service registration
@@ -41,20 +47,31 @@ var useFakeApi = builder.Configuration.GetValue<bool>("UseFakeApi");
 
 if (useFakeApi)
 {
-    // Use the fake API service for local development without a running backend
-    builder.Services.AddSingleton<IApiService, FakeApiService>();
-    // Also add HttpClient for authentication components
-    builder.Services.AddHttpClient();
+	// Use the fake API service for local development without a running backend
+	builder.Services.AddSingleton<IApiService, FakeApiService>();
+	builder.Services.AddHttpClient();
 }
 else
 {
-    // Use the real API service
-    builder.Services.AddHttpClient<IApiService, ApiService>(client =>
-    {
-        var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
-        client.BaseAddress = new Uri(apiBaseUrl);
-    })
-    .AddHttpMessageHandler<AuthHeaderHandler>();
+	// ✅ ΣΩΣΤΗ ΛΥΣΗ: Named HttpClient με handler
+	var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
+
+	// 1. Register named HttpClient with AuthHeaderHandler
+	builder.Services.AddHttpClient("FocusFlowAPI", client =>
+	{
+		client.BaseAddress = new Uri(apiBaseUrl);
+		client.Timeout = TimeSpan.FromSeconds(30);
+	})
+	.AddHttpMessageHandler<AuthHeaderHandler>();
+
+	// 2. Register IApiService that uses the named HttpClient
+	builder.Services.AddScoped<IApiService>(sp =>
+	{
+		var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+		var httpClient = httpClientFactory.CreateClient("FocusFlowAPI");
+		var logger = sp.GetRequiredService<ILogger<ApiService>>();
+		return new ApiService(httpClient, logger);
+	});
 }
 
 var app = builder.Build();
@@ -68,7 +85,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// IMPORTANT: Serve static files from wwwroot AND _content (for Razor Class Libraries like MudBlazor)
+// Serve static files from wwwroot AND _content (for Razor Class Libraries like MudBlazor)
 app.UseStaticFiles();
 
 app.UseAntiforgery();
@@ -79,4 +96,4 @@ app.MapRazorPages();
 app.MapRazorComponents<App>()
 	.AddInteractiveServerRenderMode();
 
-app.Run();
+await app.RunAsync();

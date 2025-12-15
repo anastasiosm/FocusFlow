@@ -89,10 +89,14 @@ public class ProjectsController : ControllerBase
 	public async Task<ActionResult<ProjectDto>> Create([FromBody] CreateProjectDto dto)
 	{
 		var userId = GetCurrentUserId();
+
+		_logger.LogInformation("Creating project: {ProjectName} for user {UserId}",	dto.Name, userId);
+
 		var command = new CreateProjectCommand(dto.Name, dto.Description, userId);
 		var result = await _mediator.Send(command);
 
-		_logger.LogInformation("User {UserId} created project {ProjectId}", userId, result.Id);
+		_logger.LogInformation("User {UserId} created project {ProjectId}", userId, result.Id);		
+
 		return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
 	}
 

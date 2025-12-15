@@ -11,8 +11,8 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - "ConnectionStrings:DefaultConnection=Host=postgres-db;Port=5432;Database=FocusFlowDb;Username=postgres;Password=postgres"
       - "Jwt:Key=YourSuperSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm"
-      - "Jwt:Issuer=FocusFlowAPI"
-      - "Jwt:Audience=FocusFlowClients"
+      - "Jwt:Issuer=FocusFlowApi"
+      - "Jwt:Audience=FocusFlowClient"
       - TEST_USER_EMAIL=test@example.com
       - TEST_USER_PASSWORD=Password123!
       # (Development) API serves HTTP only inside Docker to avoid HTTPS redirect name-mismatch

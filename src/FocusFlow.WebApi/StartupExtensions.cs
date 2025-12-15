@@ -16,7 +16,7 @@ namespace FocusFlow.WebApi;
 public static class StartupExtensions
 {
 	// Configure services
-	public static WebApplication ConfigureServices
+	public static WebApplicationBuilder ConfigureServices
 		(this WebApplicationBuilder builder)
 	{
 		builder.Services.AddApplicationServices();
@@ -107,15 +107,19 @@ public static class StartupExtensions
 				.AllowAnyHeader()
 				.AllowCredentials()));
 
-		return builder.Build();
+		// Exception handling
+		builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+		builder.Services.AddProblemDetails(); // standardized responses
+
+		return builder;
 	}
 
 	// Configure the HTTP request pipeline.
 	public static WebApplication ConfigurePipelineAsync(this WebApplication app)
 	{
 		// Global exception handler (must be first)
-		app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-		
+		app.UseExceptionHandler(); // Αυτό καλεί το registered IExceptionHandler
+
 		app.UseCors("open");
 
 		if (app.Environment.IsDevelopment())

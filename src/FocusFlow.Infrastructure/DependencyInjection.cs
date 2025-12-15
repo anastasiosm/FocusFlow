@@ -1,6 +1,7 @@
 using FocusFlow.Application.Interfaces;
 using FocusFlow.Infrastructure.Data;
 using FocusFlow.Infrastructure.Identity;
+using FocusFlow.Infrastructure.Identity.Extensions;
 using FocusFlow.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -34,26 +35,8 @@ public static class DependencyInjection
 #endif
 		});
 
-		// ASP.NET Core Identity
-		services.AddIdentityCore<ApplicationUser>(options =>
-		{
-			// Password settings
-			options.Password.RequireDigit = true;
-			options.Password.RequiredLength = 8;
-			options.Password.RequireNonAlphanumeric = false;
-			options.Password.RequireUppercase = true;
-			options.Password.RequireLowercase = true;
-
-			// Lockout settings
-			options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-			options.Lockout.MaxFailedAccessAttempts = 5;
-			options.Lockout.AllowedForNewUsers = true;
-
-			// User settings
-			options.User.RequireUniqueEmail = true;
-			options.SignIn.RequireConfirmedEmail = false; // Set to true in production
-		})
-		.AddEntityFrameworkStores<FocusFlowDbContext>();
+		// ASP.NET Core Identity (moved to extension)
+		services.AddIdentityServices();
 
 		// Repositories
 		services.AddScoped<IProjectRepository, ProjectRepository>();
