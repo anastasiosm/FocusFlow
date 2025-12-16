@@ -26,6 +26,15 @@ public class AuthHeaderHandler : DelegatingHandler
 			return await base.SendAsync(request, cancellationToken);
 		}
 
+		// Skip authentication endpoints - they don't need/shouldn't have Authorization header
+		var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+		if (path.Contains("/auth/login", StringComparison.OrdinalIgnoreCase) ||
+			path.Contains("/auth/register", StringComparison.OrdinalIgnoreCase))
+		{
+			_logger.LogInformation("⏭️ Skipping Authorization header for auth endpoint: {Path}", path);
+			return await base.SendAsync(request, cancellationToken);
+		}
+
 		// Get token from provider (synchronous, no localStorage needed)
 		var token = _tokenProvider.GetToken();
 
@@ -40,7 +49,7 @@ public class AuthHeaderHandler : DelegatingHandler
 		}
 		else
 		{
-			_logger.LogWarning("⚠️ No token available for request to {Url}", request.RequestUri);
+			_logger.LogDebug("⚠️ No token available for request to {Url}", request.RequestUri);
 		}
 
 		return await base.SendAsync(request, cancellationToken);

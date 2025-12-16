@@ -322,6 +322,9 @@ If tests timeout or fail to start:
 | **Microsoft.AspNetCore.Authentication.JwtBearer** | 8.0.0 | JWT token authentication for API |
 | **Swashbuckle.AspNetCore** | 6.6.2 | OpenAPI/Swagger documentation generation |
 | **Scalar.AspNetCore** | 2.11.6 | Modern interactive API documentation UI |
+| **Serilog.AspNetCore** | (see project) | Structured logging integration for ASP.NET Core and centralized logging pipelines |
+| **Serilog.Enrichers.Environment** | (see project) | Adds environment metadata to Serilog events (machine, environment) |
+| **Serilog.Enrichers.Thread** | (see project) | Adds thread id/name information to Serilog events |
 
 ### Frontend Libraries
 
@@ -329,21 +332,27 @@ If tests timeout or fail to start:
 |---------|---------|---------|
 | **MudBlazor** | 7.8.0 | Material Design component library (rich UI components) |
 | **Fluxor** | 6.9.0 | Redux-like state management for Blazor (predictable state) |
+| **Fluxor.Blazor.Web** | (see project) | Blazor-specific Fluxor bindings and middleware |
 | **Blazored.LocalStorage** | 4.5.0 | Browser LocalStorage wrapper (JWT persistence) |
 | **Blazored.FluentValidation** | 2.2.0 | Client-side FluentValidation integration |
 | **System.IdentityModel.Tokens.Jwt** | 8.15.0 | JWT token parsing (client-side role extraction) |
+| **Serilog.Sinks.BrowserConsole** | (see project) | Sends Serilog events to the browser console (useful for client-side debugging in development) |
+| **Microsoft.AspNetCore.Components.Authorization** | (see project) | Blazor authentication abstractions and AuthenticationStateProvider integration |
+| **Microsoft.Extensions.Http** | (see project) | HttpClientFactory helpers and typed/named client support |
 
-### Testing Libraries
+### Testing & Static Analysis / CI Tools
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| **xUnit** | 2.9.0 | Test framework (industry standard for .NET) |
-| **FluentAssertions** | 6.12.0 | Readable, expressive assertions |
-| **Moq** | 4.20.70 | Mocking framework for dependencies |
-| **Bogus** | 35.6.1 | Realistic fake data generation (addresses, names, dates) |
-| **bUnit** | 1.28.9 | Blazor component testing framework |
-| **Microsoft.Playwright** | 1.49.0 | Browser automation for E2E tests (Chromium/Firefox/WebKit) |
-| **Microsoft.AspNetCore.Mvc.Testing** | 8.0.0 | In-memory API integration testing |
+| Tool / Package | Purpose |
+|----------------|---------|
+| **xUnit** | Test framework (industry standard for .NET) |
+| **FluentAssertions** | Readable, expressive assertions |
+| **Moq** | Mocking framework for dependencies |
+| **Bogus** | Realistic fake data generation (addresses, names, dates) |
+| **bUnit** | Blazor component testing framework |
+| **Microsoft.Playwright** | Browser automation for E2E tests (Chromium/Firefox/WebKit) |
+| **Microsoft.AspNetCore.Mvc.Testing** | In-memory API integration testing |
+| **SonarAnalyzer.CSharp** | Static code analysis rules (runs in IDE / during build) |
+| **SonarScanner.MSBuild** | Scanner used in CI to publish results to SonarQube / SonarCloud and enforce quality gates |
 
 ### Why These Libraries?
 

@@ -41,6 +41,8 @@ public class ProjectsController : ControllerBase
 	public async Task<ActionResult<List<ProjectDto>>> GetAll()
 	{
 		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is retrieving all their projects", userId);
+
 		var query = new GetProjectsByOwnerQuery(userId);
 		var result = await _mediator.Send(query);
 
@@ -55,6 +57,8 @@ public class ProjectsController : ControllerBase
 	[ProducesResponseType(typeof(List<ProjectDto>), StatusCodes.Status200OK)]
 	public async Task<ActionResult<List<ProjectDto>>> GetAllProjects()
 	{
+		_logger.LogInformation("Retrieving all projects (admin/dev)");
+
 		var result = await _mediator.Send(new GetAllProjectsQuery());
 		_logger.LogInformation("Retrieved {Count} total projects", result.Count);
 		return Ok(result);
@@ -72,8 +76,13 @@ public class ProjectsController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<ProjectDetailDto>> GetById(Guid id)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is retrieving project {ProjectId}", userId, id);
+
 		var query = new GetProjectByIdQuery(id);
 		var result = await _mediator.Send(query);
+
+		_logger.LogInformation("Successfully retrieved project {ProjectId} for user {UserId}", id, userId);
 
 		return Ok(result);
 	}
@@ -115,11 +124,13 @@ public class ProjectsController : ControllerBase
 	public async Task<IActionResult> Update(Guid id, [FromBody] UpdateProjectDto dto)
 	{
 		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is updating project {ProjectId}", userId, id);
+		
 		var command = new UpdateProjectCommand(id, dto.Name, dto.Description, userId);
 		
 		await _mediator.Send(command);
 
-		_logger.LogInformation("User {UserId} updated project {ProjectId}", userId, id);
+		_logger.LogInformation("User {UserId} successfully updated project {ProjectId}", userId, id);
 		
 		return NoContent();
 	}
@@ -137,10 +148,12 @@ public class ProjectsController : ControllerBase
 	public async Task<IActionResult> Delete(Guid id)
 	{
 		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is deleting project {ProjectId}", userId, id);
+
 		var command = new DeleteProjectCommand(id, userId);
 		await _mediator.Send(command);
 
-		_logger.LogInformation("User {UserId} deleted project {ProjectId}", userId, id);
+		_logger.LogInformation("User {UserId} successfully deleted project {ProjectId}", userId, id);
 		return NoContent();
 	}
 
@@ -156,8 +169,13 @@ public class ProjectsController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<List<TaskDto>>> GetProjectTasks(Guid id)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is retrieving tasks for project {ProjectId}", userId, id);
+		
 		var query = new GetProjectByIdQuery(id);
 		var project = await _mediator.Send(query);
+
+		_logger.LogInformation("Retrieved {TaskCount} tasks for project {ProjectId}", project.Tasks.Count, id);
 
 		return Ok(project.Tasks);
 	}

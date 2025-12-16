@@ -48,11 +48,14 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<TaskDto>> Create([FromQuery] Guid projectId, [FromBody] CreateTaskDto dto)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} attempting to create task '{TaskTitle}' in project {ProjectId}",
+			userId, dto.Title, projectId);
+
 		// Verify user owns the project
 		var projectQuery = new GetProjectByIdQuery(projectId);
 		var project = await _mediator.Send(projectQuery);
 
-		var userId = GetCurrentUserId();
 		if (project.OwnerId != userId)
 		{
 			_logger.LogWarning("User {UserId} attempted to create task in project {ProjectId} owned by {OwnerId}",
@@ -70,7 +73,7 @@ public class TasksController : ControllerBase
 
 		var result = await _mediator.Send(command);
 
-		_logger.LogInformation("User {UserId} created task {TaskId} in project {ProjectId}",
+		_logger.LogInformation("User {UserId} successfully created task {TaskId} in project {ProjectId}",
 			userId, result.Id, projectId);
 
 		return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
@@ -87,10 +90,13 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> Update(Guid id, [FromBody] UpdateTaskRequest request)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is updating task {TaskId}", userId, id);
+
 		var command = new UpdateTaskCommand(id, request.Title, request.Description, request.DueDate, request.Priority);
 		var result = await _mediator.Send(command);
 
-		_logger.LogInformation("User {UserId} updated task {TaskId}", GetCurrentUserId(), id);
+		_logger.LogInformation("User {UserId} successfully updated task {TaskId}", userId, id);
 		return Ok(result);
 	}
 
@@ -104,8 +110,11 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> Unassign(Guid id)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is unassigning task {TaskId}", userId, id);
+
 		var result = await _mediator.Send(new UnassignTaskCommand(id));
-		_logger.LogInformation("User {UserId} unassigned task {TaskId}", GetCurrentUserId(), id);
+		_logger.LogInformation("User {UserId} successfully unassigned task {TaskId}", userId, id);
 		return Ok(result);
 	}
 
@@ -116,7 +125,11 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(typeof(List<TaskDto>), StatusCodes.Status200OK)]
 	public async Task<ActionResult<List<TaskDto>>> GetByUser(string userId)
 	{
+		_logger.LogInformation("Retrieving tasks for user {UserId}", userId);
+
 		var result = await _mediator.Send(new GetTasksByUserQuery(userId));
+
+		_logger.LogInformation("Retrieved {Count} tasks for user {UserId}", result.Count, userId);
 		return Ok(result);
 	}
 
@@ -132,7 +145,12 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> GetById(Guid id)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is retrieving task {TaskId}", userId, id);
+
 		var task = await _mediator.Send(new GetTaskByIdQuery(id));
+
+		_logger.LogInformation("User {UserId} successfully retrieved task {TaskId}", userId, id);
 		return Ok(task);
 	}
 
@@ -150,11 +168,15 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusRequest request)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is updating status of task {TaskId} to {Status}",
+			userId, id, request.Status);
+
 		var command = new UpdateTaskStatusCommand(id, request.Status);
 		var result = await _mediator.Send(command);
 
-		_logger.LogInformation("User {UserId} updated task {TaskId} status to {Status}",
-			GetCurrentUserId(), id, request.Status);
+		_logger.LogInformation("User {UserId} successfully updated task {TaskId} status to {Status}",
+			userId, id, request.Status);
 
 		return Ok(result);
 	}
@@ -171,9 +193,12 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Delete(Guid id)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is deleting task {TaskId}", userId, id);
+
 		await _mediator.Send(new DeleteTaskCommand(id));
 
-		_logger.LogInformation("User {UserId} deleted task {TaskId}", GetCurrentUserId(), id);
+		_logger.LogInformation("User {UserId} successfully deleted task {TaskId}", userId, id);
 		return NoContent();
 	}
 
@@ -191,10 +216,14 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TaskDto>> AssignTask(Guid id, [FromBody] AssignTaskRequest request)
 	{
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is assigning task {TaskId} to user {AssignedUserId}",
+			userId, id, request.UserId);
+
 		var result = await _mediator.Send(new AssignTaskCommand(id, request.UserId));
 
-		_logger.LogInformation("User {UserId} assigned task {TaskId} to user {AssignedUserId}",
-			GetCurrentUserId(), id, request.UserId);
+		_logger.LogInformation("User {UserId} successfully assigned task {TaskId} to user {AssignedUserId}",
+			userId, id, request.UserId);
 
 		return Ok(result);
 	}
@@ -214,6 +243,8 @@ public class TasksController : ControllerBase
 		[FromQuery] bool? isOverdue = null)
 	{
 		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is retrieving filtered tasks with status: {Status}, priority: {Priority}, overdue: {IsOverdue}",
+			userId, status, priority, isOverdue);
 
 		var query = new GetTasksByOwnerAndFilterQuery(userId, status, priority, isOverdue);
 		var userTasks = await _mediator.Send(query);

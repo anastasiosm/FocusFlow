@@ -43,10 +43,13 @@ public class AuthController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
 	{
+		_logger.LogInformation("Attempting to register new user with email: {Email}", request.Email);
+
 		// Check if user already exists
 		var existingUser = await _userManager.FindByEmailAsync(request.Email);
 		if (existingUser != null)
 		{
+			_logger.LogWarning("Registration failed for {Email}: User with this email already exists.", request.Email);
 			return BadRequest(new { message = "User with this email already exists" });
 		}
 
@@ -65,11 +68,11 @@ public class AuthController : ControllerBase
 		if (!result.Succeeded)
 		{
 			var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-			_logger.LogWarning("User registration failed: {Errors}", errors);
+			_logger.LogWarning("User registration failed for {Email}: {Errors}", request.Email, errors);
 			return BadRequest(new { message = "Registration failed", errors = result.Errors });
 		}
 
-		_logger.LogInformation("New user registered: {Email}", request.Email);
+		_logger.LogInformation("New user registered successfully: {Email}", request.Email);
 
 		// Automatically log in the user after registration
 		var token = await GenerateJwtToken(user);
@@ -93,6 +96,8 @@ public class AuthController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
 	{
+		_logger.LogInformation("User login attempt for: {Email}", request.Email);
+
 		var user = await _userManager.FindByEmailAsync(request.Email);
 		if (user == null)
 		{
@@ -133,14 +138,20 @@ public class AuthController : ControllerBase
 		var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 		if (string.IsNullOrEmpty(userId))
 		{
+			_logger.LogWarning("Could not find user ID in token claims.");
 			return Unauthorized();
 		}
+
+		_logger.LogInformation("Retrieving current user info for UserId: {UserId}", userId);
 
 		var user = await _userManager.FindByIdAsync(userId);
 		if (user == null)
 		{
+			_logger.LogWarning("User with ID {UserId} not found.", userId);
 			return Unauthorized();
 		}
+
+		_logger.LogInformation("Successfully retrieved user info for {Email}", user.Email);
 
 		return Ok(new UserInfoResponse
 		{

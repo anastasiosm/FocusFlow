@@ -1,12 +1,15 @@
 @page "/tasks"
+@attribute [Authorize]
 
 @using Fluxor
 @using FocusFlow.BlazorApp.Store.Tasks
 @using FocusFlow.Domain.Enums
+@using Microsoft.AspNetCore.Components.Authorization
 
 @inject IDispatcher Dispatcher
 @inject IState<TasksState> TasksState
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>My Tasks - FocusFlow</PageTitle>
 
@@ -162,10 +165,19 @@
 </AuthorizeView>
 
 @code {
-	protected override void OnInitialized()
+	private bool _hasDispatched = false;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
-		base.OnInitialized();
-		Dispatcher.Dispatch(new TasksActions.LoadTasks());
+		if (!firstRender || _hasDispatched) return;
+
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+		if (authState.User.Identity?.IsAuthenticated == true)
+		{
+			_hasDispatched = true;
+			Dispatcher.Dispatch(new TasksActions.LoadTasks());
+		}
 	}
 
 	private void OnStatusFilterChanged(ProjectTaskStatus? value)

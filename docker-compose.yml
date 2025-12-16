@@ -42,7 +42,8 @@ services:
     tmpfs:
       - /tmp
     volumes:
-      - ./certs:/https:ro
+      - ./certs:/https:ro # Mount development certificate
+      - ./dataprotection:/dataprotection-keys:rw # Persist keys across restarts
 
   postgres-db:
     image: postgres:17.2

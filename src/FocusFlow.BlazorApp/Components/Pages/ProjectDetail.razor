@@ -1,4 +1,6 @@
-@page "/projects/{id:guid}"
+﻿@page "/projects/{id:guid}"
+@attribute [Authorize]
+
 @using FocusFlow.Application.Features.Projects.GetProjectById
 @using FocusFlow.Application.Features.Tasks.CreateTask
 @using FocusFlow.BlazorApp.Components.Tasks
@@ -7,9 +9,11 @@
 @using FocusFlow.BlazorApp.Store.ProjectDetail
 @using FocusFlow.Domain.Enums
 @using Fluxor
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IDispatcher Dispatcher
 @inject IState<ProjectDetailState> ProjectDetailState
 @inject IDialogService DialogService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Project Detail - FocusFlow</PageTitle>
 
@@ -87,11 +91,18 @@
     [Parameter]
     public Guid Id { get; set; }
 
-    protected override void OnParametersSet()
+    private bool _hasDispatched = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        base.OnParametersSet();
-        if (Id != Guid.Empty && Id != ProjectDetailState.Value.Project?.Id)
+        if (!firstRender || _hasDispatched) return;
+
+        // ✅ Περίμενε auth να γίνει έτοιμο
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true && Id != Guid.Empty && Id != ProjectDetailState.Value.Project?.Id)
         {
+            _hasDispatched = true;
             Dispatcher.Dispatch(new LoadProjectDetailAction(Id));
         }
     }

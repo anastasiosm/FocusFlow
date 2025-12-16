@@ -1,4 +1,5 @@
 @page "/projects"
+@attribute [Authorize]
 
 @using Fluxor
 @using Microsoft.AspNetCore.Components.Forms
@@ -7,12 +8,14 @@
 @using FocusFlow.BlazorApp.Components.Projects
 @using FocusFlow.Application.Features.Projects.Common
 @using FluentValidation
+@using Microsoft.AspNetCore.Components.Authorization
 
 @inject IDispatcher Dispatcher
 @inject IState<ProjectsState> ProjectsState
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject IValidator<ProjectUpdateFormModel> _updateProjectFormModelValidator
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Projects - FocusFlow</PageTitle>
 
@@ -93,11 +96,19 @@
     private bool _showCreateDialog = false;
     private bool _showEditDialog = false;
     private ProjectDto? _projectToEdit;
+    private bool _hasDispatched = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        base.OnInitialized();
-        Dispatcher.Dispatch(new LoadProjectsAction());
+        if (!firstRender || _hasDispatched) return;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            _hasDispatched = true;
+            Dispatcher.Dispatch(new LoadProjectsAction());
+        }
     }
 
     private void OpenCreateDialog() => _showCreateDialog = true;

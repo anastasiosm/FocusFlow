@@ -1,12 +1,15 @@
 @page "/dashboard"
+@attribute [Authorize]
 
 @using Fluxor
 @using FocusFlow.BlazorApp.Store.Dashboard
 @using FocusFlow.Application.Features.Dashboard.Common
+@using Microsoft.AspNetCore.Components.Authorization
 
 @inject IDispatcher Dispatcher
 @inject IState<DashboardState> DashboardState
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Dashboard - FocusFlow</PageTitle>
 
@@ -140,10 +143,19 @@
 </AuthorizeView>
 
 @code {
-	protected override void OnInitialized()
+	private bool _hasDispatched = false;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
-		base.OnInitialized();
-		Dispatcher.Dispatch(new DashboardActions.LoadDashboardStatistics());
+		if (!firstRender || _hasDispatched) return;
+
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+		if (authState.User.Identity?.IsAuthenticated == true)
+		{
+			_hasDispatched = true;
+			Dispatcher.Dispatch(new DashboardActions.LoadDashboardStatistics());
+		}
 	}
 
 	private void NavigateToProject(Guid projectId)

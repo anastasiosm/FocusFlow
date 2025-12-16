@@ -34,7 +34,9 @@ public class DashboardController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<ActionResult<List<ProjectStatisticsDto>>> GetStatistics()
 	{
-		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+		var userId = GetCurrentUserId();
+		_logger.LogInformation("User {UserId} is retrieving dashboard statistics", userId);
+
 		var query = new GetDashboardStatisticsQuery(userId);
 		var result = await _mediator.Send(query);
 
@@ -46,6 +48,7 @@ public class DashboardController : ControllerBase
 
 	private string GetCurrentUserId()
 	{
-		return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+		return User.FindFirstValue(ClaimTypes.NameIdentifier)
+			?? throw new UnauthorizedAccessException("User ID not found in token");
 	}
 }

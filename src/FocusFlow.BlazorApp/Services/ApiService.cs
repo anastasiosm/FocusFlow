@@ -1,16 +1,11 @@
-﻿using System.Net.Http;
-using System.Net;
+﻿using FocusFlow.Application.Features.Dashboard.Common;
 using FocusFlow.Application.Features.Projects.Common;
 using FocusFlow.Application.Features.Projects.CreateProject;
 using FocusFlow.Application.Features.Projects.GetProjectById;
 using FocusFlow.Application.Features.Projects.UpdateProject;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Features.Tasks.CreateTask;
-using FocusFlow.Application.Features.Dashboard.Common;
-using FocusFlow.Domain.Enums;
-using System.Net.Http.Json;
-using FocusFlow.BlazorApp.Models; 
-using System.Text.Json;
+using FocusFlow.BlazorApp.Models;
 
 namespace FocusFlow.BlazorApp.Services;
 
@@ -25,52 +20,52 @@ public class ApiService : IApiService
 		_logger = logger;
 	}
 
-	    // Auth
-    public async Task<ApiResult<string>> LoginAsync(LoginRequest request)
-    {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync("api/auth/login", request);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<LoginResponse>(); 
-            
-            return ApiResult<string>.Success(result?.Token ?? throw new InvalidOperationException("Login failed: No token received"));
-        }
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error logging in");
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult<string>.Failure(error);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error logging in");
-            return ApiResult<string>.Failure("An unexpected error occurred during login.");
-        }
-    }
+	// Auth
+	public async Task<ApiResult<string>> LoginAsync(LoginRequest request)
+	{
+		try
+		{
+			var response = await _httpClient.PostAsJsonAsync("api/auth/login", request);
+			response.EnsureSuccessStatusCode();
+			var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-    public async Task<ApiResult> RegisterAsync(RegisterRequest request)
-    {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync("api/auth/register", request);
-            response.EnsureSuccessStatusCode();
-            return ApiResult.Success();
-        }
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error registering");
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult.Failure(error);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error registering");
-            return ApiResult.Failure("An unexpected error occurred during registration.");
-        }
-    }
+			return ApiResult<string>.Success(result?.Token ?? throw new InvalidOperationException("Login failed: No token received"));
+		}
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error logging in");
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult<string>.Failure(error);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error logging in");
+			return ApiResult<string>.Failure("An unexpected error occurred during login.");
+		}
+	}
 
-    // Projects
+	public async Task<ApiResult> RegisterAsync(RegisterRequest request)
+	{
+		try
+		{
+			var response = await _httpClient.PostAsJsonAsync("api/auth/register", request);
+			response.EnsureSuccessStatusCode();
+			return ApiResult.Success();
+		}
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error registering");
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult.Failure(error);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error registering");
+			return ApiResult.Failure("An unexpected error occurred during registration.");
+		}
+	}
+
+	// Projects
 	public async Task<ApiResult<List<ProjectDto>>> GetProjectsAsync()
 	{
 		// Diagnostic comment to force re-evaluation
@@ -79,12 +74,12 @@ public class ApiService : IApiService
 			var result = await _httpClient.GetFromJsonAsync<List<ProjectDto>>("api/projects");
 			return ApiResult<List<ProjectDto>>.Success(result ?? new List<ProjectDto>());
 		}
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error fetching projects");
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult<List<ProjectDto>>.Failure(error);
-        }
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error fetching projects");
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult<List<ProjectDto>>.Failure(error);
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Error fetching projects");
@@ -99,12 +94,12 @@ public class ApiService : IApiService
 			var result = await _httpClient.GetFromJsonAsync<ProjectDetailDto>($"api/projects/{id}");
 			return ApiResult<ProjectDetailDto>.Success(result ?? throw new InvalidOperationException($"Project {id} not found"));
 		}
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error fetching project {ProjectId}", id);
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult<ProjectDetailDto>.Failure(error);
-        }
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error fetching project {ProjectId}", id);
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult<ProjectDetailDto>.Failure(error);
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Error fetching project {ProjectId}", id);
@@ -121,12 +116,12 @@ public class ApiService : IApiService
 			var result = await response.Content.ReadFromJsonAsync<ProjectDto>();
 			return ApiResult<ProjectDto>.Success(result ?? throw new InvalidOperationException("Failed to create project"));
 		}
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error creating project");
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult<ProjectDto>.Failure(error);
-        }
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error creating project");
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult<ProjectDto>.Failure(error);
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Error creating project");
@@ -140,14 +135,14 @@ public class ApiService : IApiService
 		{
 			var response = await _httpClient.PutAsJsonAsync($"api/projects/{id}", dto);
 			response.EnsureSuccessStatusCode();
-            return ApiResult.Success();
+			return ApiResult.Success();
 		}
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error updating project {ProjectId}", id);
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult.Failure(error);
-        }
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error updating project {ProjectId}", id);
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult.Failure(error);
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Error updating project {ProjectId}", id);
@@ -161,14 +156,14 @@ public class ApiService : IApiService
 		{
 			var response = await _httpClient.DeleteAsync($"api/projects/{id}");
 			response.EnsureSuccessStatusCode();
-            return ApiResult.Success();
+			return ApiResult.Success();
 		}
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error deleting project {ProjectId}", id);
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult.Failure(error);
-        }
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error deleting project {ProjectId}", id);
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult.Failure(error);
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Error deleting project {ProjectId}", id);
@@ -237,12 +232,12 @@ public class ApiService : IApiService
 			var result = await response.Content.ReadFromJsonAsync<TaskDto>();
 			return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException("Failed to create task"));
 		}
-        catch (HttpRequestException httpEx)
-        {
-            _logger.LogError(httpEx, "HTTP Error creating task for project {ProjectId}", projectId);
-            string error = await GetErrorMessage(httpEx);
-            return ApiResult<TaskDto>.Failure(error);
-        }
+		catch (HttpRequestException httpEx)
+		{
+			_logger.LogError(httpEx, "HTTP Error creating task for project {ProjectId}", projectId);
+			string error = await GetErrorMessage(httpEx);
+			return ApiResult<TaskDto>.Failure(error);
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Error creating task for project {ProjectId}", projectId);
@@ -305,9 +300,9 @@ public class ApiService : IApiService
 // ProblemDetails class for deserialization
 public class ProblemDetails
 {
-    public string? Type { get; set; }
-    public string? Title { get; set; }
-    public int? Status { get; set; }
-    public string? Detail { get; set; }
-    public string? Instance { get; set; }
+	public string? Type { get; set; }
+	public string? Title { get; set; }
+	public int? Status { get; set; }
+	public string? Detail { get; set; }
+	public string? Instance { get; set; }
 }
