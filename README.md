@@ -222,24 +222,13 @@ graph LR
 
 ## 🧪 Testing
 
-FocusFlow has **5 test layers** with **400+ tests** covering unit, integration, component, and end-to-end scenarios.
+FocusFlow has **5 test layers** with ~300 tests covering unit, integration, component, and end-to-end scenarios.
 
 ### Test Execution
 
 ```bash
-# Run ALL tests (requires Docker for E2E tests)
-dotnet test
-
-# Run specific test projects
-dotnet test tests/FocusFlow.Domain.Tests              # Unit tests (Domain entities)
-dotnet test tests/FocusFlow.Application.Tests         # Unit tests (CQRS handlers)
-dotnet test tests/FocusFlow.Infrastructure.Tests      # Integration tests (Repositories)
-dotnet test tests/FocusFlow.Integration.Tests         # API integration tests
-dotnet test tests/FocusFlow.BlazorApp.Tests           # Blazor component tests (bUnit)
-dotnet test tests/FocusFlow.E2E.Tests                 # E2E tests (Playwright)
-
-# Run tests with coverage (requires coverlet.collector)
-dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+# Run ALL tests (except E2E tests, because requires Docker for E2E tests)
+dotnet test FocusFlow.sln --filter "Category!=E2E"
 
 # Run E2E tests with full Docker orchestration
 cd tests/FocusFlow.E2E.Tests
@@ -257,6 +246,14 @@ pwsh ./run-e2e-tests.ps1
 # - Waits for health checks (up to 180s)
 # - Runs Playwright tests
 # - Cleans up containers (unless -KeepRunning)
+
+# Run specific test projects
+dotnet test tests/FocusFlow.Domain.Tests              # Unit tests (Domain entities)
+dotnet test tests/FocusFlow.Application.Tests         # Unit tests (CQRS handlers)
+dotnet test tests/FocusFlow.Infrastructure.Tests      # Integration tests (Repositories)
+dotnet test tests/FocusFlow.Integration.Tests         # API integration tests
+dotnet test tests/FocusFlow.BlazorApp.Tests           # Blazor component tests (bUnit)
+dotnet test tests/FocusFlow.E2E.Tests                 # E2E tests (Playwright)
 ```
 
 ### Test Coverage Summary

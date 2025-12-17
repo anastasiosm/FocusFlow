@@ -2,10 +2,17 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+
+    <!-- ✨ ΚΡΙΣΙΜΟ για CLI test runner -->
+    <VSTestUseMSBuildOutput>false</VSTestUseMSBuildOutput>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.collector">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
@@ -13,7 +20,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Moq" />    
     <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <!-- ✨ Metadata ΠΡΕΠΕΙ στο .csproj, όχι στο Directory.Packages.props -->
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

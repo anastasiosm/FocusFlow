@@ -428,3 +428,9 @@ certs/
 # Test coverage reports
 **/coverage-report/
 **/coverage/
+
+# GEMINI
+/GEMINI.md
+
+# Data protection keys folder /dataprotection
+/dataprotection/
