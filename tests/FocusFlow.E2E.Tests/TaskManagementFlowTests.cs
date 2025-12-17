@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace FocusFlow.E2E.Tests;
 
+[Trait("Category", "E2E")]
 public class TaskManagementFlowTests : PageTest
 {
     public TaskManagementFlowTests(PlaywrightFixture playwrightFixture) 

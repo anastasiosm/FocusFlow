@@ -1,15 +1,16 @@
-using FluentAssertions;
 using Microsoft.Playwright;
 using System.Text.RegularExpressions;
+using Xunit;
 
 namespace FocusFlow.E2E.Tests;
 
+[Trait("Category", "E2E")]
 public class AuthenticationFlowTests : PageTest
 {
-    public AuthenticationFlowTests(PlaywrightFixture playwrightFixture) 
-        : base(playwrightFixture)
-    {
-    }    
+	public AuthenticationFlowTests(PlaywrightFixture playwrightFixture)
+		: base(playwrightFixture)
+	{
+	}
 
 	[Fact]
 	public async Task UserCanLoginSuccessfully()
@@ -19,7 +20,7 @@ public class AuthenticationFlowTests : PageTest
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Act
-		await Page.GetByLabel("Email").FillAsync("test@example.com"); 
+		await Page.GetByLabel("Email").FillAsync("test@example.com");
 		await Page.GetByLabel("Password").FillAsync("Password123!");
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Login" }).ClickAsync();
 

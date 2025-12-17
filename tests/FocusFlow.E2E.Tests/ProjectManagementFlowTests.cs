@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace FocusFlow.E2E.Tests;
 
+[Trait("Category", "E2E")]
 public class ProjectManagementFlowTests : PageTest, IAsyncLifetime
 {
 	private string _testProjectId = string.Empty;
