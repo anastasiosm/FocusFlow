@@ -6,6 +6,7 @@
 @using FocusFlow.Application.Features.Dashboard.Common
 @using Microsoft.AspNetCore.Components.Authorization
 
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IDispatcher Dispatcher
 @inject IState<DashboardState> DashboardState
 @inject NavigationManager Navigation
@@ -147,7 +148,8 @@
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
-		if (!firstRender || _hasDispatched) return;
+		await base.OnAfterRenderAsync(firstRender);
+		if (_hasDispatched) return;
 
 		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 

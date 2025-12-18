@@ -10,6 +10,7 @@
 @using FluentValidation
 @using Microsoft.AspNetCore.Components.Authorization
 
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IDispatcher Dispatcher
 @inject IState<ProjectsState> ProjectsState
 @inject IDialogService DialogService
@@ -100,7 +101,8 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _hasDispatched) return;
+        await base.OnAfterRenderAsync(firstRender);
+        if (_hasDispatched) return;
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 
