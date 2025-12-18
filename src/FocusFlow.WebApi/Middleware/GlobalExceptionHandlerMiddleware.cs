@@ -34,14 +34,22 @@ public class GlobalExceptionHandler : IExceptionHandler
 		httpContext.Response.StatusCode = (int)statusCode;
 		httpContext.Response.ContentType = "application/json";
 
-		var response = new
+		var response = new Dictionary<string, object?>
 		{
-			error = message,
-			statusCode = (int)statusCode,
-			traceId = httpContext.TraceIdentifier,
-			path = httpContext.Request.Path.Value,
-			stackTrace = _env.IsDevelopment() ? exception.StackTrace : null
+			["error"] = message,
+			["statusCode"] = (int)statusCode,
+			["traceId"] = httpContext.TraceIdentifier,
+			["path"] = httpContext.Request.Path.Value
 		};
+
+		if (exception is FocusFlowValidationException valEx)
+		{
+			response["errors"] = valEx.Errors;
+		}
+		else if (_env.IsDevelopment())
+		{
+			response["stackTrace"] = exception.StackTrace;
+		}
 
 		await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
 

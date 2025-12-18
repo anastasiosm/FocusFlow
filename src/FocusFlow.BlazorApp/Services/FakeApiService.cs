@@ -230,8 +230,9 @@ public class FakeApiService : IApiService
         }
     }
 
-    public Task<ApiResult<TaskDto>> CreateTaskAsync(Guid projectId, CreateTaskDto dto)
+    public Task<ApiResult<TaskDto>> CreateTaskAsync(CreateTaskDto dto)
     {
+        var projectId = dto.ProjectId;
         var newTask = new TaskDto(
             Guid.NewGuid(),
             dto.Title,

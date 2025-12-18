@@ -62,7 +62,12 @@ public static class StartupExtensions
 		builder.Services.AddScoped<IAuthorizationHandler, ProjectOwnershipHandler>();
 		builder.Services.AddScoped<IAuthorizationHandler, TaskOwnershipHandler>();
 
-		builder.Services.AddControllers();
+		builder.Services.AddControllers()
+			// We added AddJsonOptions with JsonStringEnumConverter to make enum values be sent and received as their names (strings) in JSON instead of numeric values.
+			.AddJsonOptions(options =>
+			{
+				options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+			});
 
 		// OpenAPI / Swagger
 		builder.Services.AddEndpointsApiExplorer();

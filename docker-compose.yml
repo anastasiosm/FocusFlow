@@ -10,9 +10,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - "ConnectionStrings:DefaultConnection=Host=postgres-db;Port=5432;Database=FocusFlowDb;Username=postgres;Password=postgres"
-      - "Jwt:Key=YourSuperSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm"
-      - "Jwt:Issuer=FocusFlowApi"
-      - "Jwt:Audience=FocusFlowClient"
+      - "JwtSettings__SecretKey=YourSuperSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm"
+      - "JwtSettings__Issuer=FocusFlowApi"
+      - "JwtSettings__Audience=FocusFlowClient"
       - TEST_USER_EMAIL=test@example.com
       - TEST_USER_PASSWORD=Password123!
       # (Development) API serves HTTP only inside Docker to avoid HTTPS redirect name-mismatch
@@ -35,6 +35,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
       - ApiBaseUrl=http://focusflow-api:8080
+      - "JwtSettings__SecretKey=YourSuperSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm"
+      - "JwtSettings__Issuer=FocusFlowApi"
+      - "JwtSettings__Audience=FocusFlowClient"
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD:-MyPfxPassword123!}
     depends_on:

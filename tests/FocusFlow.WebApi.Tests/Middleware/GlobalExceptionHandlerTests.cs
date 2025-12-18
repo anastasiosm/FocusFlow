@@ -218,8 +218,7 @@ public class GlobalExceptionHandlerTests
 		var responseBody = await reader.ReadToEndAsync();
 		
 		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
-		response.TryGetProperty("stackTrace", out var stackTrace).Should().BeTrue();
-		stackTrace.ValueKind.Should().Be(JsonValueKind.Null);
+		response.TryGetProperty("stackTrace", out var stackTrace).Should().BeFalse();
 	}
 
 	[Fact]

@@ -27,7 +27,7 @@ public class CreateTaskEffect : Effect<CreateTaskAction>
                 action.Command.AssignedUserId
             );
 
-            var result = await _apiService.CreateTaskAsync(action.Command.ProjectId, dto);
+            var result = await _apiService.CreateTaskAsync(dto);
 
             if (result.Succeeded)
             {

@@ -6,6 +6,10 @@ using FocusFlow.Application.Features.Projects.UpdateProject;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Features.Tasks.CreateTask;
 using FocusFlow.BlazorApp.Models;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using System.Net.Http.Json;
 
 namespace FocusFlow.BlazorApp.Services;
 
@@ -223,24 +227,24 @@ public class ApiService : IApiService
 		}
 	}
 
-	public async Task<ApiResult<TaskDto>> CreateTaskAsync(Guid projectId, CreateTaskDto dto)
+	public async Task<ApiResult<TaskDto>> CreateTaskAsync(CreateTaskDto dto)
 	{
 		try
 		{
-			var response = await _httpClient.PostAsJsonAsync($"api/tasks?projectId={projectId}", dto);
+			var response = await _httpClient.PostAsJsonAsync("api/tasks", dto);
 			response.EnsureSuccessStatusCode();
 			var result = await response.Content.ReadFromJsonAsync<TaskDto>();
 			return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException("Failed to create task"));
 		}
 		catch (HttpRequestException httpEx)
 		{
-			_logger.LogError(httpEx, "HTTP Error creating task for project {ProjectId}", projectId);
+			_logger.LogError(httpEx, "HTTP Error creating task for project {ProjectId}", dto.ProjectId);
 			string error = await GetErrorMessage(httpEx);
 			return ApiResult<TaskDto>.Failure(error);
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "Error creating task for project {ProjectId}", projectId);
+			_logger.LogError(ex, "Error creating task for project {ProjectId}", dto.ProjectId);
 			return ApiResult<TaskDto>.Failure("An unexpected error occurred during task creation.");
 		}
 	}
@@ -294,7 +298,7 @@ public class ApiService : IApiService
 			return $"An HTTP error occurred: {(int)httpEx.StatusCode.Value} {httpEx.StatusCode.Value}";
 		}
 		return "An unexpected network error occurred.";
-	}
+	}	
 }
 
 // ProblemDetails class for deserialization

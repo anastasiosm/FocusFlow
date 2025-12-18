@@ -2,6 +2,8 @@ using FocusFlow.Infrastructure.Data;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace FocusFlow.Integration.Tests;
@@ -13,6 +15,11 @@ public abstract class IntegrationTestBase : IClassFixture<FocusFlowWebApplicatio
 {
     protected readonly FocusFlowWebApplicationFactory _factory;
     protected readonly HttpClient _client;
+    protected static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     protected IntegrationTestBase(FocusFlowWebApplicationFactory factory)
     {
@@ -56,7 +63,7 @@ public abstract class IntegrationTestBase : IClassFixture<FocusFlowWebApplicatio
 
         if (loginResponse.IsSuccessStatusCode)
         {
-            var authResponse = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            var authResponse = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>(JsonOptions);
             if (authResponse != null)
             {
                 _client.DefaultRequestHeaders.Authorization = 

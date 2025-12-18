@@ -2,6 +2,9 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using Bunit.TestDoubles;
+using Fluxor;
+using FocusFlow.BlazorApp.Services;
+using NSubstitute;
 
 namespace FocusFlow.BlazorApp.Tests;
 
@@ -12,12 +15,20 @@ namespace FocusFlow.BlazorApp.Tests;
 public abstract class TestContextBase : TestContext
 {
     protected TestAuthorizationContext AuthContext { get; }
+    protected IApiService MockApiService { get; }
 
     protected TestContextBase()
     {
         // Add MudBlazor services (required for components that use MudBlazor)
         Services.AddMudServices();
         
+        // Add mock IApiService before Fluxor
+        MockApiService = Substitute.For<IApiService>();
+        Services.AddSingleton(MockApiService);
+        
+        // Add Fluxor services
+        Services.AddFluxor(options => options.ScanAssemblies(typeof(FocusFlow.BlazorApp.Auth.CustomAuthenticationStateProvider).Assembly));
+
         // Add TestAuthorizationContext and set a default authorized user
         AuthContext = this.AddTestAuthorization();
         AuthContext.SetAuthorized("testuser");

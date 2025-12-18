@@ -23,18 +23,18 @@ public class DashboardControllerTests : IntegrationTestBase
 		// Create some projects
 		var project1Response = await _client.PostAsJsonAsync("/api/projects", 
 			new { Name = "Project 1", Description = "Test project 1" });
-		var project1 = await project1Response.Content.ReadFromJsonAsync<ProjectDto>();
+		var project1 = await project1Response.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 
 		var project2Response = await _client.PostAsJsonAsync("/api/projects", 
 			new { Name = "Project 2", Description = "Test project 2" });
-		var project2 = await project2Response.Content.ReadFromJsonAsync<ProjectDto>();
+		var project2 = await project2Response.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 
 		// Act
 		var response = await _client.GetAsync("/api/dashboard/statistics");
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
-		var statistics = await response.Content.ReadFromJsonAsync<List<ProjectStatisticsDto>>();
+		var statistics = await response.Content.ReadFromJsonAsync<List<ProjectStatisticsDto>>(JsonOptions);
 		
 		statistics.Should().NotBeNull();
 		statistics.Should().HaveCount(2);
@@ -63,7 +63,7 @@ public class DashboardControllerTests : IntegrationTestBase
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
-		var statistics = await response.Content.ReadFromJsonAsync<List<ProjectStatisticsDto>>();
+		var statistics = await response.Content.ReadFromJsonAsync<List<ProjectStatisticsDto>>(JsonOptions);
 		
 		statistics.Should().NotBeNull();
 		statistics.Should().BeEmpty();
@@ -81,14 +81,14 @@ public class DashboardControllerTests : IntegrationTestBase
 		await AuthenticateAsync("user2", "user2@example.com");
 		var user2ProjectResponse = await _client.PostAsJsonAsync("/api/projects", 
 			new { Name = "User2 Project", Description = "User2's project" });
-		var user2Project = await user2ProjectResponse.Content.ReadFromJsonAsync<ProjectDto>();
+		var user2Project = await user2ProjectResponse.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 
 		// Act - Get statistics for User2
 		var response = await _client.GetAsync("/api/dashboard/statistics");
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
-		var statistics = await response.Content.ReadFromJsonAsync<List<ProjectStatisticsDto>>();
+		var statistics = await response.Content.ReadFromJsonAsync<List<ProjectStatisticsDto>>(JsonOptions);
 		
 		statistics.Should().NotBeNull();
 		statistics.Should().HaveCount(1);

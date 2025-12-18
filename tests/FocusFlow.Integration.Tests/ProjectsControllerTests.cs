@@ -29,7 +29,7 @@ public class ProjectsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var projects = await response.Content.ReadFromJsonAsync<List<ProjectDto>>();
+        var projects = await response.Content.ReadFromJsonAsync<List<ProjectDto>>(JsonOptions);
         projects.Should().BeEmpty(); // User2 should not see User1's project
     }
 
@@ -46,7 +46,7 @@ public class ProjectsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-        var project = await response.Content.ReadFromJsonAsync<ProjectDto>();
+        var project = await response.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
         project.Should().NotBeNull();
         project!.Name.Should().Be("New Project");
     }
@@ -60,7 +60,7 @@ public class ProjectsControllerTests : IntegrationTestBase
         // Create project
         var createResponse = await _client.PostAsJsonAsync("/api/projects", new { Name = "My Project", Description = "Desc" });
         createResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-        var createdProject = await createResponse.Content.ReadFromJsonAsync<ProjectDto>();
+        var createdProject = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 
         var updateRequest = new { Name = "Updated Name", Description = "Updated Desc" };
 
@@ -78,7 +78,7 @@ public class ProjectsControllerTests : IntegrationTestBase
         await AuthenticateAsync("owner", "owner@example.com");
         var createResponse = await _client.PostAsJsonAsync("/api/projects", new { Name = "Owner Project", Description = "Owner Desc" });
         createResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-        var createdProject = await createResponse.Content.ReadFromJsonAsync<ProjectDto>();
+        var createdProject = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 
         // Switch user
         await AuthenticateAsync("intruder", "intruder@example.com");
@@ -99,7 +99,7 @@ public class ProjectsControllerTests : IntegrationTestBase
         await AuthenticateAsync();
         var createResponse = await _client.PostAsJsonAsync("/api/projects", new { Name = "To Delete", Description = "Desc" });
         createResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-        var createdProject = await createResponse.Content.ReadFromJsonAsync<ProjectDto>();
+        var createdProject = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 
         // Act
         var response = await _client.DeleteAsync($"/api/projects/{createdProject!.Id}");

@@ -1,22 +1,21 @@
-﻿using Blazored.LocalStorage; 
-using FluentValidation; 
+﻿using Blazored.LocalStorage;
+using FluentValidation;
 using Fluxor;
-using FocusFlow.BlazorApp.Auth; 
+using FocusFlow.BlazorApp.Auth;
 using FocusFlow.BlazorApp.Components;
-using FocusFlow.BlazorApp.Models.Validators; 
+using FocusFlow.BlazorApp.Models.Validators;
 using FocusFlow.BlazorApp.Services;
-using Microsoft.AspNetCore.Components.Authorization; 
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using MudBlazor.Services;
 using Serilog;
+using System.Text;
 
-// Use a bootstrap logger to log events during startup.
-// For Blazor, this will log to the server console during startup, 
-// and the BrowserConsole sink will take over for client-side events.
+// bootstrap logger to log events during startup.
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.BrowserConsole()    // optional: sends logs to browser console for Blazor Server
-    .CreateBootstrapLogger();
+	.WriteTo.Console()
+	.WriteTo.BrowserConsole()
+	.CreateBootstrapLogger();
 
 Log.Information("FocusFlow.BlazorApp starting up...");
 
@@ -53,51 +52,33 @@ try
 	// Add MudBlazor services
 	builder.Services.AddMudServices();
 
-	// Add Auth services
+	// Blazored.LocalStorage
 	builder.Services.AddBlazoredLocalStorage();
 
-	// ✅ CRITICAL FIX: Singleton so the SAME instance is shared across ALL scopes
-	// This ensures AuthHeaderHandler (transient) and AuthEffects (scoped) see the SAME token
-	// ILocalStorageService is passed as parameter (can't inject Scoped into Singleton)
-	builder.Services.AddSingleton<ITokenProvider, TokenProvider>();
-	builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 	builder.Services.AddAuthorizationCore();
 
-	// Transient - New instance for each request
+	// Custom AuthenticationStateProvider
+	builder.Services.AddSingleton<ITokenProvider, TokenProvider>();
+	builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+
+	// HTTP Client + API service
 	builder.Services.AddTransient<AuthHeaderHandler>();
 
-	// Add FluentValidation
-	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
-
-	// Add Fluxor
-	builder.Services.AddFluxor(options =>
-	{
-		options.ScanAssemblies(typeof(Program).Assembly);
-	});
-
-	// Add API service registration
 	var useFakeApi = builder.Configuration.GetValue<bool>("UseFakeApi");
-
 	if (useFakeApi)
 	{
-		// Use the fake API service for local development without a running backend
 		builder.Services.AddSingleton<IApiService, FakeApiService>();
 		builder.Services.AddHttpClient();
 	}
 	else
 	{
-		// ✅ ΣΩΣΤΗ ΛΥΣΗ: Named HttpClient με handler
 		var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
-
-		// 1. Register named HttpClient with AuthHeaderHandler
 		builder.Services.AddHttpClient("FocusFlowAPI", client =>
 		{
 			client.BaseAddress = new Uri(apiBaseUrl);
 			client.Timeout = TimeSpan.FromSeconds(30);
-		})
-		.AddHttpMessageHandler<AuthHeaderHandler>();
+		}).AddHttpMessageHandler<AuthHeaderHandler>();
 
-		// 2. Register IApiService that uses the named HttpClient
 		builder.Services.AddScoped<IApiService>(sp =>
 		{
 			var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
@@ -107,9 +88,17 @@ try
 		});
 	}
 
+	// FluentValidation
+	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+
+	// Fluxor
+	builder.Services.AddFluxor(options =>
+	{
+		options.ScanAssemblies(typeof(Program).Assembly);
+	});
+
 	var app = builder.Build();
 
-	// Configure the HTTP request pipeline.
 	if (!app.Environment.IsDevelopment())
 	{
 		app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -117,29 +106,26 @@ try
 	}
 
 	app.UseHttpsRedirection();
-
-	// Serve static files from wwwroot AND _content (for Razor Class Libraries like MudBlazor)
 	app.UseStaticFiles();
 
 	app.UseAntiforgery();
-    
-    // This is important for Serilog to work correctly with request-scoped services
-    app.UseSerilogRequestLogging();
 
-	// Map Razor Pages so _Host.cshtml is served
+	app.UseAuthentication(); // ✅ must come BEFORE UseAuthorization
+	app.UseAuthorization();
+
+	app.UseSerilogRequestLogging();
+
 	app.MapRazorPages();
-
-	app.MapRazorComponents<App>()
-		.AddInteractiveServerRenderMode();
+	app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 	await app.RunAsync();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "An unhandled exception occurred during BlazorApp bootstrapping");
+	Log.Fatal(ex, "An unhandled exception occurred during BlazorApp bootstrapping");
 }
 finally
 {
-    Log.Information("BlazorApp shut down complete");
+	Log.Information("BlazorApp shut down complete");
 	await Log.CloseAndFlushAsync();
 }

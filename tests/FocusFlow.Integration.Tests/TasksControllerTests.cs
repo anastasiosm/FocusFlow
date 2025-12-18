@@ -1,6 +1,7 @@
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;
+using FocusFlow.Domain.Enums;
 using Xunit;
 
 namespace FocusFlow.Integration.Tests;
@@ -27,7 +28,7 @@ public class TasksControllerTests : IntegrationTestBase
 		
 		// Ensure project was created successfully
 		projRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>();
+		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 		project.Should().NotBeNull();
 
 		// 2. Create Task - FIXED: Added Description
@@ -37,16 +38,16 @@ public class TasksControllerTests : IntegrationTestBase
 			Title = "My Task", 
 			Description = "Do something important", // FIXED: Description is required
 			DueDate = DateTime.UtcNow.AddDays(7),
-			Priority = 1, // High
+			Priority = Priority.High,
 			AssignedUserId = (string?)null
 		};
 
 		// Act
-		var response = await _client.PostAsJsonAsync($"/api/tasks?projectId={project!.Id}", taskRequest);
+		var response = await _client.PostAsJsonAsync("/api/tasks", taskRequest);
 
 		// Assert
 		response.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var task = await response.Content.ReadFromJsonAsync<TaskDto>();
+		var task = await response.Content.ReadFromJsonAsync<TaskDto>(JsonOptions);
 		task.Should().NotBeNull();
 		task!.Title.Should().Be("My Task");
 	}
@@ -64,26 +65,26 @@ public class TasksControllerTests : IntegrationTestBase
 		
 		// Ensure project was created successfully
 		projRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>();
+		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 		project.Should().NotBeNull();
 
 		// FIXED: Added Description to all tasks
-		await _client.PostAsJsonAsync($"/api/tasks?projectId={project!.Id}", new 
+		await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
 			ProjectId = project!.Id,
 			Title = "T1",
 			Description = "Task 1 description",
 			DueDate = DateTime.UtcNow.AddDays(7),
-			Priority = 1,
+			Priority = Priority.High,
 			AssignedUserId = (string?)null
 		});
-		await _client.PostAsJsonAsync($"/api/tasks?projectId={project!.Id}", new 
+		await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
 			ProjectId = project!.Id,
 			Title = "T2",
 			Description = "Task 2 description",
 			DueDate = DateTime.UtcNow.AddDays(7),
-			Priority = 1,
+			Priority = Priority.High,
 			AssignedUserId = (string?)null
 		});
 
@@ -92,7 +93,7 @@ public class TasksControllerTests : IntegrationTestBase
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
-		var tasks = await response.Content.ReadFromJsonAsync<List<TaskDto>>();
+		var tasks = await response.Content.ReadFromJsonAsync<List<TaskDto>>(JsonOptions);
 		tasks.Should().HaveCount(2);
 	}
 
@@ -105,22 +106,22 @@ public class TasksControllerTests : IntegrationTestBase
 		// Create Project
 		var projRes = await _client.PostAsJsonAsync("/api/projects", new { Name = "Project", Description = (string?)null });
 		projRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>();
+		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 		project.Should().NotBeNull();
 		
 		// Create Task - FIXED: Added Description, DueDate and validation
-		var createTaskRes = await _client.PostAsJsonAsync($"/api/tasks?projectId={project!.Id}", new 
+		var createTaskRes = await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
 			ProjectId = project.Id,
 			Title = "Original Title",
 			Description = "Original Description", // FIXED: Required field
 			DueDate = DateTime.UtcNow.AddDays(7), // FIXED: Required field
-			Priority = 2
+			Priority = Priority.Medium
 		});
 		
 		// FIXED: Validate task was created successfully
 		createTaskRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var createdTask = await createTaskRes.Content.ReadFromJsonAsync<TaskDto>();
+		var createdTask = await createTaskRes.Content.ReadFromJsonAsync<TaskDto>(JsonOptions);
 		createdTask.Should().NotBeNull();
 
 		var updateRequest = new
@@ -128,7 +129,7 @@ public class TasksControllerTests : IntegrationTestBase
 			Title = "Updated Title",
 			Description = "Updated Description",
 			DueDate = DateTime.UtcNow.AddDays(10),
-			Priority = 1
+			Priority = Priority.High
 		};
 
 		// Act
@@ -136,7 +137,7 @@ public class TasksControllerTests : IntegrationTestBase
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
-		var updatedTask = await response.Content.ReadFromJsonAsync<TaskDto>();
+		var updatedTask = await response.Content.ReadFromJsonAsync<TaskDto>(JsonOptions);
 		updatedTask!.Title.Should().Be("Updated Title");
 	}
 
@@ -147,21 +148,21 @@ public class TasksControllerTests : IntegrationTestBase
 		await AuthenticateAsync();
 		
 		var projRes = await _client.PostAsJsonAsync("/api/projects", new { Name = "Project", Description = (string?)null });
-		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>();
+		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 		
 		// FIXED: Added Description and DueDate
-		var createTaskRes = await _client.PostAsJsonAsync($"/api/tasks?projectId={project!.Id}", new 
+		var createTaskRes = await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
-			ProjectId = project.Id,
+			ProjectId = project!.Id,
 			Title = "Task to Delete",
 			Description = "This task will be deleted",
 			DueDate = DateTime.UtcNow.AddDays(7), // FIXED: Required field
-			Priority = 2
+			Priority = Priority.Medium
 		});
 		
 		// FIXED: Ensure task was created successfully
 		createTaskRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var task = await createTaskRes.Content.ReadFromJsonAsync<TaskDto>();
+		var task = await createTaskRes.Content.ReadFromJsonAsync<TaskDto>(JsonOptions);
 		task.Should().NotBeNull();
 
 		// Act
@@ -179,31 +180,31 @@ public class TasksControllerTests : IntegrationTestBase
 		
 		var projRes = await _client.PostAsJsonAsync("/api/projects", new { Name = "Project", Description = (string?)null });
 		projRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>();
+		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 		project.Should().NotBeNull();
 		
 		// FIXED: Added Description, DueDate and validation
-		var createTaskRes = await _client.PostAsJsonAsync($"/api/tasks?projectId={project!.Id}", new 
+		var createTaskRes = await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
 			ProjectId = project.Id,
 			Title = "Task",
 			Description = "Task description",
 			DueDate = DateTime.UtcNow.AddDays(7), // FIXED: Required field
-			Priority = 2
+			Priority = Priority.Medium
 		});
 		createTaskRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var task = await createTaskRes.Content.ReadFromJsonAsync<TaskDto>();
+		var task = await createTaskRes.Content.ReadFromJsonAsync<TaskDto>(JsonOptions);
 		task.Should().NotBeNull();
 
-		var statusUpdate = new { Status = 2 }; // InProgress = 2
+		var statusUpdate = new { Status = ProjectTaskStatus.InProgress };
 
 		// Act
 		var response = await _client.PatchAsJsonAsync($"/api/tasks/{task!.Id}/status", statusUpdate);
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
-		var updatedTask = await response.Content.ReadFromJsonAsync<TaskDto>();
-		updatedTask!.Status.Should().Be(2);
+		var updatedTask = await response.Content.ReadFromJsonAsync<TaskDto>(JsonOptions);
+		updatedTask!.Status.Should().Be(ProjectTaskStatus.InProgress);
 	}
 
 	[Fact]
@@ -213,45 +214,45 @@ public class TasksControllerTests : IntegrationTestBase
 		await AuthenticateAsync();
 		
 		var projRes = await _client.PostAsJsonAsync("/api/projects", new { Name = "Project", Description = (string?)null });
-		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>();
+		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 		
 		// Create multiple tasks with different statuses - FIXED: Added Description, DueDate and validation
-		var task1Res = await _client.PostAsJsonAsync($"/api/tasks?projectId={project!.Id}", new 
+		var task1Res = await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
-			ProjectId = project.Id,
+			ProjectId = project!.Id,
 			Title = "Task 1",
 			Description = "Task 1 description",
 			DueDate = DateTime.UtcNow.AddDays(7), // FIXED: Required field
-			Priority = 2
+			Priority = Priority.Medium
 		});
 		task1Res.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var task1 = await task1Res.Content.ReadFromJsonAsync<TaskDto>();
+		var task1 = await task1Res.Content.ReadFromJsonAsync<TaskDto>(JsonOptions);
 		task1.Should().NotBeNull();
 		
-		var task2Res = await _client.PostAsJsonAsync($"/api/tasks?projectId={project.Id}", new 
+		var task2Res = await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
 			ProjectId = project.Id,
 			Title = "Task 2",
 			Description = "Task 2 description",
 			DueDate = DateTime.UtcNow.AddDays(7), // FIXED: Required field
-			Priority = 2
+			Priority = Priority.Medium
 		});
 		task2Res.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var task2 = await task2Res.Content.ReadFromJsonAsync<TaskDto>();
+		var task2 = await task2Res.Content.ReadFromJsonAsync<TaskDto>(JsonOptions);
 		task2.Should().NotBeNull();
 		
 		// Update task2 to InProgress
-		var statusUpdateRes = await _client.PatchAsJsonAsync($"/api/tasks/{task2!.Id}/status", new { Status = 2 });
+		var statusUpdateRes = await _client.PatchAsJsonAsync($"/api/tasks/{task2!.Id}/status", new { Status = ProjectTaskStatus.InProgress });
 		statusUpdateRes.StatusCode.Should().Be(HttpStatusCode.OK);
 
 		// Act - Filter by InProgress status
-		var response = await _client.GetAsync("/api/tasks?status=2");
+		var response = await _client.GetAsync("/api/tasks?status=InProgress");
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
-		var filteredTasks = await response.Content.ReadFromJsonAsync<List<TaskDto>>();
+		var filteredTasks = await response.Content.ReadFromJsonAsync<List<TaskDto>>(JsonOptions);
 		filteredTasks.Should().HaveCount(1);
-		filteredTasks!.First().Status.Should().Be(2);
+		filteredTasks!.First().Status.Should().Be(ProjectTaskStatus.InProgress);
 	}
 
 	[Fact]
@@ -262,38 +263,38 @@ public class TasksControllerTests : IntegrationTestBase
 		
 		var projRes = await _client.PostAsJsonAsync("/api/projects", new { Name = "Project", Description = (string?)null });
 		projRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
-		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>();
+		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 		project.Should().NotBeNull();
 		
 		// Create tasks with different priorities - FIXED: Added Description, DueDate (required) and validation
-		var highPriorityRes = await _client.PostAsJsonAsync($"/api/tasks?projectId={project!.Id}", new 
+		var highPriorityRes = await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
-			ProjectId = project.Id,
+			ProjectId = project!.Id,
 			Title = "High Priority Task",
 			Description = "High priority description",
 			DueDate = DateTime.UtcNow.AddDays(7), // FIXED: Required field
-			Priority = 2 // High
+			Priority = Priority.High
 		});
 		highPriorityRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
 		
-		var lowPriorityRes = await _client.PostAsJsonAsync($"/api/tasks?projectId={project.Id}", new 
+		var lowPriorityRes = await _client.PostAsJsonAsync("/api/tasks", new 
 		{ 
 			ProjectId = project.Id,
 			Title = "Low Priority Task",
 			Description = "Low priority description",
 			DueDate = DateTime.UtcNow.AddDays(7), // FIXED: Required field
-			Priority = 0 // Low
+			Priority = Priority.Low
 		});
 		lowPriorityRes.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
 
 		// Act - Filter by High priority
-		var response = await _client.GetAsync("/api/tasks?priority=2");
+		var response = await _client.GetAsync("/api/tasks?priority=High");
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
-		var filteredTasks = await response.Content.ReadFromJsonAsync<List<TaskDto>>();
+		var filteredTasks = await response.Content.ReadFromJsonAsync<List<TaskDto>>(JsonOptions);
 		filteredTasks.Should().HaveCount(1);
-		filteredTasks!.First().Priority.Should().Be(2);
+		filteredTasks!.First().Priority.Should().Be(Priority.High);
 	}
 
 	[Fact]
@@ -302,7 +303,7 @@ public class TasksControllerTests : IntegrationTestBase
 		// Arrange - User 1 creates project
 		await AuthenticateAsync("user1", "user1@example.com");
 		var projRes = await _client.PostAsJsonAsync("/api/projects", new { Name = "User1 Project", Description = (string?)null });
-		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>();
+		var project = await projRes.Content.ReadFromJsonAsync<ProjectDto>(JsonOptions);
 
 		// User 2 tries to create task in User1's project
 		await AuthenticateAsync("user2", "user2@example.com");
@@ -312,11 +313,12 @@ public class TasksControllerTests : IntegrationTestBase
 			ProjectId = project!.Id,
 			Title = "Unauthorized Task",
 			Description = "Trying to create task in someone else's project",
-			Priority = 2
+			Priority = Priority.High,
+			DueDate = DateTime.UtcNow.AddDays(1)
 		};
 
 		// Act
-		var response = await _client.PostAsJsonAsync($"/api/tasks?projectId={project.Id}", taskRequest);
+		var response = await _client.PostAsJsonAsync("/api/tasks", taskRequest);
 
 		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -324,4 +326,4 @@ public class TasksControllerTests : IntegrationTestBase
 }
 
 // Helper DTO
-public record TaskDto(Guid Id, string Title, string? Description, int Priority, int Status);
+public record TaskDto(Guid Id, string Title, string? Description, Priority Priority, ProjectTaskStatus Status);

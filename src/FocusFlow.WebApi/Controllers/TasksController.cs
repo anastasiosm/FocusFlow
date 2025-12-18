@@ -46,9 +46,10 @@ public class TasksController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<TaskDto>> Create([FromQuery] Guid projectId, [FromBody] CreateTaskDto dto)
+	public async Task<ActionResult<TaskDto>> Create([FromBody] CreateTaskDto dto)
 	{
 		var userId = GetCurrentUserId();
+		var projectId = dto.ProjectId;
 		_logger.LogInformation("User {UserId} attempting to create task '{TaskTitle}' in project {ProjectId}",
 			userId, dto.Title, projectId);
 
