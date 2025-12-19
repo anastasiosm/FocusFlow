@@ -63,29 +63,20 @@ try
 	// HTTP Client + API service
 	builder.Services.AddTransient<AuthHeaderHandler>();
 
-	var useFakeApi = builder.Configuration.GetValue<bool>("UseFakeApi");
-	if (useFakeApi)
+	var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
+	builder.Services.AddHttpClient("FocusFlowAPI", client =>
 	{
-		builder.Services.AddSingleton<IApiService, FakeApiService>();
-		builder.Services.AddHttpClient();
-	}
-	else
-	{
-		var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
-		builder.Services.AddHttpClient("FocusFlowAPI", client =>
-		{
-			client.BaseAddress = new Uri(apiBaseUrl);
-			client.Timeout = TimeSpan.FromSeconds(30);
-		}).AddHttpMessageHandler<AuthHeaderHandler>();
+		client.BaseAddress = new Uri(apiBaseUrl);
+		client.Timeout = TimeSpan.FromSeconds(30);
+	}).AddHttpMessageHandler<AuthHeaderHandler>();
 
-		builder.Services.AddScoped<IApiService>(sp =>
-		{
-			var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-			var httpClient = httpClientFactory.CreateClient("FocusFlowAPI");
-			var logger = sp.GetRequiredService<ILogger<ApiService>>();
-			return new ApiService(httpClient, logger);
-		});
-	}
+	builder.Services.AddScoped<IApiService>(sp =>
+	{
+		var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+		var httpClient = httpClientFactory.CreateClient("FocusFlowAPI");
+		var logger = sp.GetRequiredService<ILogger<ApiService>>();
+		return new ApiService(httpClient, logger);
+	});
 
 	// FluentValidation
 	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
