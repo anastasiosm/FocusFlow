@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Serilog;
 using System.Text;
 
 namespace FocusFlow.WebApi;
@@ -154,6 +155,10 @@ public static class StartupExtensions
 
 		app.UseAuthentication();
 		app.UseAuthorization();
+		
+		// Serilog request logging
+		app.UseSerilogRequestLogging();
+		
 		//app.UseHttpsRedirection();
 		app.MapControllers();
 
