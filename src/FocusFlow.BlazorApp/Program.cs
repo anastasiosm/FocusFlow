@@ -15,6 +15,7 @@ using System.Text;
 Log.Logger = new LoggerConfiguration()
 	.WriteTo.Console()
 	.WriteTo.BrowserConsole()
+	.WriteTo.Seq("http://focusflow-seq:5341")
 	.CreateBootstrapLogger();
 
 Log.Information("FocusFlow.BlazorApp starting up...");
@@ -24,10 +25,8 @@ try
 	var builder = WebApplication.CreateBuilder(args);
 
 	// Replace the default logger with Serilog
-	builder.Host.UseSerilog((context, services, configuration) => configuration
-		.ReadFrom.Configuration(context.Configuration)
-		.ReadFrom.Services(services)
-		.Enrich.FromLogContext());
+	builder.Host.UseSerilog((context, configuration) => configuration
+		.ReadFrom.Configuration(context.Configuration));
 
 	// Configure Data Protection to persist keys to a shared location
 	builder.Services.AddDataProtection()
@@ -110,7 +109,7 @@ try
 
 	app.UseAntiforgery();
 
-	app.UseAuthentication(); // ✅ must come BEFORE UseAuthorization
+	app.UseAuthentication(); 
 	app.UseAuthorization();
 
 	app.UseSerilogRequestLogging();

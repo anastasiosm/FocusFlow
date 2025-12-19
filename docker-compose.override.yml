@@ -5,10 +5,6 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       # Use these for local debugging without HTTPS complications
       - ASPNETCORE_URLS=http://+:8080
-    ports:
-      - "8080:8080"
-    # Remove HTTPS port in development override for simplicity
-    # Mount user secrets for development
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
 
@@ -16,16 +12,18 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       # Development: HTTP only to avoid certificate issues
-      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_URLS=http://+:8080 # HTTP only in dev
       - ApiBaseUrl=http://focusflow-api:8080
     ports:
-      - "5050:8080"
-    # Override volumes to skip HTTPS in development
+      - "5050:8080" # Override to expose only HTTP
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      # Remove certificate mount in development override
 
   postgres-db:
     # Development override: add pgAdmin for easier database management
+    # ports:
+    #   - "5432:5432" # Expose only in development for host tools and EF commands
     environment:
       POSTGRES_DB: FocusFlowDb_Dev
       POSTGRES_USER: postgres

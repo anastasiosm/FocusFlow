@@ -55,6 +55,7 @@ docker-compose up --build
 # - API:        http://localhost:8080
 # - Swagger:    http://localhost:8080/swagger
 # - Scalar API: http://localhost:8080/scalar/v1
+# - Seq Logs:   http://localhost:8082
 # - OpenAPI JSON document: http://localhost:8080/openapi/v1.json
 (The API exposes an OpenAPI JSON document useful for tooling and client generation)
 
@@ -216,7 +217,7 @@ graph LR
 2. `CreateProjectEffect` intercepts → Calls `IApiService.CreateProject()`
 3. API responds → Effect dispatches `CreateProjectSuccessAction` or `CreateProjectFailureAction`
 4. `ProjectReducer` updates `ProjectState`
-5. Component re-renders with new state
+5. Component re-renders with new state 
 
 ---
 
@@ -322,6 +323,7 @@ If tests timeout or fail to start:
 | **Serilog.AspNetCore** | (see project) | Structured logging integration for ASP.NET Core and centralized logging pipelines |
 | **Serilog.Enrichers.Environment** | (see project) | Adds environment metadata to Serilog events (machine, environment) |
 | **Serilog.Enrichers.Thread** | (see project) | Adds thread id/name information to Serilog events |
+| **Serilog.Sinks.Seq** | (see project) | Sends structured logs to Seq for centralized aggregation and analysis |
 
 ### Frontend Libraries
 
