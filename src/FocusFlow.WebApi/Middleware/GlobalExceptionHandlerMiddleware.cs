@@ -23,11 +23,19 @@ public class GlobalExceptionHandler : IExceptionHandler
 		Exception exception,
 		CancellationToken cancellationToken)
 	{
+		var errors = exception is FocusFlowValidationException validationEx ? validationEx.Errors : null;
+		
 		_logger.LogError(exception,
-			"Unhandled exception. Path: {Path}, Method: {Method}, TraceId: {TraceId}",
-			httpContext.Request.Path,
-			httpContext.Request.Method,
-			httpContext.TraceIdentifier);
+			"Exception occurred: {Message} {@Errors} {@Exception}",
+			exception.Message,
+			errors,
+			new { 
+				Type = exception.GetType().Name,
+				Path = httpContext.Request.Path.Value,
+				Method = httpContext.Request.Method,
+				TraceId = httpContext.TraceIdentifier,
+				StatusCode = GetStatusCodeAndMessage(exception).statusCode
+			});
 
 		var (statusCode, message) = GetStatusCodeAndMessage(exception);
 
