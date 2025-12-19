@@ -19,7 +19,8 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
 
 	public async Task<bool> Handle(UpdateProjectCommand request, CancellationToken cancellationToken)
 	{
-		var project = await _projectRepository.GetByIdAsync(request.Id, cancellationToken);
+		// Use GetByIdWithTasksAsync to ensure Tasks collection is loaded
+		var project = await _projectRepository.GetByIdWithTasksAsync(request.Id, cancellationToken);
 
 		if (project == null)
 			throw new FocusFlowNotFoundException("Project", request.Id);

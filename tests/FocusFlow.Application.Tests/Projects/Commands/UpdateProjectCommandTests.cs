@@ -29,7 +29,7 @@ public class UpdateProjectCommandTests : TestBase
 		idProperty!.SetValue(existingProject, projectId);
 
 		MockProjectRepository
-			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.GetByIdWithTasksAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingProject);
 
 		var command = new UpdateProjectCommand(projectId, "Updated Name", "Updated Description", "user123");
@@ -56,7 +56,7 @@ public class UpdateProjectCommandTests : TestBase
 		var projectId = Guid.NewGuid();
 
 		MockProjectRepository
-			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.GetByIdWithTasksAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync((Project?)null);
 
 		var command = new UpdateProjectCommand(projectId, "Updated Name", null, "user123");
@@ -86,7 +86,7 @@ public class UpdateProjectCommandTests : TestBase
 		idProperty!.SetValue(existingProject, projectId);
 
 		MockProjectRepository
-			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.GetByIdWithTasksAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingProject);
 
 		var command = new UpdateProjectCommand(projectId, "Updated Name", "Updated Description", "otherUser");
@@ -117,7 +117,7 @@ public class UpdateProjectCommandTests : TestBase
 		idProperty!.SetValue(existingProject, projectId);
 
 		MockProjectRepository
-			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.GetByIdWithTasksAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingProject);
 
 		var command = new UpdateProjectCommand(projectId, invalidName, "Description", "user123");
@@ -142,7 +142,7 @@ public class UpdateProjectCommandTests : TestBase
 		idProperty!.SetValue(existingProject, projectId);
 
 		MockProjectRepository
-			.Setup(repo => repo.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.GetByIdWithTasksAsync(projectId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingProject);
 
 		var longDescription = new string('a', 2001);

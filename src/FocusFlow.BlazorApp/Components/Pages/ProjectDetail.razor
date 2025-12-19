@@ -114,22 +114,41 @@ else
 @code {
     [Parameter] public Guid Id { get; set; }
 
-    private bool _isInitialized = false;
+    // SOLUTION: Track the last loaded project ID to prevent unnecessary reloads
+    // This solves the issue where navigating between different projects
+    // wouldn't reload the data properly
+    private Guid _lastLoadedId = Guid.Empty;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    // SOLUTION: Use OnParametersSetAsync instead of OnAfterRenderAsync
+    // 
+    // PROBLEM: Previously used OnAfterRenderAsync with _isInitialized flag
+    // This prevented proper reloading when navigating between different projects
+    // 
+    // WHY OnParametersSetAsync works better:
+    // - Called whenever route parameters change (when project ID changes)
+    // - Perfect for components with route parameters like /projects/{Id:guid}
+    // - Ensures data reloads when switching between projects
+    //
+    // WHY OnAfterRenderAsync was problematic:
+    // - Only called once after first render
+    // - _isInitialized flag prevented subsequent loads
+    // - Navigating from Project A to Project B wouldn't trigger reload
+    protected override async Task OnParametersSetAsync()
     {
-        await base.OnAfterRenderAsync(firstRender);
-        if (_isInitialized) return;
+        await base.OnParametersSetAsync();
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 
-        if (authState.User.Identity?.IsAuthenticated == true && Id != Guid.Empty)
+        // Only load if:
+        // 1. User is authenticated
+        // 2. We have a valid project ID  
+        // 3. This is a different project than the last one we loaded
+        //    (prevents unnecessary API calls when component re-renders)
+        if (authState.User.Identity?.IsAuthenticated == true && Id != Guid.Empty && Id != _lastLoadedId)
         {
-            if (ProjectDetailState.Value.Project?.Id != Id)
-            {
-                Dispatcher.Dispatch(new LoadProjectDetailAction(Id));
-            }
-            _isInitialized = true;
+            Logger.LogInformation("Loading project {ProjectId}", Id);
+            Dispatcher.Dispatch(new LoadProjectDetailAction(Id));
+            _lastLoadedId = Id; // Remember which project we just loaded
         }
     }
 

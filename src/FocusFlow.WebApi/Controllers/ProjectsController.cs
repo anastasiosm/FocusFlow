@@ -1,5 +1,6 @@
 using FocusFlow.Application.Features.Projects.Common;
 using FocusFlow.Application.Features.Projects.GetProjectById;
+using FocusFlow.Application.Features.Projects.GetProjectWithTasks;
 using FocusFlow.Application.Features.Projects.GetProjectsByOwner;
 using FocusFlow.Application.Features.Projects.GetAllProjects;
 using FocusFlow.Application.Features.Projects.CreateProject;
@@ -79,7 +80,7 @@ public class ProjectsController : ControllerBase
 		var userId = GetCurrentUserId();
 		_logger.LogInformation("User {UserId} is retrieving project {ProjectId}", userId, id);
 
-		var query = new GetProjectByIdQuery(id);
+		var query = new GetProjectWithTasksQuery(id);
 		var result = await _mediator.Send(query);
 
 		_logger.LogInformation("Successfully retrieved project {ProjectId} for user {UserId}", id, userId);
@@ -172,7 +173,7 @@ public class ProjectsController : ControllerBase
 		var userId = GetCurrentUserId();
 		_logger.LogInformation("User {UserId} is retrieving tasks for project {ProjectId}", userId, id);
 		
-		var query = new GetProjectByIdQuery(id);
+		var query = new GetProjectWithTasksQuery(id);
 		var project = await _mediator.Send(query);
 
 		_logger.LogInformation("Retrieved {TaskCount} tasks for project {ProjectId}", project.Tasks.Count, id);
