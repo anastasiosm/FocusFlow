@@ -6,6 +6,6 @@ public record CreateTaskDto(
     Guid ProjectId,
     string Title,
     string? Description,
-    DateTime DueDate,
+    DateTime? DueDate,
     Priority Priority,
     string? AssignedUserId);
