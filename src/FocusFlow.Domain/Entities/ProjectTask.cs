@@ -16,7 +16,10 @@ public class ProjectTask : BaseEntity
 	public DateTime? CompletedAt { get; private set; }
 
 	public Guid ProjectId { get; private set; }
+	
+#pragma warning disable S1144 // Remove the unused private setter - EF Navigation Property
 	public Project? Project { get; private set; }
+#pragma warning restore S1144
 
 	public string? AssignedUserId { get; private set; }
 
