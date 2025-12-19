@@ -5,9 +5,11 @@ using FocusFlow.BlazorApp.Auth;
 using FocusFlow.BlazorApp.Components;
 using FocusFlow.BlazorApp.Models.Validators;
 using FocusFlow.BlazorApp.Services;
+using FocusFlow.BlazorApp.Services.Api;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using MudBlazor.Services;
+using Refit;
 using Serilog;
 using System.Text;
 
@@ -60,23 +62,30 @@ try
 	builder.Services.AddSingleton<ITokenProvider, TokenProvider>();
 	builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
-	// HTTP Client + API service
+	// HTTP Client + API service with Refit
 	builder.Services.AddTransient<AuthHeaderHandler>();
 
 	var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
-	builder.Services.AddHttpClient("FocusFlowAPI", client =>
-	{
-		client.BaseAddress = new Uri(apiBaseUrl);
-		client.Timeout = TimeSpan.FromSeconds(30);
-	}).AddHttpMessageHandler<AuthHeaderHandler>();
+	
+	// Register Refit clients
+	builder.Services.AddRefitClient<IAuthApi>()
+		.ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBaseUrl))
+		.AddHttpMessageHandler<AuthHeaderHandler>();
 
-	builder.Services.AddScoped<IApiService>(sp =>
-	{
-		var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-		var httpClient = httpClientFactory.CreateClient("FocusFlowAPI");
-		var logger = sp.GetRequiredService<ILogger<ApiService>>();
-		return new ApiService(httpClient, logger);
-	});
+	builder.Services.AddRefitClient<IProjectsApi>()
+		.ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBaseUrl))
+		.AddHttpMessageHandler<AuthHeaderHandler>();
+
+	builder.Services.AddRefitClient<ITasksApi>()
+		.ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBaseUrl))
+		.AddHttpMessageHandler<AuthHeaderHandler>();
+
+	builder.Services.AddRefitClient<IDashboardApi>()
+		.ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBaseUrl))
+		.AddHttpMessageHandler<AuthHeaderHandler>();
+
+	// Register the main API service
+	builder.Services.AddScoped<IApiService, RefitApiService>();
 
 	// FluentValidation
 	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();

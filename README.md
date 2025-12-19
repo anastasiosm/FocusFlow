@@ -333,6 +333,7 @@ If tests timeout or fail to start:
 | **Fluxor** | 6.9.0 | Redux-like state management for Blazor (predictable state) |
 | **Fluxor.Blazor.Web** | (see project) | Blazor-specific Fluxor bindings and middleware |
 | **Blazored.LocalStorage** | 4.5.0 | Browser LocalStorage wrapper (JWT persistence) |
+| **Refit** | (see project) | Type-safe, interface-based REST API client used by the Blazor UI |
 | **Blazored.FluentValidation** | 2.2.0 | Client-side FluentValidation integration |
 | **System.IdentityModel.Tokens.Jwt** | 8.15.0 | JWT token parsing (client-side role extraction) |
 | **Serilog.Sinks.BrowserConsole** | (see project) | Sends Serilog events to the browser console (useful for client-side debugging in development) |
