@@ -19,13 +19,13 @@
         <EditForm Model="@_createProjectFormModel" OnValidSubmit="HandleValidSubmit">
             <FluentValidationValidator Validator="@_createProjectFormModelValidator" />
             <MudTextField T="string"
-                @bind-value="_createProjectFormModel.Name" 
+                @bind-Value="_createProjectFormModel.Name" 
                 Label="Project Name" 
                 Required="true"
                 For="@(() => _createProjectFormModel.Name)"
                 Variant="Variant.Outlined" />
             <MudTextField T="string"
-                @bind-value="_createProjectFormModel.Description" 
+                @bind-Value="_createProjectFormModel.Description" 
                 Label="Description" 
                 Lines="3"
                 For="@(() => _createProjectFormModel.Description)"

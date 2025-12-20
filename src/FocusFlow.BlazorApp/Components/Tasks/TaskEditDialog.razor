@@ -1,0 +1,118 @@
+@using FocusFlow.Application.Features.Tasks.Common
+@using FocusFlow.Domain.Enums
+@using FluentValidation
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="@editModel" Validation="@validator.ValidateValue">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField Value="@editModel.Title"
+                                  Label="Title"
+                                  Required="true"
+                                  For="@(() => editModel.Title)"
+                                  Immediate="true"
+                                  ValueChanged="@((string value) => { editModel.Title = value; OnFieldChanged(); })" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField Value="@editModel.Description"
+                                  Label="Description"
+                                  Lines="3"
+                                  For="@(() => editModel.Description)"
+                                  Immediate="true"
+                                  ValueChanged="@((string value) => { editModel.Description = value; OnFieldChanged(); })" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker Date="@editModel.DueDate"
+                                   Label="Due Date"
+                                   For="@(() => editModel.DueDate)"
+                                   Clearable="true"
+                                   DateChanged="@((DateTime? value) => { editModel.DueDate = value; OnFieldChanged(); })" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect Value="@editModel.Priority"
+                               Label="Priority"
+                               Required="true"
+                               For="@(() => editModel.Priority)"
+                               ValueChanged="@((Priority value) => { editModel.Priority = value; OnFieldChanged(); })">
+                        <MudSelectItem T="Priority" Value="@Priority.Low">Low</MudSelectItem>
+                        <MudSelectItem T="Priority" Value="@Priority.Medium">Medium</MudSelectItem>
+                        <MudSelectItem T="Priority" Value="@Priority.High">High</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled" 
+                   OnClick="Save"
+                   Disabled="@(!isFormValid)">
+            Save Changes
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public TaskDto Task { get; set; } = null!;
+
+    private MudForm? form;
+    private TaskEditModel editModel = new();
+    private TaskEditModelValidator validator = new();
+    private bool isFormValid = false;
+
+    protected override void OnInitialized()
+    {
+        editModel = new TaskEditModel
+        {
+            Title = Task.Title,
+            Description = Task.Description,
+            DueDate = Task.DueDate,
+            Priority = Task.Priority
+        };
+        
+        // Initial validation
+        ValidateForm();
+    }
+
+    private async void ValidateForm()
+    {
+        if (form != null)
+        {
+            await form.Validate();
+            isFormValid = form.IsValid;
+            StateHasChanged();
+        }
+    }
+
+    private void OnFieldChanged()
+    {
+        // Trigger validation when any field changes
+        InvokeAsync(ValidateForm);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Save()
+    {
+        if (form != null)
+        {
+            await form.Validate();
+            if (form.IsValid)
+            {
+                var result = new TaskEditResult(
+                    editModel.Title,
+                    editModel.Description,
+                    editModel.DueDate,
+                    editModel.Priority);
+                
+                MudDialog.Close(DialogResult.Ok(result));
+            }
+        }
+    }
+}

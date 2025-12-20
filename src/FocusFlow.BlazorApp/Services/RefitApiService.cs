@@ -237,6 +237,74 @@ public class RefitApiService : IApiService
         }
     }
 
+    public async Task<ApiResult<TaskDto>> GetTaskByIdAsync(Guid id)
+    {
+        try
+        {
+            var result = await _tasksApi.GetTaskByIdAsync(id);
+            return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException($"Task {id} not found"));
+        }
+        catch (ApiException apiEx)
+        {
+            _logger.LogError(apiEx, "API Error fetching task {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
+            var error = await GetErrorMessage(apiEx);
+            return ApiResult<TaskDto>.Failure(error);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching task {TaskId}", id);
+            return ApiResult<TaskDto>.Failure($"An unexpected error occurred while fetching task {id}.");
+        }
+    }
+
+    public async Task<ApiResult<TaskDto>> UpdateTaskAsync(Guid id, UpdateTaskDto dto)
+    {
+        try
+        {
+            var request = new UpdateTaskRequest
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                DueDate = dto.DueDate,
+                Priority = dto.Priority
+            };
+            var result = await _tasksApi.UpdateTaskAsync(id, request);
+            return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException($"Failed to update task {id}"));
+        }
+        catch (ApiException apiEx)
+        {
+            _logger.LogError(apiEx, "API Error updating task {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
+            var error = await GetErrorMessage(apiEx);
+            return ApiResult<TaskDto>.Failure(error);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating task {TaskId}", id);
+            return ApiResult<TaskDto>.Failure($"An unexpected error occurred while updating task {id}.");
+        }
+    }
+
+    public async Task<ApiResult> UpdateTaskStatusAsync(Guid id, ProjectTaskStatus status)
+    {
+        try
+        {
+            var request = new UpdateTaskStatusRequest { Status = status };
+            await _tasksApi.UpdateTaskStatusAsync(id, request);
+            return ApiResult.Success();
+        }
+        catch (ApiException apiEx)
+        {
+            _logger.LogError(apiEx, "API Error updating task status {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
+            var error = await GetErrorMessage(apiEx);
+            return ApiResult.Failure(error);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating task status {TaskId}", id);
+            return ApiResult.Failure($"An unexpected error occurred while updating task status {id}.");
+        }
+    }
+
     public async Task<ApiResult> DeleteTaskAsync(Guid id)
     {
         try
@@ -284,6 +352,28 @@ public class RefitApiService : IApiService
         {
             try
             {
+                // Try to parse as validation error response first
+                var validationError = await apiEx.GetContentAsAsync<ValidationErrorResponse>();
+
+                if (validationError?.Errors != null && validationError.Errors.Any())
+                {
+                    // Extract the first validation error message
+                    var firstError = validationError.Errors.First();
+                    var errorMessages = firstError.Value;
+                    
+                    if (errorMessages?.Any() == true)
+                    {
+                        return errorMessages.First();
+                    }
+                }
+
+                // Return the general error message if available
+                if (!string.IsNullOrEmpty(validationError?.Error))
+                {
+                    return validationError.Error;
+                }
+
+                // If validation error parsing fails, try ProblemDetails
                 var content = await apiEx.GetContentAsAsync<ProblemDetails>();
                 return content?.Detail ?? content?.Title ?? $"API Error: {apiEx.StatusCode}";
             }
@@ -295,6 +385,16 @@ public class RefitApiService : IApiService
 
         return $"API Error: {(int)apiEx.StatusCode} {apiEx.StatusCode}";
     }
+}
+
+// Validation error response class for deserialization
+public class ValidationErrorResponse
+{
+    public string? Error { get; set; }
+    public Dictionary<string, string[]>? Errors { get; set; }
+    public int StatusCode { get; set; }
+    public string? TraceId { get; set; }
+    public string? Path { get; set; }
 }
 
 // ProblemDetails class for deserialization

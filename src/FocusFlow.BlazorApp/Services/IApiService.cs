@@ -26,7 +26,10 @@ public interface IApiService
 	// Tasks
 	Task<ApiResult<List<TaskDto>>> GetTasksAsync(Guid projectId);
 	Task<ApiResult<List<TaskDto>>> GetTasksFilteredAsync(ProjectTaskStatus? status = null, Priority? priority = null, bool? isOverdue = null);
+	Task<ApiResult<TaskDto>> GetTaskByIdAsync(Guid id);
 	Task<ApiResult<TaskDto>> CreateTaskAsync(CreateTaskDto dto);
+	Task<ApiResult<TaskDto>> UpdateTaskAsync(Guid id, UpdateTaskDto dto);
+	Task<ApiResult> UpdateTaskStatusAsync(Guid id, ProjectTaskStatus status);
 	Task<ApiResult> DeleteTaskAsync(Guid id);
 	
 	// Dashboard

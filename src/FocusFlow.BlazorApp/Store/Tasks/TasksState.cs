@@ -11,7 +11,9 @@ namespace FocusFlow.BlazorApp.Store.Tasks;
 public record TasksState
 {
 	public List<TaskDto> Tasks { get; init; }
+	public TaskDto? SelectedTask { get; init; }
 	public bool IsLoading { get; init; }
+	public bool IsLoadingTask { get; init; }
 	public string? ErrorMessage { get; init; }
 	
 	// Filter properties
@@ -24,11 +26,13 @@ public record TasksState
 		Tasks = new List<TaskDto>();
 	}
 
-	public TasksState(List<TaskDto> tasks, bool isLoading, string? errorMessage, 
+	public TasksState(List<TaskDto> tasks, TaskDto? selectedTask, bool isLoading, bool isLoadingTask, string? errorMessage, 
 		ProjectTaskStatus? statusFilter = null, Priority? priorityFilter = null, bool? isOverdueFilter = null)
 	{
 		Tasks = tasks;
+		SelectedTask = selectedTask;
 		IsLoading = isLoading;
+		IsLoadingTask = isLoadingTask;
 		ErrorMessage = errorMessage;
 		StatusFilter = statusFilter;
 		PriorityFilter = priorityFilter;

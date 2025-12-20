@@ -82,4 +82,83 @@ public class TasksEffects
 		await Task.CompletedTask;
 		dispatcher.Dispatch(new TasksActions.LoadTasks());
 	}
+
+	// Task Detail effects
+	[EffectMethod]
+	public async Task HandleLoadTaskById(TasksActions.LoadTaskById action, IDispatcher dispatcher)
+	{
+		_logger.LogInformation("Loading task by ID: {TaskId}", action.TaskId);
+
+		var result = await _apiService.GetTaskByIdAsync(action.TaskId);
+
+		if (result.Succeeded)
+		{
+			_logger.LogInformation("Successfully loaded task: {TaskId}", action.TaskId);
+			dispatcher.Dispatch(new TasksActions.LoadTaskByIdSuccess(result.Data!));
+		}
+		else
+		{
+			_logger.LogError("Failed to load task {TaskId}: {Error}", action.TaskId, result.Error);
+			dispatcher.Dispatch(new TasksActions.LoadTaskByIdFailure(result.Error ?? "Unknown error"));
+		}
+	}
+
+	[EffectMethod]
+	public async Task HandleUpdateTask(TasksActions.UpdateTask action, IDispatcher dispatcher)
+	{
+		_logger.LogInformation("Updating task: {TaskId}", action.TaskId);
+
+		var updateDto = new Models.UpdateTaskDto(action.Title, action.Description, action.DueDate, action.Priority);
+		var result = await _apiService.UpdateTaskAsync(action.TaskId, updateDto);
+
+		if (result.Succeeded)
+		{
+			_logger.LogInformation("Successfully updated task: {TaskId}", action.TaskId);
+			dispatcher.Dispatch(new TasksActions.UpdateTaskSuccess(result.Data!));
+		}
+		else
+		{
+			_logger.LogError("Failed to update task {TaskId}: {Error}", action.TaskId, result.Error);
+			dispatcher.Dispatch(new TasksActions.UpdateTaskFailure(result.Error ?? "Unknown error"));
+		}
+	}
+
+	[EffectMethod]
+	public async Task HandleUpdateTaskStatus(TasksActions.UpdateTaskStatus action, IDispatcher dispatcher)
+	{
+		_logger.LogInformation("Updating task status: {TaskId} to {Status}", action.TaskId, action.Status);
+
+		var result = await _apiService.UpdateTaskStatusAsync(action.TaskId, action.Status);
+
+		if (result.Succeeded)
+		{
+			_logger.LogInformation("Successfully updated task status: {TaskId}", action.TaskId);
+			// Reload the task to get updated data
+			dispatcher.Dispatch(new TasksActions.LoadTaskById(action.TaskId));
+		}
+		else
+		{
+			_logger.LogError("Failed to update task status {TaskId}: {Error}", action.TaskId, result.Error);
+			dispatcher.Dispatch(new TasksActions.UpdateTaskStatusFailure(result.Error ?? "Unknown error"));
+		}
+	}
+
+	[EffectMethod]
+	public async Task HandleDeleteTask(TasksActions.DeleteTask action, IDispatcher dispatcher)
+	{
+		_logger.LogInformation("Deleting task: {TaskId}", action.TaskId);
+
+		var result = await _apiService.DeleteTaskAsync(action.TaskId);
+
+		if (result.Succeeded)
+		{
+			_logger.LogInformation("Successfully deleted task: {TaskId}", action.TaskId);
+			dispatcher.Dispatch(new TasksActions.DeleteTaskSuccess(action.TaskId));
+		}
+		else
+		{
+			_logger.LogError("Failed to delete task {TaskId}: {Error}", action.TaskId, result.Error);
+			dispatcher.Dispatch(new TasksActions.DeleteTaskFailure(result.Error ?? "Unknown error"));
+		}
+	}
 }

@@ -11,6 +11,8 @@
 @inject IDispatcher Dispatcher
 @inject IState<ProjectsState> ProjectsState
 
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+
 <MudDialog @bind-Visible="Visible">
     <TitleContent>
         <MudText Typo="Typo.h6">Edit Project</MudText>
@@ -19,13 +21,13 @@
         <EditForm Model="@_updateProjectFormModel" OnValidSubmit="HandleValidSubmit">
             <FluentValidationValidator Validator="@_updateProjectFormModelValidator" />
             <MudTextField T="string"
-                @bind-value="_updateProjectFormModel.Name" 
+                @bind-Value="_updateProjectFormModel.Name" 
                 Label="Project Name" 
                 Required="true"
                 For="@(() => _updateProjectFormModel.Name)"
                 Variant="Variant.Outlined" />
             <MudTextField T="string"
-                @bind-value="_updateProjectFormModel.Description" 
+                @bind-Value="_updateProjectFormModel.Description" 
                 Label="Description" 
                 Lines="3"
                 For="@(() => _updateProjectFormModel.Description)"
@@ -60,6 +62,7 @@
     public ProjectDto? Project { get; set; }
 
     private ProjectUpdateFormModel _updateProjectFormModel = new();
+    private bool _wasUpdating = false;
 
     protected override void OnParametersSet()
     {
@@ -71,19 +74,45 @@
                 Name = Project.Name,
                 Description = Project.Description
             };
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        
+        // Check if we were updating and now we're not (success case)
+        if (_wasUpdating && !ProjectsState.Value.IsLoading && string.IsNullOrEmpty(ProjectsState.Value.Error))
+        {
+            _wasUpdating = false;
+            Snackbar.Add("Project updated successfully!", MudBlazor.Severity.Success);
+            CloseDialog();
+        }
+        else if (_wasUpdating && !ProjectsState.Value.IsLoading && !string.IsNullOrEmpty(ProjectsState.Value.Error))
+        {
+            _wasUpdating = false;
+            Snackbar.Add($"Failed to update project: {ProjectsState.Value.Error}", MudBlazor.Severity.Error);
         }
     }
 
     private void HandleValidSubmit()
     {
         if (Project is null) return;
+        _wasUpdating = true;
         Dispatcher.Dispatch(new UpdateProjectAction(Project.Id, _updateProjectFormModel));
     }
 
     private async Task Cancel()
     {
+        await CloseDialog();
+    }
+
+    private async Task CloseDialog()
+    {
         Visible = false;
         await VisibleChanged.InvokeAsync(Visible);
         _updateProjectFormModel = new(); // Reset form model
+        _wasUpdating = false;
     }
 }

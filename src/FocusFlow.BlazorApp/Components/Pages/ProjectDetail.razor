@@ -16,6 +16,7 @@
 @inject IDialogService DialogService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILogger<ProjectDetail> Logger
+@inject NavigationManager Navigation
 
 <PageTitle>Project Detail - FocusFlow</PageTitle>
 
@@ -42,6 +43,16 @@ else if (ProjectDetailState.Value.Project is not null)
 {
     var project = ProjectDetailState.Value.Project;
     <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+        
+        <!-- Back Button -->
+        <MudButton Variant="Variant.Text" 
+                  StartIcon="@Icons.Material.Filled.ArrowBack" 
+                  OnClick="@(() => Navigation.NavigateTo("/projects"))"
+                  Color="Color.Primary"
+                  Class="mb-4">
+            Back to Projects
+        </MudButton>
+        
         <div class="d-flex justify-space-between align-center mb-4">
             <div>
                 <MudText Typo="Typo.h3">@project.Name</MudText>
@@ -69,7 +80,7 @@ else if (ProjectDetailState.Value.Project is not null)
                     <MudList T="TaskDto" Dense="true">
                         @foreach (var task in project.Tasks.OrderBy(t => t.Status).ThenByDescending(t => t.Priority))
                         {
-                            <MudListItem T="TaskDto">
+                            <MudListItem T="TaskDto" Style="cursor: pointer;" @onclick="@(() => NavigateToTaskDetail(task.Id))">
                                 <div class="d-flex align-center" style="width: 100%;">
                                     <div class="flex-grow-1">
                                         <MudText Typo="Typo.body1"><strong>@task.Title</strong></MudText>
@@ -179,4 +190,9 @@ else
         ProjectTaskStatus.Done => Color.Success,
         _ => Color.Default
     };
+
+    private void NavigateToTaskDetail(Guid taskId)
+    {
+        Navigation.NavigateTo($"/tasks/{taskId}");
+    }
 }

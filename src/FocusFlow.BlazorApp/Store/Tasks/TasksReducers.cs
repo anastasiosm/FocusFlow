@@ -79,4 +79,141 @@ public static class TasksReducers
 			IsLoading = false
 		};
 	}
+
+	// Task Detail reducers
+	[ReducerMethod]
+	public static TasksState OnLoadTaskById(TasksState state, TasksActions.LoadTaskById action)
+	{
+		return state with
+		{
+			IsLoadingTask = true,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TasksState OnLoadTaskByIdSuccess(TasksState state, TasksActions.LoadTaskByIdSuccess action)
+	{
+		return state with
+		{
+			SelectedTask = action.Task,
+			IsLoadingTask = false,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TasksState OnLoadTaskByIdFailure(TasksState state, TasksActions.LoadTaskByIdFailure action)
+	{
+		return state with
+		{
+			IsLoadingTask = false,
+			ErrorMessage = action.ErrorMessage
+		};
+	}
+
+	// Update Task reducers
+	[ReducerMethod]
+	public static TasksState OnUpdateTask(TasksState state, TasksActions.UpdateTask action)
+	{
+		return state with
+		{
+			IsLoadingTask = true,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TasksState OnUpdateTaskSuccess(TasksState state, TasksActions.UpdateTaskSuccess action)
+	{
+		var updatedTasks = state.Tasks.Select(t => t.Id == action.Task.Id ? action.Task : t).ToList();
+		
+		return state with
+		{
+			Tasks = updatedTasks,
+			SelectedTask = action.Task,
+			IsLoadingTask = false,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TasksState OnUpdateTaskFailure(TasksState state, TasksActions.UpdateTaskFailure action)
+	{
+		return state with
+		{
+			IsLoadingTask = false,
+			ErrorMessage = action.ErrorMessage
+		};
+	}
+
+	// Update Task Status reducers
+	[ReducerMethod]
+	public static TasksState OnUpdateTaskStatus(TasksState state, TasksActions.UpdateTaskStatus action)
+	{
+		return state with
+		{
+			IsLoadingTask = true,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TasksState OnUpdateTaskStatusSuccess(TasksState state, TasksActions.UpdateTaskStatusSuccess action)
+	{
+		var updatedTasks = state.Tasks.Select(t => t.Id == action.Task.Id ? action.Task : t).ToList();
+		
+		return state with
+		{
+			Tasks = updatedTasks,
+			SelectedTask = action.Task,
+			IsLoadingTask = false,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TasksState OnUpdateTaskStatusFailure(TasksState state, TasksActions.UpdateTaskStatusFailure action)
+	{
+		return state with
+		{
+			IsLoadingTask = false,
+			ErrorMessage = action.ErrorMessage
+		};
+	}
+
+	// Delete Task reducers
+	[ReducerMethod]
+	public static TasksState OnDeleteTask(TasksState state, TasksActions.DeleteTask action)
+	{
+		return state with
+		{
+			IsLoadingTask = true,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TasksState OnDeleteTaskSuccess(TasksState state, TasksActions.DeleteTaskSuccess action)
+	{
+		var updatedTasks = state.Tasks.Where(t => t.Id != action.TaskId).ToList();
+		
+		return state with
+		{
+			Tasks = updatedTasks,
+			SelectedTask = state.SelectedTask?.Id == action.TaskId ? null : state.SelectedTask,
+			IsLoadingTask = false,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TasksState OnDeleteTaskFailure(TasksState state, TasksActions.DeleteTaskFailure action)
+	{
+		return state with
+		{
+			IsLoadingTask = false,
+			ErrorMessage = action.ErrorMessage
+		};
+	}
 }
