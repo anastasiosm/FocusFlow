@@ -8,8 +8,7 @@ A production-ready task management application built with .NET 8, demonstrating 
 
 - [Prerequisites](#-prerequisites)
 - [Quick Start](#-quick-start)
-  - [Option 1: Docker Compose (Recommended)](#option-1-docker-compose-recommended)
-  - [Option 2: Local Development (dotnet run)](#option-2-local-development-dotnet-run)
+  - [Docker Compose (Recommended)](#docker-compose-recommended)
 - [Architecture](#-architecture)
 - [Testing](#-testing)
 - [Technology Stack](#-technology-stack)
@@ -89,50 +88,6 @@ pwsh scripts/setup-dev-certs.ps1
 
 # Then enable HTTPS in docker-compose.yml by uncommenting the HTTPS configuration
 ```
-
----
-
-### Option 2: Local Development (dotnet run)
-
-**For active development with hot reload and debugging:**
-
-```bash
-# 1. Clone and restore dependencies
-git clone https://github.com/anastasiosm/FocusFlow.git
-cd FocusFlow
-dotnet restore
-
-# 2. Start PostgreSQL (via Docker or local install)
-docker run -d \
-  -e POSTGRES_DB=FocusFlowDb \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -p 5432:5432 \
-  postgres:17.2
-
-# 3. Apply database migrations
-cd src/FocusFlow.Infrastructure
-dotnet ef database update --startup-project ../FocusFlow.WebApi
-cd ../..
-
-# 4. Run the API (terminal 1)
-cd src/FocusFlow.WebApi
-dotnet run
-# API available at: http://localhost:5000
-
-# 5. Run the Blazor UI (terminal 2)
-cd src/FocusFlow.BlazorApp
-# Edit appsettings.Development.json to set ApiBaseUrl to http://localhost:5000
-dotnet run
-# UI available at: http://localhost:5001
-
-# 6. Run tests
-dotnet test
-```
-
-**Configuration:**
-- Update `appsettings.Development.json` in both projects for connection strings
-- User secrets: `dotnet user-secrets set "Jwt:Key" "YourSecretKey"`
 
 ---
 
@@ -231,22 +186,24 @@ FocusFlow has **5 test layers** with ~300 tests covering unit, integration, comp
 # Run ALL tests (except E2E tests, because requires Docker for E2E tests)
 dotnet test FocusFlow.sln --filter "Category!=E2E"
 
-# Run E2E tests with full Docker orchestration
-cd tests/FocusFlow.E2E.Tests
-pwsh ./run-e2e-tests.ps1
+# Run E2E tests with Testcontainers orchestration
+# First, build the Docker images:
+pwsh scripts/build-e2e-images.ps1
 
-# E2E test script options:
-# pwsh ./run-e2e-tests.ps1 -SkipBuild           # Skip Docker image rebuild
-# pwsh ./run-e2e-tests.ps1 -KeepRunning         # Keep containers running after tests
-# pwsh ./run-e2e-tests.ps1 -Filter "TestName"   # Run specific test by name
+# Then run the tests:
+dotnet test tests/FocusFlow.E2E.Tests --filter "Category=E2E"
 
-# The script automatically:
-# - Stops existing containers
-# - Builds Docker images (unless -SkipBuild)
-# - Starts all services (API, Blazor, PostgreSQL)
-# - Waits for health checks (up to 180s)
-# - Runs Playwright tests
-# - Cleans up containers (unless -KeepRunning)
+# Or run a specific test:
+dotnet test tests/FocusFlow.E2E.Tests --filter "UserCanLoginSuccessfully"
+
+# The Testcontainers framework automatically:
+# - Starts fresh PostgreSQL container
+# - Starts API container (focusflow-api:test image)
+# - Starts Blazor container (focusflow-client:test image)
+# - Creates custom Docker network for inter-container communication
+# - Waits for container health checks
+# - Runs Playwright tests against real containers
+# - Cleans up all containers after tests complete
 
 # Run specific test projects
 dotnet test tests/FocusFlow.Domain.Tests              # Unit tests (Domain entities)
@@ -279,10 +236,17 @@ dotnet test tests/FocusFlow.E2E.Tests                 # E2E tests (Playwright)
 
 ### E2E Test Requirements
 
-E2E tests use **Playwright + Docker Compose** and require:
+E2E tests use **Playwright + Testcontainers** and require:
 1. **Docker Desktop** running
 2. **Playwright browsers** installed: `pwsh tests/FocusFlow.E2E.Tests/playwright.ps1 install`
 3. **PowerShell** 7+ (for `run-e2e-tests.ps1` script)
+
+**E2E Test Architecture:**
+- **Testcontainers** orchestrates 3 Docker containers: PostgreSQL + API + Blazor
+- **Custom Docker network** enables inter-container communication
+- **Shared DataProtection keys** volume for API ↔ Blazor authentication
+- **Fresh database** per test suite (no data pollution)
+- **Playwright** automates browser interactions against real Blazor container
 
 **E2E Test Scenarios:**
 - ✅ User registration & login flow
@@ -290,14 +254,6 @@ E2E tests use **Playwright + Docker Compose** and require:
 - ✅ Create/assign/complete tasks
 - ✅ Dashboard statistics validation
 - ✅ Authorization (non-owner cannot delete projects)
-
-**Troubleshooting E2E Tests:**
-
-If tests timeout or fail to start:
-- Check Docker Desktop is running and has sufficient resources (4GB+ RAM)
-- Verify no port conflicts (5000, 8080, 5432)
-- View logs: `docker-compose logs --tail=100`
-- Run with `-KeepRunning` to manually inspect containers
 
 ---
 
@@ -350,6 +306,7 @@ If tests timeout or fail to start:
 | **Bogus** | Realistic fake data generation (addresses, names, dates) |
 | **bUnit** | Blazor component testing framework |
 | **Microsoft.Playwright** | Browser automation for E2E tests (Chromium/Firefox/WebKit) |
+| **Testcontainers** | Docker container orchestration for integration tests (real PostgreSQL, API, Blazor containers) |
 | **Microsoft.AspNetCore.Mvc.Testing** | In-memory API integration testing |
 | **SonarAnalyzer.CSharp** | Static code analysis rules (runs in IDE / during build) |
 | **SonarScanner.MSBuild** | Scanner used in CI to publish results to SonarQube / SonarCloud and enforce quality gates |
@@ -363,6 +320,7 @@ If tests timeout or fail to start:
 **MudBlazor** - 60+ pre-built components; accessibility support; responsive grid system  
 **bUnit** - Renders Blazor components in-memory; queries like jQuery; tests without browser overhead  
 **Playwright** - Cross-browser; auto-wait for elements; video/screenshot capture on failure  
+**Testcontainers** - Real Docker containers for E2E tests; eliminates test environment inconsistencies; supports PostgreSQL + API + Blazor orchestration  
 **Scalar.AspNetCore** - Modern Swagger alternative; better UX than SwaggerUI; supports OpenAPI 3.1
 
 ---
@@ -499,10 +457,11 @@ FocusFlow/
 │       ├── ProjectManagementFlowTests.cs
 │       ├── TaskManagementFlowTests.cs
 │       ├── DashboardTests.cs
-│       ├── PlaywrightFixture.cs
-│       └── run-e2e-tests.ps1               # E2E test orchestration script
+│       ├── E2ETestEnvironment.cs           # Testcontainers orchestration
+│       └── PlaywrightTestBase.cs           # Browser automation setup
 │
 ├── scripts/
+│   ├── build-e2e-images.ps1                 # Build Docker images for E2E testing
 │   └── setup-dev-certs.ps1                  # HTTPS certificate generation (optional)
 │
 ├── docker-compose.yml                       # Production-like Docker setup
@@ -786,3 +745,31 @@ Component → Dispatch(CreateProjectAction)
 ✅ Tests Blazor components in isolation  
 ✅ Catches UI bugs before E2E tests  
 ⚠️ Cannot test CSS/layout (need E2E for that)
+
+---
+
+### ADR-016: Testcontainers for E2E Test Environment
+**Decision:** Use Testcontainers to orchestrate real Docker containers (PostgreSQL + API + Blazor) for E2E tests  
+**Rationale:**
+- **Real environment** - Tests against actual PostgreSQL, not in-memory SQLite
+- **Container parity** - Same Docker images used in production
+- **Isolation** - Fresh database per test suite
+- **Networking** - Tests inter-container communication (API ↔ DB, Blazor ↔ API)
+- **DataProtection** - Validates shared key scenarios between API and Blazor
+
+**Consequences:**  
+✅ E2E tests catch Docker configuration issues  
+✅ No "works on my machine" - consistent test environment  
+✅ Tests real database migrations and seeding  
+⚠️ Slower than in-memory tests (~2-3 minutes startup)  
+⚠️ Requires Docker Desktop with sufficient resources (4GB+ RAM)
+
+**Implementation:**
+```csharp
+// E2ETestEnvironment orchestrates 3 containers:
+// 1. PostgreSQL (fresh DB per test suite)
+// 2. API container (focusflow-api:test image)  
+// 3. Blazor container (focusflow-client:test image)
+// + Custom Docker network for inter-container communication
+// + Shared DataProtection keys volume
+```

@@ -5,11 +5,18 @@ using System.Text.RegularExpressions;
 namespace FocusFlow.E2E.Tests;
 
 [Trait("Category", "E2E")]
-public class TaskManagementFlowTests : PageTest
+[Trait("Infrastructure", "Testcontainers")]
+public class TaskManagementFlowTests : PageTest, IClassFixture<E2ETestEnvironment>
 {
-    public TaskManagementFlowTests(PlaywrightFixture playwrightFixture) 
+    protected readonly E2ETestEnvironment TestEnvironment;
+
+    // Override BaseUrl to use Testcontainers URL when available
+    protected override string BaseUrl => TestEnvironment?.BlazorBaseUrl ?? "http://localhost:5050";
+
+    public TaskManagementFlowTests(PlaywrightTestBase playwrightFixture, E2ETestEnvironment testEnvironment) 
         : base(playwrightFixture)
     {
+        TestEnvironment = testEnvironment;
     }
 
     [Fact]

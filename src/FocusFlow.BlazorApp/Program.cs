@@ -32,7 +32,7 @@ try
 
 	// Configure Data Protection to persist keys to a shared location
 	builder.Services.AddDataProtection()
-		.PersistKeysToFileSystem(new DirectoryInfo("/dataprotection-keys"))
+		.PersistKeysToFileSystem(new DirectoryInfo("/tmp/dataprotection-keys"))
 		.SetApplicationName("FocusFlow")
 		.SetDefaultKeyLifetime(TimeSpan.FromDays(90)); // Keys expire after 90 days
 

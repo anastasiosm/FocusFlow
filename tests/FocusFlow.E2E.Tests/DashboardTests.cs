@@ -6,7 +6,7 @@ namespace FocusFlow.E2E.Tests;
 [Trait("Category", "E2E")]
 public class DashboardTests : PageTest
 {
-    public DashboardTests(PlaywrightFixture playwrightFixture) 
+    public DashboardTests(PlaywrightTestBase playwrightFixture) 
         : base(playwrightFixture)
     {
     }    

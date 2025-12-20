@@ -6,6 +6,7 @@ using FocusFlow.WebApi.Authorization.TaskOwnership;
 using FocusFlow.WebApi.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -22,6 +23,12 @@ public static class StartupExtensions
 	{
 		builder.Services.AddApplicationServices();
 		builder.Services.AddInfrastructure(builder.Configuration);
+		
+		// Configure Data Protection to use shared keys with Blazor app
+		builder.Services.AddDataProtection()
+			.PersistKeysToFileSystem(new DirectoryInfo("/tmp/dataprotection-keys"))
+			.SetApplicationName("FocusFlow")
+			.SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 		
 		// Configure Identity specifics for WebAPI (SignInManager)
 		builder.Services.AddIdentityCore<ApplicationUser>()

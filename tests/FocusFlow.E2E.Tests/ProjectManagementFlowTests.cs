@@ -5,14 +5,20 @@ using System.Text.RegularExpressions;
 namespace FocusFlow.E2E.Tests;
 
 [Trait("Category", "E2E")]
-public class ProjectManagementFlowTests : PageTest, IAsyncLifetime
+[Trait("Infrastructure", "Testcontainers")]
+public class ProjectManagementFlowTests : PageTest, IClassFixture<E2ETestEnvironment>, IAsyncLifetime
 {
+	protected readonly E2ETestEnvironment TestEnvironment;
 	private string _testProjectId = string.Empty;
 	private readonly string _uniqueProjectName = $"E2E-Test-{Guid.NewGuid().ToString()[..8]}";
 
-	public ProjectManagementFlowTests(PlaywrightFixture playwrightFixture)
+	// Override BaseUrl to use Testcontainers URL when available
+	protected override string BaseUrl => TestEnvironment?.BlazorBaseUrl ?? "http://localhost:5050";
+
+	public ProjectManagementFlowTests(PlaywrightTestBase playwrightFixture, E2ETestEnvironment testEnvironment)
 		: base(playwrightFixture)
 	{
+		TestEnvironment = testEnvironment;
 	}
 
 	// ✅ Setup - Δημιουργεί test data πριν από κάθε test
