@@ -18,7 +18,7 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
 			.When(x => x.Description != null);
 
 		RuleFor(x => x.DueDate)
-			.GreaterThan(DateTime.UtcNow.AddDays(-1)).WithMessage("Due date cannot be in the past")
+			.GreaterThanOrEqualTo(DateTime.UtcNow.Date).WithMessage("Due date cannot be in the past")
 			.When(x => x.DueDate.HasValue);
 	}
 }
