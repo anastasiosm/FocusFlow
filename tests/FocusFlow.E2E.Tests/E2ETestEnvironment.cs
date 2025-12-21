@@ -55,6 +55,9 @@ public class E2ETestEnvironment : IAsyncLifetime
 
 	public async Task InitializeAsync()
 	{
+		// Disable Ryuk to prevent NullReferenceException in some environments
+		Environment.SetEnvironmentVariable("TESTCONTAINERS_RYUK_DISABLED", "true");
+
 		Console.WriteLine("🚀 Starting Testcontainers environment...");
 
 		// Create a custom network for container communication
@@ -110,8 +113,8 @@ public class E2ETestEnvironment : IAsyncLifetime
 				["JwtSettings__ExpiryMinutes"] = "60",
 				["ASPNETCORE_ENVIRONMENT"] = "Development",
 				// Test user for E2E tests
-				["TEST_USER_EMAIL"] = "test@example.com",
-				["TEST_USER_PASSWORD"] = "Password123!"
+				["TestUser__Email"] = "test@example.com",
+				["TestUser__Password"] = "Password123!"
 			})
 			.WithWaitStrategy(
 				Wait.ForUnixContainer()
@@ -122,9 +125,8 @@ public class E2ETestEnvironment : IAsyncLifetime
 		await _apiContainer.StartAsync();
 		Console.WriteLine($"✅ API started: {ApiBaseUrl}");
 
-		// Get the API URL for the client to connect to
-		var apiHostPort = _apiContainer.GetMappedPublicPort(8080);
-		var ApiUrl = $"http://localhost:{apiHostPort}";
+		// Get the API URL for the client to connect to (using internal network alias)
+		var ApiUrl = "http://api:8080";
 
 		// Blazor Client container
 		// * Real Blazor Server app
@@ -137,7 +139,7 @@ public class E2ETestEnvironment : IAsyncLifetime
 			.WithBindMount(tempKeysDir, "/tmp/dataprotection-keys")  // ← Mount same shared directory
 			.WithEnvironment(new Dictionary<string, string>
 			{
-				["API_BASE_URL"] = ApiUrl,
+				["ApiBaseUrl"] = ApiUrl,
 				["ASPNETCORE_ENVIRONMENT"] = "Development"
 			})
 			.WithCleanUp(true) // ← IMPORTANT: Enable cleanup
