@@ -1,4 +1,4 @@
-﻿using FocusFlow.Domain.Enums;
+using FocusFlow.Domain.Enums;
 using FocusFlow.Domain.Exceptions;
 
 namespace FocusFlow.Domain.Entities;

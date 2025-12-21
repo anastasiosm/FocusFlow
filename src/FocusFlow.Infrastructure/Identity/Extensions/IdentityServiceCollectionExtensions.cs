@@ -1,4 +1,4 @@
-﻿using FocusFlow.Infrastructure.Data;
+using FocusFlow.Infrastructure.Data;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FocusFlow.Infrastructure.Identity.Extensions;

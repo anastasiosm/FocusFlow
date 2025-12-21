@@ -1,4 +1,4 @@
-﻿using FocusFlow.Infrastructure.Data;
+using FocusFlow.Infrastructure.Data;
 using FocusFlow.Infrastructure.Data.Extensions;
 using FocusFlow.WebApi;
 using Serilog;

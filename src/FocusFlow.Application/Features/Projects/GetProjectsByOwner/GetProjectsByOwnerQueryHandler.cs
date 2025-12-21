@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FocusFlow.Application.Features.Projects.Common;
 using FocusFlow.Application.Interfaces;
 using MediatR;

@@ -1,5 +1,7 @@
 @using FocusFlow.Application.Features.Tasks.Common
 @using FocusFlow.Domain.Enums
+@using FocusFlow.BlazorApp.Models
+@using FocusFlow.BlazorApp.Validators
 @using FluentValidation
 
 <MudDialog>
@@ -63,7 +65,7 @@
 
     private MudForm? form;
     private TaskEditModel editModel = new();
-    private TaskEditModelValidator validator = new();
+    private readonly TaskEditModelValidator validator = new();
     private bool isFormValid = false;
 
     protected override void OnInitialized()

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FocusFlow.Domain.Entities;
 
 namespace FocusFlow.Application.Features.Tasks.Common;

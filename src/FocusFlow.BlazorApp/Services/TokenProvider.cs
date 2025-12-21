@@ -1,4 +1,4 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 

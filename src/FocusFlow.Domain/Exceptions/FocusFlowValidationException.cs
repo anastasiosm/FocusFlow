@@ -1,4 +1,4 @@
-﻿namespace FocusFlow.Domain.Exceptions;
+namespace FocusFlow.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when entity validation fails (invalid input data)

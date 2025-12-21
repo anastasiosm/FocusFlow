@@ -1,4 +1,4 @@
-﻿using FocusFlow.Application;
+using FocusFlow.Application;
 using FocusFlow.Infrastructure;
 using FocusFlow.Infrastructure.Identity;
 using FocusFlow.WebApi.Authorization.ProjectOwnership;

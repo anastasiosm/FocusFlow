@@ -1,4 +1,4 @@
-﻿namespace FocusFlow.Application.Features.Projects.CreateProject;
+namespace FocusFlow.Application.Features.Projects.CreateProject;
 
 /// <summary>
 /// Create project request DTO

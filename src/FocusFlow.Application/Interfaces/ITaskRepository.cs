@@ -1,4 +1,4 @@
-﻿using FocusFlow.Domain.Entities;
+using FocusFlow.Domain.Entities;
 using FocusFlow.Domain.Enums;
 
 namespace FocusFlow.Application.Interfaces;

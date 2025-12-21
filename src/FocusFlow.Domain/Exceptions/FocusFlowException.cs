@@ -1,4 +1,4 @@
-﻿namespace FocusFlow.Domain.Exceptions;
+namespace FocusFlow.Domain.Exceptions;
 
 /// <summary>
 /// Base exception for all FocusFlow domain-specific errors

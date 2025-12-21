@@ -1,4 +1,4 @@
-﻿namespace FocusFlow.Application.Interfaces;
+namespace FocusFlow.Application.Interfaces;
 
 /// <summary>
 /// Unit of Work pattern for transaction management

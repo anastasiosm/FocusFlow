@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using FluentValidation;
 using FocusFlow.Application.Common.Behaviours;
 using MediatR;

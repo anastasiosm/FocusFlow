@@ -1,4 +1,4 @@
-﻿using Fluxor;
+using Fluxor;
 using FocusFlow.BlazorApp.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 

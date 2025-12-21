@@ -1,4 +1,4 @@
-﻿using FocusFlow.Application.Features.Projects.Common;
+using FocusFlow.Application.Features.Projects.Common;
 using MediatR;
 
 namespace FocusFlow.Application.Features.Projects.GetProjectsByOwner;

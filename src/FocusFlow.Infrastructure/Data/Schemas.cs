@@ -1,4 +1,4 @@
-﻿namespace FocusFlow.Infrastructure.Data;
+namespace FocusFlow.Infrastructure.Data;
 
 public static class Schemas
 {

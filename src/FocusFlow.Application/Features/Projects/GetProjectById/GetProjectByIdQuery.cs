@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 
 namespace FocusFlow.Application.Features.Projects.GetProjectById;
 

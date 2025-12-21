@@ -1,4 +1,4 @@
-﻿using FocusFlow.Application.Features.Tasks.Common;
+using FocusFlow.Application.Features.Tasks.Common;
 
 namespace FocusFlow.Application.Features.Projects.GetProjectById;
 

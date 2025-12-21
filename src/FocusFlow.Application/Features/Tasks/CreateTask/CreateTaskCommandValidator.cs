@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 
 namespace FocusFlow.Application.Features.Tasks.CreateTask;
 

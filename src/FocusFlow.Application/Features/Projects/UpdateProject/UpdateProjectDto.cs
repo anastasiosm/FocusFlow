@@ -1,4 +1,4 @@
-﻿namespace FocusFlow.Application.Features.Projects.UpdateProject;
+namespace FocusFlow.Application.Features.Projects.UpdateProject;
 
 /// <summary>
 /// Update project request DTO

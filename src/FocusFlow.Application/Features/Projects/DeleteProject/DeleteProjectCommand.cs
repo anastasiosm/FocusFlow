@@ -1,4 +1,4 @@
-﻿using FocusFlow.Application.Interfaces;
+using FocusFlow.Application.Interfaces;
 using MediatR;
 
 namespace FocusFlow.Application.Features.Projects.DeleteProject;

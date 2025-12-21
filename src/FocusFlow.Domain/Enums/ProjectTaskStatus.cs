@@ -1,4 +1,4 @@
-﻿namespace FocusFlow.Domain.Enums;
+namespace FocusFlow.Domain.Enums;
 
 /// <summary>
 /// Represents the status of a task
