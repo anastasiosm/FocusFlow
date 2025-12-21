@@ -17,7 +17,7 @@ using System.Text;
 Log.Logger = new LoggerConfiguration()
 	.WriteTo.Console()
 	.WriteTo.BrowserConsole()
-	.WriteTo.Seq("http://focusflow-seq:5341")
+	// .WriteTo.Seq("http://focusflow-seq:5341")
 	.CreateBootstrapLogger();
 
 Log.Information("FocusFlow.BlazorApp starting up...");

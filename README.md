@@ -54,7 +54,7 @@ docker-compose up --build
 # - API:        http://localhost:8080
 # - Swagger:    http://localhost:8080/swagger
 # - Scalar API: http://localhost:8080/scalar/v1
-# - Seq Logs:   http://localhost:8082
+# - Seq Logs:   http://localhost:8082 (DISABLED - commented out to save resources)
 # - OpenAPI JSON document: http://localhost:8080/openapi/v1.json
 (The API exposes an OpenAPI JSON document useful for tooling and client generation)
 
@@ -279,7 +279,7 @@ E2E tests use **Playwright + Testcontainers** and require:
 | **Serilog.AspNetCore** | (see project) | Structured logging integration for ASP.NET Core and centralized logging pipelines |
 | **Serilog.Enrichers.Environment** | (see project) | Adds environment metadata to Serilog events (machine, environment) |
 | **Serilog.Enrichers.Thread** | (see project) | Adds thread id/name information to Serilog events |
-| **Serilog.Sinks.Seq** | (see project) | Sends structured logs to Seq for centralized aggregation and analysis |
+<!-- | **Serilog.Sinks.Seq** | (see project) | Sends structured logs to Seq for centralized aggregation and analysis | -->
 
 ### Frontend Libraries
 
