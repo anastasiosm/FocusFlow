@@ -43,11 +43,28 @@ A production-ready task management application built with .NET 8, demonstrating 
 git clone https://github.com/anastasiosm/FocusFlow.git
 cd FocusFlow
 
-# 2. Create environment file (optional - defaults work fine)
+# 2. Set up environment file
+# Option A: Use the setup script (recommended - provides helpful info)
+pwsh scripts/setup-env.ps1
+# This script:
+# - Copies .env.example to .env (with overwrite protection)
+# - Shows current configuration (database, URLs)
+# - Provides next steps and pro tips
+# - Explains security considerations
+
+# Option B: Manual setup (quick & silent)
 cp .env.example .env
+# Then edit .env if you need custom values
 
 # 3. Build and start all services
+# Option A: First time / debugging (shows logs in terminal)
 docker-compose up --build
+
+# Option B: Background mode (recommended for daily use)
+docker-compose up -d --build
+
+# Option C: View logs after starting in background
+docker-compose logs -f
 
 # 4. Access the application
 # - Blazor UI:  http://localhost:5050

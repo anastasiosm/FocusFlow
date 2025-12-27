@@ -9,12 +9,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - "ConnectionStrings:DefaultConnection=Host=postgres-db;Port=5432;Database=FocusFlowDb;Username=postgres;Password=postgres"
-      - "JwtSettings__SecretKey=YourSuperSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm"
-      - "JwtSettings__Issuer=FocusFlowApi"
-      - "JwtSettings__Audience=FocusFlowClient"
-      - TEST_USER_EMAIL=test@example.com
-      - TEST_USER_PASSWORD=Password123!
+      - "ConnectionStrings:DefaultConnection=${CONNECTION_STRING}"
+      - "JwtSettings__SecretKey=${JWT_KEY}"
+      - "JwtSettings__Issuer=${JWT_ISSUER}"
+      - "JwtSettings__Audience=${JWT_AUDIENCE}"
+      - TEST_USER_EMAIL=${TEST_USER_EMAIL}
+      - TEST_USER_PASSWORD=${TEST_USER_PASSWORD}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -34,11 +34,11 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
       - ApiBaseUrl=http://focusflow-api:8080
-      - "JwtSettings__SecretKey=YourSuperSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm"
-      - "JwtSettings__Issuer=FocusFlowApi"
-      - "JwtSettings__Audience=FocusFlowClient"
+      - "JwtSettings__SecretKey=${JWT_KEY}"
+      - "JwtSettings__Issuer=${JWT_ISSUER}"
+      - "JwtSettings__Audience=${JWT_AUDIENCE}"
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD:-MyPfxPassword123!}
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
     depends_on:
       - focusflow-api
     tmpfs:
@@ -50,9 +50,9 @@ services:
   postgres-db:
     image: postgres:17.2
     environment:
-      POSTGRES_DB: FocusFlowDb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     # ports removed for production/security
     volumes:
       - focusflow-db-data:/var/lib/postgresql/data

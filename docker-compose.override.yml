@@ -22,12 +22,14 @@ services:
 
   postgres-db:
     # Development override: add pgAdmin for easier database management
-    # ports:
-    #   - "5432:5432" # Expose only in development for host tools and EF commands
+    # Uncomment the ports section below if you need external database access (DBeaver, pgAdmin, etc.)
+    # Note: This may cause port conflicts if you have PostgreSQL running locally
+    ports:
+      - "5432:5432" # Expose only in development for host tools and EF commands
     environment:
-      POSTGRES_DB: FocusFlowDb_Dev
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
 # Optional: Add pgAdmin for development
   # pgadmin:
