@@ -18,7 +18,7 @@ public class GetProjectsByOwnerQueryHandler : IRequestHandler<GetProjectsByOwner
 
 	public async Task<List<ProjectDto>> Handle(GetProjectsByOwnerQuery request, CancellationToken cancellationToken)
 	{
-		var projects = await _projectRepository.GetByOwnerIdAsync(request.OwnerId, cancellationToken);
+		var projects = await _projectRepository.GetByOwnerIdWithTasksAsync(request.OwnerId, cancellationToken);
 		return _mapper.Map<List<ProjectDto>>(projects);
 	}
 }
