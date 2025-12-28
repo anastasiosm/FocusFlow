@@ -1,0 +1,289 @@
+@page "/tasks/{TaskId:guid}"
+@attribute [Authorize]
+
+@using Fluxor
+@using FocusFlow.BlazorApp.Features.Tasks.Detail.Store
+@using FocusFlow.BlazorApp.Features.Tasks.Shared.Models
+@using FocusFlow.BlazorApp.Features.Tasks.Edit.Components
+@using FocusFlow.BlazorApp.Features.Tasks.Edit.Models
+@using FocusFlow.Domain.Enums
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IDispatcher Dispatcher
+@inject IState<TaskDetailState> TaskDetailState
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Task Details - FocusFlow</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+            
+            <!-- Header with Back Button -->
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                <MudButton Variant="Variant.Text" 
+                          StartIcon="@Icons.Material.Filled.ArrowBack" 
+                          OnClick="@(() => Navigation.NavigateTo("/tasks"))"
+                          Color="Color.Primary">
+                    Back to Tasks
+                </MudButton>
+                
+                @if (TaskDetailState.Value.Task != null)
+                {
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  StartIcon="@Icons.Material.Filled.Edit"
+                                  OnClick="OpenEditDialog">
+                            Edit Task
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" 
+                                  Color="Color.Error" 
+                                  StartIcon="@Icons.Material.Filled.Delete"
+                                  OnClick="DeleteTask">
+                            Delete
+                        </MudButton>
+                    </MudStack>
+                }
+            </MudStack>
+
+            @if (TaskDetailState.Value.IsLoading)
+            {
+                <!-- Loading Skeleton -->
+                <MudCard Elevation="2" Class="pa-4">
+                    <MudCardContent>
+                        <MudSkeleton Width="60%" Height="2rem" Animation="Animation.Wave" Class="mb-3" />
+                        <MudSkeleton Width="100%" Height="1rem" Animation="Animation.Wave" Class="mb-2" />
+                        <MudSkeleton Width="100%" Height="1rem" Animation="Animation.Wave" Class="mb-2" />
+                        <MudSkeleton Width="80%" Height="1rem" Animation="Animation.Wave" Class="mb-4" />
+                        
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudSkeleton Width="40%" Height="1rem" Animation="Animation.Wave" Class="mb-1" />
+                                <MudSkeleton Width="60%" Height="1.5rem" Animation="Animation.Wave" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudSkeleton Width="40%" Height="1rem" Animation="Animation.Wave" Class="mb-1" />
+                                <MudSkeleton Width="60%" Height="1.5rem" Animation="Animation.Wave" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            }
+            else if (!string.IsNullOrEmpty(TaskDetailState.Value.ErrorMessage))
+            {
+                <MudAlert Severity="MudBlazor.Severity.Error" Class="mb-4">
+                    @TaskDetailState.Value.ErrorMessage
+                </MudAlert>
+            }
+            else if (TaskDetailState.Value.Task == null)
+            {
+                <MudAlert Severity="MudBlazor.Severity.Warning">
+                    Task not found.
+                </MudAlert>
+            }
+            else
+            {
+                var task = TaskDetailState.Value.Task;
+                
+                <!-- Task Details Card -->
+                <MudCard Elevation="2" Class="mb-4">
+                    <MudCardContent Class="pa-6">
+                        
+                        <!-- Title and Status -->
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Class="mb-4">
+                            <div>
+                                <MudText Typo="Typo.h4" Class="mb-2">@task.Title</MudText>
+                                @if (!string.IsNullOrEmpty(task.Description))
+                                {
+                                    <MudText Typo="Typo.body1" Class="text-muted">@task.Description</MudText>
+                                }
+                            </div>
+                            
+                            <MudSelect T="ProjectTaskStatus" 
+                                      Value="@task.Status" 
+                                      ValueChanged="@OnStatusChanged"
+                                      Label="Status"
+                                      Variant="Variant.Outlined"
+                                      Style="min-width: 150px;">
+                                <MudSelectItem T="ProjectTaskStatus" Value="@ProjectTaskStatus.Todo">To Do</MudSelectItem>
+                                <MudSelectItem T="ProjectTaskStatus" Value="@ProjectTaskStatus.InProgress">In Progress</MudSelectItem>
+                                <MudSelectItem T="ProjectTaskStatus" Value="@ProjectTaskStatus.Done">Done</MudSelectItem>
+                            </MudSelect>
+                        </MudStack>
+
+                        <!-- Task Properties Grid -->
+                        <MudGrid>
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-1">Priority</MudText>
+                                <MudChip T="string" Size="Size.Medium" Color="@GetPriorityColor(task.Priority)">
+                                    @task.Priority Priority
+                                </MudChip>
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-1">Due Date</MudText>
+                                @if (task.DueDate.HasValue)
+                                {
+                                    var isOverdue = task.DueDate.Value < DateTime.UtcNow && task.Status != ProjectTaskStatus.Done;
+                                    <MudChip T="string" 
+                                            Size="Size.Medium" 
+                                            Color="@(isOverdue ? Color.Error : Color.Default)"
+                                            Icon="@Icons.Material.Filled.CalendarMonth">
+                                        @task.DueDate.Value.ToString("MMM dd, yyyy")
+                                        @if (isOverdue)
+                                        {
+                                            <text> (Overdue)</text>
+                                        }
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Class="text-muted">No due date</MudText>
+                                }
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-1">Created</MudText>
+                                <MudText Typo="Typo.body2">@task.CreatedAt.ToString("MMM dd, yyyy")</MudText>
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-1">Last Updated</MudText>
+                                <MudText Typo="Typo.body2">@task.UpdatedAt.ToString("MMM dd, yyyy")</MudText>
+                            </MudItem>
+
+                            @if (task.CompletedAt.HasValue)
+                            {
+                                <MudItem xs="12" sm="6" md="3">
+                                    <MudText Typo="Typo.subtitle2" Class="mb-1">Completed</MudText>
+                                    <MudText Typo="Typo.body2">@task.CompletedAt.Value.ToString("MMM dd, yyyy")</MudText>
+                                </MudItem>
+                            }
+
+                            @if (!string.IsNullOrEmpty(task.AssignedUserId))
+                            {
+                                <MudItem xs="12" sm="6" md="3">
+                                    <MudText Typo="Typo.subtitle2" Class="mb-1">Assigned User</MudText>
+                                    <MudText Typo="Typo.body2">@task.AssignedUserId</MudText>
+                                </MudItem>
+                            }
+                        </MudGrid>
+
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Project Link -->
+                <MudCard Elevation="1" Class="pa-4" Style="cursor: pointer;" @onclick="@(() => Navigation.NavigateTo($"/projects/{task.ProjectId}"))">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" />
+                        <MudText Typo="Typo.body1">View Project</MudText>
+                        <MudSpacer />
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
+                    </MudStack>
+                </MudCard>
+            }
+
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="MudBlazor.Severity.Warning">Please login to view task details.</MudAlert>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter] public Guid TaskId { get; set; }
+    
+    private bool _hasDispatched = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (_hasDispatched) return;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            _hasDispatched = true;
+            Dispatcher.Dispatch(new TaskDetailActions.LoadTaskByIdAction(TaskId));
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_hasDispatched && TaskDetailState.Value.Task?.Id != TaskId)
+        {
+            Dispatcher.Dispatch(new TaskDetailActions.LoadTaskByIdAction(TaskId));
+        }
+    }
+
+    private void OnStatusChanged(ProjectTaskStatus newStatus)
+    {
+        if (TaskDetailState.Value.Task?.Status != newStatus)
+        {
+            // TODO: Implement status update action
+            // Dispatcher.Dispatch(new TaskDetailActions.UpdateTaskStatusAction(TaskId, newStatus));
+        }
+    }
+
+    private async Task OpenEditDialog()
+    {
+        if (TaskDetailState.Value.Task == null) return;
+
+        var task = TaskDetailState.Value.Task;
+        var parameters = new DialogParameters<TaskEditDialog>
+        {
+            { x => x.Task, task }
+        };
+
+        var dialog = await DialogService.ShowAsync<TaskEditDialog>("Edit Task", parameters, new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        });
+
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is TaskEditResult editResult)
+        {
+            // TODO: Implement update task action
+            // Dispatcher.Dispatch(new TaskDetailActions.UpdateTaskFromResultAction(TaskId, editResult));
+        }
+    }
+
+    private async Task DeleteTask()
+    {
+        if (TaskDetailState.Value.Task == null) return;
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Task",
+            $"Are you sure you want to delete '{TaskDetailState.Value.Task.Title}'? This action cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            // TODO: Implement delete task action
+            // Dispatcher.Dispatch(new TaskDetailActions.DeleteTaskAction(TaskId));
+            Snackbar.Add("Task deleted successfully", MudBlazor.Severity.Success);
+            Navigation.NavigateTo("/tasks");
+        }
+    }
+
+    private Color GetPriorityColor(Priority priority)
+    {
+        return priority switch
+        {
+            Priority.Low => Color.Success,
+            Priority.Medium => Color.Warning,
+            Priority.High => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

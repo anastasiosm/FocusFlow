@@ -1,10 +1,12 @@
 @page "/projects/{Id:guid}"
 @attribute [Authorize]
 
-@using FocusFlow.BlazorApp.Components.Tasks
+@using FocusFlow.BlazorApp.Features.Tasks.List.Components
 @using FocusFlow.BlazorApp.Features.Projects.Detail.Models
 @using FocusFlow.BlazorApp.Models
-@using FocusFlow.BlazorApp.Models.Dtos
+@using FocusFlow.BlazorApp.Features.Tasks.Shared.Models
+@using FocusFlow.BlazorApp.Features.Tasks.Create.Components
+@using FocusFlow.BlazorApp.Features.Tasks.Create.Models
 @using FocusFlow.BlazorApp.Features.Projects.Detail.Store
 @using FocusFlow.Domain.Enums
 @using Fluxor
@@ -12,6 +14,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using MudBlazor
 @using MudBlazor.Services
+@using Microsoft.AspNetCore.Components
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IDispatcher Dispatcher
 @inject IState<ProjectDetailState> ProjectDetailState
@@ -99,10 +102,10 @@ else if (ProjectDetailState.Value.Project is not null)
                 }
                 else
                 {
-                    <MudList T="TaskDto" Dense="true">
+                    <MudList T="TaskResponse" Dense="true">
                         @foreach (var task in project.Tasks.OrderBy(t => t.Status).ThenByDescending(t => t.Priority))
                         {
-                            <MudListItem T="TaskDto" Style="cursor: pointer;" @onclick="@(() => NavigateToTaskDetail(task.Id))">
+                            <MudListItem T="TaskResponse" Style="cursor: pointer;" @onclick="@(() => NavigateToTaskDetail(task.Id))">
                                 <div class="d-flex align-center" style="width: 100%;">
                                     <div class="flex-grow-1">
                                         <MudText Typo="Typo.body1"><strong>@task.Title</strong></MudText>

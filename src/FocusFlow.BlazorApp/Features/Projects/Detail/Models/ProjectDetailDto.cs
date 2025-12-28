@@ -1,4 +1,4 @@
-using FocusFlow.BlazorApp.Models.Dtos;
+using FocusFlow.BlazorApp.Features.Tasks.Shared.Models;
 
 namespace FocusFlow.BlazorApp.Features.Projects.Detail.Models;
 
@@ -12,4 +12,4 @@ public record ProjectDetailDto(
     string OwnerId,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    List<TaskDto> Tasks);
+    List<TaskResponse> Tasks);

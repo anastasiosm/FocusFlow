@@ -1,6 +1,6 @@
 using Fluxor;
+using FocusFlow.BlazorApp.Features.Tasks.Create.Extensions;
 using FocusFlow.BlazorApp.Services;
-using FocusFlow.BlazorApp.Shared.Extensions;
 
 namespace FocusFlow.BlazorApp.Features.Projects.Detail.Store;
 
@@ -21,10 +21,10 @@ public class CreateTaskEffect : Effect<CreateTaskAction>
 
         try
         {
-            // Create DTO from form model with proper validation using extension method
-            var dto = action.FormModel.ToCreateDto(action.ProjectId);
+            // Create Request from form model with proper validation using extension method
+            var request = action.FormModel.ToCreateRequest(action.ProjectId);
 
-            var result = await _apiService.CreateTaskAsync(dto);
+            var result = await _apiService.CreateTaskAsync(request);
 
             if (result.Succeeded)
             {

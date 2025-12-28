@@ -26,6 +26,10 @@
     <ProjectReference Include="..\FocusFlow.Domain\FocusFlow.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Tasks\UpdateStatus\Store\" />
+  </ItemGroup>
+
   <!-- Add this to ensure static assets are copied -->
   <PropertyGroup>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

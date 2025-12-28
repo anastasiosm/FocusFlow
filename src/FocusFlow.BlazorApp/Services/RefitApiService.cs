@@ -8,9 +8,14 @@ using FocusFlow.BlazorApp.Features.Projects.Create.Models;
 using FocusFlow.BlazorApp.Features.Projects.Edit.Models;
 using FocusFlow.BlazorApp.Features.Projects.Shared.Models;
 using FocusFlow.BlazorApp.Features.Projects.Shared.Services;
+using FocusFlow.BlazorApp.Features.Tasks.Shared.Models;
 using FocusFlow.BlazorApp.Services.Api;
 using FocusFlow.Domain.Enums;
 using Refit;
+using FocusFlow.BlazorApp.Features.Tasks.Shared.Services;
+using FocusFlow.BlazorApp.Features.Tasks.Create.Models;
+using FocusFlow.BlazorApp.Features.Tasks.UpdateStatus.Models;
+using FocusFlow.BlazorApp.Features.Dashboard.Shared.Services;
 
 namespace FocusFlow.BlazorApp.Services;
 
@@ -179,47 +184,47 @@ public class RefitApiService : IApiService
     }
 
     // Tasks
-    public async Task<ApiResult<List<TaskDto>>> GetTasksAsync(Guid projectId)
+    public async Task<ApiResult<List<TaskResponse>>> GetTasksAsync(Guid projectId)
     {
         try
         {
             var result = await _tasksApi.GetTasksAsync(projectId);
-            return ApiResult<List<TaskDto>>.Success(result ?? new List<TaskDto>());
+            return ApiResult<List<TaskResponse>>.Success(result ?? new List<TaskResponse>());
         }
         catch (ApiException apiEx)
         {
             _logger.LogError(apiEx, "API Error fetching tasks for project {ProjectId}. Status: {StatusCode}", projectId, apiEx.StatusCode);
             var error = await GetErrorMessage(apiEx);
-            return ApiResult<List<TaskDto>>.Failure(error);
+            return ApiResult<List<TaskResponse>>.Failure(error);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching tasks for project {ProjectId}", projectId);
-            return ApiResult<List<TaskDto>>.Failure($"An unexpected error occurred while fetching tasks for project {projectId}.");
+            return ApiResult<List<TaskResponse>>.Failure($"An unexpected error occurred while fetching tasks for project {projectId}.");
         }
     }
 
-    public async Task<ApiResult<List<TaskDto>>> GetTasksFilteredAsync(ProjectTaskStatus? status = null, Priority? priority = null, bool? isOverdue = null)
+    public async Task<ApiResult<List<TaskResponse>>> GetTasksFilteredAsync(ProjectTaskStatus? status = null, Priority? priority = null, bool? isOverdue = null)
     {
         try
         {
             var result = await _tasksApi.GetTasksFilteredAsync(status, priority, isOverdue);
-            return ApiResult<List<TaskDto>>.Success(result ?? new List<TaskDto>());
+            return ApiResult<List<TaskResponse>>.Success(result ?? new List<TaskResponse>());
         }
         catch (ApiException apiEx)
         {
             _logger.LogError(apiEx, "API Error fetching filtered tasks. Status: {StatusCode}", apiEx.StatusCode);
             var error = await GetErrorMessage(apiEx);
-            return ApiResult<List<TaskDto>>.Failure(error);
+            return ApiResult<List<TaskResponse>>.Failure(error);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching filtered tasks");
-            return ApiResult<List<TaskDto>>.Failure("An unexpected error occurred while fetching filtered tasks.");
+            return ApiResult<List<TaskResponse>>.Failure("An unexpected error occurred while fetching filtered tasks.");
         }
     }
 
-    public async Task<ApiResult<TaskDto>> CreateTaskAsync(CreateTaskDto dto)
+    public async Task<ApiResult<TaskResponse>> CreateTaskAsync(CreateTaskRequest dto)
     {
         try
         {
@@ -234,42 +239,42 @@ public class RefitApiService : IApiService
             };
             
             var result = await _tasksApi.CreateTaskAsync(request);
-            return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException("Failed to create task"));
+            return ApiResult<TaskResponse>.Success(result ?? throw new InvalidOperationException("Failed to create task"));
         }
         catch (ApiException apiEx)
         {
             _logger.LogError(apiEx, "API Error creating task for project {ProjectId}. Status: {StatusCode}", dto.ProjectId, apiEx.StatusCode);
             var error = await GetErrorMessage(apiEx);
-            return ApiResult<TaskDto>.Failure(error);
+            return ApiResult<TaskResponse>.Failure(error);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating task for project {ProjectId}", dto.ProjectId);
-            return ApiResult<TaskDto>.Failure("An unexpected error occurred during task creation.");
+            return ApiResult<TaskResponse>.Failure("An unexpected error occurred during task creation.");
         }
     }
 
-    public async Task<ApiResult<TaskDto>> GetTaskByIdAsync(Guid id)
+    public async Task<ApiResult<TaskResponse>> GetTaskByIdAsync(Guid id)
     {
         try
         {
             var result = await _tasksApi.GetTaskByIdAsync(id);
-            return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException($"Task {id} not found"));
+            return ApiResult<TaskResponse>.Success(result ?? throw new InvalidOperationException($"Task {id} not found"));
         }
         catch (ApiException apiEx)
         {
             _logger.LogError(apiEx, "API Error fetching task {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
             var error = await GetErrorMessage(apiEx);
-            return ApiResult<TaskDto>.Failure(error);
+            return ApiResult<TaskResponse>.Failure(error);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching task {TaskId}", id);
-            return ApiResult<TaskDto>.Failure($"An unexpected error occurred while fetching task {id}.");
+            return ApiResult<TaskResponse>.Failure($"An unexpected error occurred while fetching task {id}.");
         }
     }
 
-    public async Task<ApiResult<TaskDto>> UpdateTaskAsync(Guid id, UpdateTaskDto dto)
+    public async Task<ApiResult<TaskResponse>> UpdateTaskAsync(Guid id, UpdateTaskRequest dto)
     {
         try
         {
@@ -281,18 +286,18 @@ public class RefitApiService : IApiService
                 Priority = dto.Priority
             };
             var result = await _tasksApi.UpdateTaskAsync(id, request);
-            return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException($"Failed to update task {id}"));
+            return ApiResult<TaskResponse>.Success(result ?? throw new InvalidOperationException($"Failed to update task {id}"));
         }
         catch (ApiException apiEx)
         {
             _logger.LogError(apiEx, "API Error updating task {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
             var error = await GetErrorMessage(apiEx);
-            return ApiResult<TaskDto>.Failure(error);
+            return ApiResult<TaskResponse>.Failure(error);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating task {TaskId}", id);
-            return ApiResult<TaskDto>.Failure($"An unexpected error occurred while updating task {id}.");
+            return ApiResult<TaskResponse>.Failure($"An unexpected error occurred while updating task {id}.");
         }
     }
 

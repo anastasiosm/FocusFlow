@@ -1,12 +1,12 @@
 using Bunit;
 using FocusFlow.BlazorApp.Components.Tasks;
-using FocusFlow.BlazorApp.Models;
 using FocusFlow.Domain.Enums;
 using FluentAssertions;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
 using Microsoft.AspNetCore.Components;
+using FocusFlow.BlazorApp.Features.Tasks.Create.Models;
 
 namespace FocusFlow.BlazorApp.Tests.Components.Tasks;
 

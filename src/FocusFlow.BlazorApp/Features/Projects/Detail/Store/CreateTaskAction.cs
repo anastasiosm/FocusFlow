@@ -1,6 +1,6 @@
-using FocusFlow.BlazorApp.Models.Dtos;
-using FocusFlow.BlazorApp.Models;
 using FocusFlow.Domain.Enums;
+using FocusFlow.BlazorApp.Features.Tasks.Create.Models;
+using FocusFlow.BlazorApp.Features.Tasks.Shared.Models;
 
 namespace FocusFlow.BlazorApp.Features.Projects.Detail.Store;
 
@@ -12,7 +12,7 @@ public record CreateTaskAction(Guid ProjectId, CreateTaskFormModel FormModel);
 /// <summary>
 /// Dispatched when task is successfully created
 /// </summary>
-public record CreateTaskSuccessAction(TaskDto Task);
+public record CreateTaskSuccessAction(TaskResponse Task);
 
 /// <summary>
 /// Dispatched when task creation fails (validation or API error)

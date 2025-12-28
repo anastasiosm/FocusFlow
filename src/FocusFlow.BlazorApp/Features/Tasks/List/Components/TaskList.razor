@@ -1,0 +1,27 @@
+@using FocusFlow.BlazorApp.Features.Tasks.Shared.Models
+@using MudBlazor
+
+@if (Tasks is null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (!Tasks.Any())
+{
+    <MudAlert Severity="Severity.Info">
+        No tasks found for this project.
+    </MudAlert>
+}
+else
+{
+    <div>
+        @foreach (var task in Tasks)
+        {
+            <TaskItem Task="task" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<TaskResponse>? Tasks { get; set; }
+}

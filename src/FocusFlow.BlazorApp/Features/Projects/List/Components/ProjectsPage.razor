@@ -14,6 +14,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Authorization
 @using MudBlazor
+@using MudBlazor
 @using MudBlazor.Services
 
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
@@ -138,7 +139,7 @@
             ["Color"] = Color.Error
         };
 
-        var dialog = DialogService.Show<FocusFlow.BlazorApp.Components.Shared.ConfirmationDialog>("Confirm Deletion", parameters);
+        var dialog = DialogService.Show<FocusFlow.BlazorApp.Shared.Components.ConfirmationDialog>("Confirm Deletion", parameters);
         var result = await dialog.Result;
 
         if (result.Data is true)
