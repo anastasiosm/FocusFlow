@@ -21,7 +21,8 @@ public static class TaskEditResultExtensions
                 ? null 
                 : result.Description.Trim(),
             DueDate = result.DueDate,
-            Priority = result.Priority
+            Priority = result.Priority,
+            AssignedUserId = result.AssignedUserId
         };
     }
 }

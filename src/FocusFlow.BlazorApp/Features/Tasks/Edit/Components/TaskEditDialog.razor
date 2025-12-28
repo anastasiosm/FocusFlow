@@ -46,6 +46,14 @@
                         <MudSelectItem T="Priority" Value="@Priority.High">High</MudSelectItem>
                     </MudSelect>
                 </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@editModel.AssignedUserId"
+                                  Label="Assigned User ID"
+                                  For="@(() => editModel.AssignedUserId)"
+                                  Immediate="true"
+                                  ValueChanged="@((string value) => { editModel.AssignedUserId = value; OnFieldChanged(); })" />
+                </MudItem>
             </MudGrid>
         </MudForm>
     </DialogContent>
@@ -77,7 +85,8 @@
             Title = Task.Title,
             Description = Task.Description,
             DueDate = Task.DueDate,
-            Priority = Task.Priority
+            Priority = Task.Priority,
+            AssignedUserId = Task.AssignedUserId
         };
 
         // Initial validation
@@ -114,7 +123,8 @@
                     editModel.Title,
                     editModel.Description,
                     editModel.DueDate,
-                    editModel.Priority
+                    editModel.Priority,
+                    editModel.AssignedUserId
                 );
 
                 MudDialog.Close(DialogResult.Ok(result));

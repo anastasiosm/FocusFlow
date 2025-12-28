@@ -9,5 +9,6 @@ public record TaskEditResult(
 	string Title,
 	string? Description,
 	DateTime? DueDate,
-	Priority Priority
+	Priority Priority,
+	string? AssignedUserId
 );

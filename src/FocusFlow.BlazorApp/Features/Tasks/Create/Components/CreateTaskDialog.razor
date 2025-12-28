@@ -70,6 +70,12 @@
 					<MudSelectItem Value="@(priority)">@priority.ToString()</MudSelectItem>
 				}
 			</MudSelect>
+
+			<MudTextField @bind-Value="_model.AssignedUserId"
+						  For="@(() => _model.AssignedUserId)"
+						  Label="Assigned User ID"
+						  Variant="Variant.Outlined"
+						  Class="mt-3" />
 		</MudForm>
 	</DialogContent>
 

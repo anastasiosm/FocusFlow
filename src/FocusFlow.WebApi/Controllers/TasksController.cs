@@ -94,7 +94,7 @@ public class TasksController : ControllerBase
 		var userId = GetCurrentUserId();
 		_logger.LogInformation("User {UserId} is updating task {TaskId}", userId, id);
 
-		var command = new UpdateTaskCommand(id, request.Title, request.Description, request.DueDate, request.Priority);
+		var command = new UpdateTaskCommand(id, request.Title, request.Description, request.DueDate, request.Priority, request.AssignedUserId);
 		var result = await _mediator.Send(command);
 
 		_logger.LogInformation("User {UserId} successfully updated task {TaskId}", userId, id);
@@ -287,4 +287,5 @@ public class UpdateTaskRequest
 	public string? Description { get; set; }
 	public DateTime? DueDate { get; set; }
 	public Priority Priority { get; set; }
+	public string? AssignedUserId { get; set; }
 }

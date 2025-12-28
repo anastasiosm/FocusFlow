@@ -34,6 +34,16 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
 			request.DueDate,
 			request.Priority);
 
+		// Handle assignment changes
+		if (string.IsNullOrWhiteSpace(request.AssignedUserId))
+		{
+			task.Unassign();
+		}
+		else if (task.AssignedUserId != request.AssignedUserId)
+		{
+			task.Assign(request.AssignedUserId);
+		}
+
 		await _taskRepository.UpdateAsync(task, cancellationToken);
 		await _unitOfWork.SaveChangesAsync(cancellationToken);
 
