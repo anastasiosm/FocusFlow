@@ -1,7 +1,7 @@
 ﻿using FocusFlow.BlazorApp.Models;
 using FocusFlow.BlazorApp.Models.Tasks;
 
-namespace FocusFlow.BlazorApp.Extensions;
+namespace FocusFlow.BlazorApp.Shared.Extensions;
 
 /// <summary>
 /// Extension methods for TaskEditResult conversions

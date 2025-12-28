@@ -1,6 +1,6 @@
 using Fluxor;
 
-namespace FocusFlow.BlazorApp.Store.Dashboard;
+namespace FocusFlow.BlazorApp.Features.Dashboard.Store;
 
 /// <summary>
 /// Reducers for Dashboard state

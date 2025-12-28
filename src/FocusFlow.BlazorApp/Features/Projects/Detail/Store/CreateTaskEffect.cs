@@ -1,6 +1,6 @@
 using Fluxor;
 using FocusFlow.BlazorApp.Services;
-using FocusFlow.BlazorApp.Extensions;
+using FocusFlow.BlazorApp.Shared.Extensions;
 
 namespace FocusFlow.BlazorApp.Features.Projects.Detail.Store;
 

@@ -1,6 +1,6 @@
 using FocusFlow.BlazorApp.Models;
 
-namespace FocusFlow.BlazorApp.Extensions;
+namespace FocusFlow.BlazorApp.Shared.Extensions;
 
 /// <summary>
 /// Extension methods for CreateTaskFormModel conversions

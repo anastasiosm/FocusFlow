@@ -4,6 +4,8 @@ using Fluxor;
 using FocusFlow.BlazorApp.Auth;
 using FocusFlow.BlazorApp.Components;
 using FocusFlow.BlazorApp.Features.Projects;
+using FocusFlow.BlazorApp.Features.Dashboard;
+using FocusFlow.BlazorApp.Features.Home;
 using FocusFlow.BlazorApp.Features.Projects.Shared.Services;
 using FocusFlow.BlazorApp.Features.Auth.Login.Validation;
 using FocusFlow.BlazorApp.Features.Auth.Register.Validation;
@@ -92,6 +94,8 @@ try
 
 	// Register Features
 	builder.Services.AddProjectsFeature();
+	builder.Services.AddDashboardFeature();
+	builder.Services.AddHomeFeature();
 
 	// FluentValidation
 	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();

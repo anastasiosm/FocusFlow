@@ -1,4 +1,4 @@
-namespace FocusFlow.BlazorApp.Models;
+namespace FocusFlow.BlazorApp.Shared.Models;
 
 public record ApiResult(bool Succeeded, string? Error = null)
 {

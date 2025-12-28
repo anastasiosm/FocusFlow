@@ -1,6 +1,6 @@
 using FocusFlow.BlazorApp.Features.Projects.Shared.Models;
 
-namespace FocusFlow.BlazorApp.Store.Dashboard;
+namespace FocusFlow.BlazorApp.Features.Dashboard.Store;
 
 /// <summary>
 /// Actions for Dashboard feature

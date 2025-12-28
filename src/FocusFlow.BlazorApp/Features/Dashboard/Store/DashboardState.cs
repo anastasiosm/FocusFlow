@@ -1,7 +1,7 @@
 using FocusFlow.BlazorApp.Features.Projects.Shared.Models;
 using Fluxor;
 
-namespace FocusFlow.BlazorApp.Store.Dashboard;
+namespace FocusFlow.BlazorApp.Features.Dashboard.Store;
 
 /// <summary>
 /// State for Dashboard feature

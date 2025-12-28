@@ -1,4 +1,4 @@
-using FocusFlow.BlazorApp.Models.Dtos;
+using FocusFlow.BlazorApp.Shared.Models;
 using FocusFlow.BlazorApp.Models;
 using FocusFlow.BlazorApp.Features.Auth.Login.Models;
 using FocusFlow.BlazorApp.Features.Auth.Register.Models;

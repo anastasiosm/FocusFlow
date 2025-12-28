@@ -1,7 +1,7 @@
 using Fluxor;
 using FocusFlow.BlazorApp.Services;
 
-namespace FocusFlow.BlazorApp.Store.Dashboard;
+namespace FocusFlow.BlazorApp.Features.Dashboard.Store;
 
 /// <summary>
 /// Effects for Dashboard feature
