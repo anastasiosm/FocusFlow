@@ -259,8 +259,8 @@
         var result = await dialog.Result;
         if (!result.Canceled && result.Data is TaskEditResult editResult)
         {
-            // TODO: Implement update task action
-            // Dispatcher.Dispatch(new TaskDetailActions.UpdateTaskFromResultAction(TaskId, editResult));
+            Dispatcher.Dispatch(new TaskDetailActions.UpdateTaskAction(TaskId, editResult));
+            Snackbar.Add("Task updated successfully", MudBlazor.Severity.Success);
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿using Fluxor;
 using FocusFlow.BlazorApp.Services;
+using FocusFlow.BlazorApp.Features.Tasks.Edit.Extensions;
 
 namespace FocusFlow.BlazorApp.Features.Tasks.Detail.Store;
 
@@ -51,6 +52,30 @@ public class TaskDetailEffects
 		{
 			_logger.LogError("Failed to update task status: {TaskId}, Error: {Error}", action.TaskId, result.Error);
 			dispatcher.Dispatch(new TaskDetailActions.UpdateTaskStatusFailureAction(result.Error ?? "Unknown error"));
+		}
+	}
+
+	[EffectMethod]
+	public async Task HandleUpdateTask(TaskDetailActions.UpdateTaskAction action, IDispatcher dispatcher)
+	{
+		_logger.LogInformation("Updating task: {TaskId}", action.TaskId);
+
+		// Convert TaskEditResult to UpdateTaskRequest using extension method
+		var request = action.EditResult.ToUpdateRequest();
+		var result = await _apiService.UpdateTaskAsync(action.TaskId, request);
+
+		if (result.Succeeded)
+		{
+			_logger.LogInformation("Successfully updated task: {TaskId}", action.TaskId);
+			// Reload the task to get the updated data
+			dispatcher.Dispatch(new TaskDetailActions.LoadTaskByIdAction(action.TaskId));
+			// Dispatch success action for UI feedback
+			dispatcher.Dispatch(new TaskDetailActions.UpdateTaskSuccessAction());
+		}
+		else
+		{
+			_logger.LogError("Failed to update task: {TaskId}, Error: {Error}", action.TaskId, result.Error);
+			dispatcher.Dispatch(new TaskDetailActions.UpdateTaskFailureAction(result.Error ?? "Unknown error"));
 		}
 	}
 }

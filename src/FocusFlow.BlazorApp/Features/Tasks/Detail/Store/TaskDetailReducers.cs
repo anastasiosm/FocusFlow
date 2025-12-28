@@ -66,4 +66,35 @@ public static class TaskDetailReducers
 			ErrorMessage = action.ErrorMessage
 		};
 	}
+
+	// Update Task (Full Update) reducers
+	[ReducerMethod]
+	public static TaskDetailState OnUpdateTask(TaskDetailState state, TaskDetailActions.UpdateTaskAction action)
+	{
+		return state with
+		{
+			IsLoading = true,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TaskDetailState OnUpdateTaskSuccess(TaskDetailState state, TaskDetailActions.UpdateTaskSuccessAction action)
+	{
+		return state with
+		{
+			IsLoading = false,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TaskDetailState OnUpdateTaskFailure(TaskDetailState state, TaskDetailActions.UpdateTaskFailureAction action)
+	{
+		return state with
+		{
+			IsLoading = false,
+			ErrorMessage = action.ErrorMessage
+		};
+	}
 }

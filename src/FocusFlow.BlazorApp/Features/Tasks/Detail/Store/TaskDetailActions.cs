@@ -1,4 +1,5 @@
 ﻿using FocusFlow.BlazorApp.Features.Tasks.Shared.Models;
+using FocusFlow.BlazorApp.Features.Tasks.Edit.Models;
 using FocusFlow.Domain.Enums;
 
 namespace FocusFlow.BlazorApp.Features.Tasks.Detail.Store;
@@ -38,4 +39,21 @@ public static class TaskDetailActions
 	/// Dispatched when task status update fails
 	/// </summary>
 	public record UpdateTaskStatusFailureAction(string ErrorMessage);
+
+	// ============================================================================
+	// Update Task (Full Update)
+	// ============================================================================
+
+	/// <summary>
+	/// Triggers full task update from edit result
+	/// </summary>
+	public record UpdateTaskAction(Guid TaskId, TaskEditResult EditResult);
+	/// <summary>
+	/// Dispatched when task is successfully updated
+	/// </summary>
+	public record UpdateTaskSuccessAction();
+	/// <summary>
+	/// Dispatched when task update fails
+	/// </summary>
+	public record UpdateTaskFailureAction(string ErrorMessage);
 }
