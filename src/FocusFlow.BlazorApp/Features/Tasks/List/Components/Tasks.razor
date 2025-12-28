@@ -123,13 +123,18 @@
 							<MudCard Elevation="2" Class="pa-3">
 								<MudCardContent>
 									<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-										<div Style="cursor: pointer; flex-grow: 1;" @onclick="@(() => NavigateToTaskDetail(task.Id))">
-											<MudText Typo="Typo.h6">@task.Title</MudText>
-											@if (!string.IsNullOrEmpty(task.Description))
-											{
-												<MudText Typo="Typo.body2" Class="mt-1">@task.Description</MudText>
-											}
-										</div>
+										<MudButton Variant="Variant.Text" 
+												   Color="Color.Inherit"
+												   Style="flex-grow: 1; justify-content: flex-start; text-align: left; padding: 8px;"
+												   OnClick="@(() => NavigateToTaskDetail(task.Id))">
+											<div>
+												<MudText Typo="Typo.h6">@task.Title</MudText>
+												@if (!string.IsNullOrEmpty(task.Description))
+												{
+													<MudText Typo="Typo.body2" Class="mt-1">@task.Description</MudText>
+												}
+											</div>
+										</MudButton>
 										<MudStack Row="false" Spacing="1" AlignItems="AlignItems.End">
 											<MudChip T="string" Size="Size.Small" Color="@GetStatusColor(task.Status)">
 												@GetStatusText(task.Status)
