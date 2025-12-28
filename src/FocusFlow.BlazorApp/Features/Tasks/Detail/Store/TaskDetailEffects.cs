@@ -31,4 +31,26 @@ public class TaskDetailEffects
 			dispatcher.Dispatch(new TaskDetailActions.LoadTaskByIdFailureAction(result.Error ?? "Unknown error"));
 		}
 	}
+
+	[EffectMethod]
+	public async Task HandleUpdateTaskStatus(TaskDetailActions.UpdateTaskStatusAction action, IDispatcher dispatcher)
+	{
+		_logger.LogInformation("Updating task status: {TaskId} to {Status}", action.TaskId, action.Status);
+
+		var result = await _apiService.UpdateTaskStatusAsync(action.TaskId, action.Status);
+
+		if (result.Succeeded)
+		{
+			_logger.LogInformation("Successfully updated task status: {TaskId}", action.TaskId);
+			// Reload the task to get the updated data
+			dispatcher.Dispatch(new TaskDetailActions.LoadTaskByIdAction(action.TaskId));
+			// Dispatch success action for UI feedback
+			dispatcher.Dispatch(new TaskDetailActions.UpdateTaskStatusSuccessAction());
+		}
+		else
+		{
+			_logger.LogError("Failed to update task status: {TaskId}, Error: {Error}", action.TaskId, result.Error);
+			dispatcher.Dispatch(new TaskDetailActions.UpdateTaskStatusFailureAction(result.Error ?? "Unknown error"));
+		}
+	}
 }

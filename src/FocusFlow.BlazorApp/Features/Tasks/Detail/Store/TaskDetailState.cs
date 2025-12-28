@@ -11,5 +11,6 @@ public record TaskDetailState
 {
 	public TaskResponse? Task { get; init; }
 	public bool IsLoading { get; init; }
+	public bool IsUpdatingStatus { get; init; }
 	public string? ErrorMessage { get; init; }
 }

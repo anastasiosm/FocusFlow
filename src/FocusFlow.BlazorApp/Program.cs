@@ -19,6 +19,7 @@ using Serilog;
 using System.Text;
 using FocusFlow.BlazorApp.Features.Tasks.Shared.Services;
 using FocusFlow.BlazorApp.Features.Dashboard.Shared.Services;
+using FocusFlow.BlazorApp.Features.Tasks;
 
 // bootstrap logger to log events during startup.
 Log.Logger = new LoggerConfiguration()
@@ -98,6 +99,7 @@ try
 	builder.Services.AddProjectsFeature();
 	builder.Services.AddDashboardFeature();
 	builder.Services.AddHomeFeature();
+	builder.Services.AddTasksFeature();
 
 	// FluentValidation
 	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();

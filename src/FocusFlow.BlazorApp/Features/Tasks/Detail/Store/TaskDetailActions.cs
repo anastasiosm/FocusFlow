@@ -1,4 +1,5 @@
 ﻿using FocusFlow.BlazorApp.Features.Tasks.Shared.Models;
+using FocusFlow.Domain.Enums;
 
 namespace FocusFlow.BlazorApp.Features.Tasks.Detail.Store;
 
@@ -20,4 +21,21 @@ public static class TaskDetailActions
 	/// Dispatched when loading a single task fails
 	/// </summary>
 	public record LoadTaskByIdFailureAction(string ErrorMessage);
+
+	// ============================================================================
+	// Update Task Status
+	// ============================================================================
+
+	/// <summary>
+	/// Triggers quick status update for the current task
+	/// </summary>
+	public record UpdateTaskStatusAction(Guid TaskId, ProjectTaskStatus Status);
+	/// <summary>
+	/// Dispatched when task status is successfully updated
+	/// </summary>
+	public record UpdateTaskStatusSuccessAction();
+	/// <summary>
+	/// Dispatched when task status update fails
+	/// </summary>
+	public record UpdateTaskStatusFailureAction(string ErrorMessage);
 }

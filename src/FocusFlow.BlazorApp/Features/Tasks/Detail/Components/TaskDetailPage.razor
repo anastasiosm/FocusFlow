@@ -111,6 +111,7 @@
                                       ValueChanged="@OnStatusChanged"
                                       Label="Status"
                                       Variant="Variant.Outlined"
+                                      Disabled="@TaskDetailState.Value.IsUpdatingStatus"
                                       Style="min-width: 150px;">
                                 <MudSelectItem T="ProjectTaskStatus" Value="@ProjectTaskStatus.Todo">To Do</MudSelectItem>
                                 <MudSelectItem T="ProjectTaskStatus" Value="@ProjectTaskStatus.InProgress">In Progress</MudSelectItem>
@@ -200,27 +201,22 @@
 @code {
     [Parameter] public Guid TaskId { get; set; }
     
-    private bool _hasDispatched = false;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await base.OnAfterRenderAsync(firstRender);
-        if (_hasDispatched) return;
-
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-
-        if (authState.User.Identity?.IsAuthenticated == true)
-        {
-            _hasDispatched = true;
-            Dispatcher.Dispatch(new TaskDetailActions.LoadTaskByIdAction(TaskId));
-        }
-    }
+    private Guid _lastLoadedTaskId = Guid.Empty;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (_hasDispatched && TaskDetailState.Value.Task?.Id != TaskId)
+        await base.OnParametersSetAsync();
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        // Only load if:
+        // 1. User is authenticated
+        // 2. We have a valid task ID  
+        // 3. This is a different task than the last one we loaded
+        if (authState.User.Identity?.IsAuthenticated == true && TaskId != Guid.Empty && TaskId != _lastLoadedTaskId)
         {
             Dispatcher.Dispatch(new TaskDetailActions.LoadTaskByIdAction(TaskId));
+            _lastLoadedTaskId = TaskId;
         }
     }
 
@@ -228,9 +224,20 @@
     {
         if (TaskDetailState.Value.Task?.Status != newStatus)
         {
-            // TODO: Implement status update action
-            // Dispatcher.Dispatch(new TaskDetailActions.UpdateTaskStatusAction(TaskId, newStatus));
+            Dispatcher.Dispatch(new TaskDetailActions.UpdateTaskStatusAction(TaskId, newStatus));
+            Snackbar.Add($"Status updated to {GetStatusText(newStatus)}", MudBlazor.Severity.Success);
         }
+    }
+
+    private string GetStatusText(ProjectTaskStatus status)
+    {
+        return status switch
+        {
+            ProjectTaskStatus.Todo => "To Do",
+            ProjectTaskStatus.InProgress => "In Progress", 
+            ProjectTaskStatus.Done => "Done",
+            _ => "Unknown"
+        };
     }
 
     private async Task OpenEditDialog()

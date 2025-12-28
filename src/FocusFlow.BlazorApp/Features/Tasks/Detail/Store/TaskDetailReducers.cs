@@ -35,4 +35,35 @@ public static class TaskDetailReducers
 			ErrorMessage = action.ErrorMessage
 		};
 	}
+
+	// Update Task Status reducers
+	[ReducerMethod]
+	public static TaskDetailState OnUpdateTaskStatus(TaskDetailState state, TaskDetailActions.UpdateTaskStatusAction action)
+	{
+		return state with
+		{
+			IsUpdatingStatus = true,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TaskDetailState OnUpdateTaskStatusSuccess(TaskDetailState state, TaskDetailActions.UpdateTaskStatusSuccessAction action)
+	{
+		return state with
+		{
+			IsUpdatingStatus = false,
+			ErrorMessage = null
+		};
+	}
+
+	[ReducerMethod]
+	public static TaskDetailState OnUpdateTaskStatusFailure(TaskDetailState state, TaskDetailActions.UpdateTaskStatusFailureAction action)
+	{
+		return state with
+		{
+			IsUpdatingStatus = false,
+			ErrorMessage = action.ErrorMessage
+		};
+	}
 }
