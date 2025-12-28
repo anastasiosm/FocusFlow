@@ -1,0 +1,108 @@
+@page "/register"
+@implements IDisposable
+@using FocusFlow.BlazorApp.Features.Auth.Register.Models
+@using FocusFlow.BlazorApp.Shared.Validation
+@using FocusFlow.BlazorApp.Features.Auth.Register.Validation
+@using FocusFlow.BlazorApp.Features.Auth.Register.Store
+@using Fluxor
+@using Fluxor.Blazor.Web
+@using FluentValidation
+@using MudBlazor
+@using MudBlazor.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject ILogger<RegisterPage> Logger
+@inject IValidator<RegisterRequest> _registerRequestValidator
+@inject IDispatcher Dispatcher
+@inject IState<RegisterState> RegisterState
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h5" GutterBottom="true" Align="Align.Center">Register</MudText>
+        <EditForm Model="@_registerRequest" OnValidSubmit="OnValidSubmit">
+            <FluentValidationValidator Validator="@_registerRequestValidator" /> @* Replaced DataAnnotationsValidator *@
+            <MudTextField T="string" InputType="InputType.Email" Label="Email" @bind-Value="_registerRequest.Email" For="@(() => _registerRequest.Email)" />
+            <MudTextField T="string" Label="Username" @bind-Value="_registerRequest.Username" For="@(() => _registerRequest.Username)" />
+            <MudTextField T="string" Label="Password" InputType="InputType.Password" @bind-Value="_registerRequest.Password" For="@(() => _registerRequest.Password)" />
+            
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@RegisterState.Value.IsLoading">
+                @if (RegisterState.Value.IsLoading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                    <MudText Class="ms-2">Registering...</MudText>
+                }
+                else
+                {
+                    <MudText>Register</MudText>
+                }
+            </MudButton>
+
+            @if (!string.IsNullOrWhiteSpace(RegisterState.Value.Error))
+            {
+                <MudAlert Severity="MudBlazor.Severity.Error" Class="mt-4">@RegisterState.Value.Error</MudAlert>
+            }
+        </EditForm>
+        <MudText Typo="Typo.body2" Class="mt-4" Align="Align.Center">
+            Already have an account? <MudLink Href="/login">Login here</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private RegisterRequest _registerRequest = new();
+    private bool _submitted;
+
+    protected override void OnInitialized()
+    {
+        RegisterState.StateChanged += OnRegisterStateChanged;
+    }
+
+    private void OnValidSubmit()
+    {
+        _submitted = true;
+        Logger.LogInformation("Register: OnValidSubmit. Email='{Email}', Username='{Username}', PasswordLength={PasswordLength}",
+            _registerRequest.Email,
+            _registerRequest.Username,
+            _registerRequest.Password?.Length ?? 0);
+        Dispatcher.Dispatch(new RegisterAction(_registerRequest));
+        Logger.LogInformation("Register: RegisterAction dispatched. IsLoading={IsLoading}, Error='{Error}'",
+            RegisterState.Value.IsLoading,
+            RegisterState.Value.Error);
+    }
+
+    private void OnRegisterStateChanged(object? sender, EventArgs e)
+    {
+        Logger.LogInformation("Register: RegisterState changed. _submitted={Submitted}, IsLoading={IsLoading}, Error='{Error}'",
+            _submitted,
+            RegisterState.Value.IsLoading,
+            RegisterState.Value.Error);
+
+        if (!_submitted)
+        {
+            return;
+        }
+
+        if (RegisterState.Value.IsLoading)
+        {
+            return;
+        }
+
+        _submitted = false;
+
+        if (string.IsNullOrWhiteSpace(RegisterState.Value.Error))
+        {
+            Logger.LogInformation("Register: Registration succeeded (no error). Navigating to /login");
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            Logger.LogWarning("Register: Registration finished with error: {Error}", RegisterState.Value.Error);
+        }
+    }
+
+    public void Dispose()
+    {
+        RegisterState.StateChanged -= OnRegisterStateChanged;
+    }
+}

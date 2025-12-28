@@ -40,7 +40,8 @@ public class UpdateTaskCommandTests
 			"Updated Title",
 			"Updated Description",
 			DateTime.UtcNow.AddDays(1),
-			Priority.High);
+			Priority.High,
+			null);
 
 		var updatedTaskDto = new TaskDto(
 			taskId,
@@ -81,7 +82,8 @@ public class UpdateTaskCommandTests
 			"Title",
 			"Description",
 			DateTime.UtcNow,
-			Priority.Medium);
+			Priority.Medium,
+			null);
 
 		_taskRepositoryMock.Setup(x => x.GetByIdAsync(command.TaskId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync((ProjectTask)null!);

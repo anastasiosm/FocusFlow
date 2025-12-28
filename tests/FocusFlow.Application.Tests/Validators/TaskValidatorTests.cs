@@ -113,7 +113,8 @@ public class TaskValidatorTests
 			"Valid Title",
 			"Valid Description",
 			DateTime.UtcNow.AddDays(1),
-			Priority.High);
+			Priority.High,
+			null);
 
 		var result = validator.TestValidate(command);
 
@@ -129,7 +130,8 @@ public class TaskValidatorTests
 			"Valid Title",
 			null,
 			null,
-			Priority.Low);
+			Priority.Low,
+			null);
 
 		var result = validator.TestValidate(command);
 
@@ -148,7 +150,8 @@ public class TaskValidatorTests
 			invalidTitle,
 			null,
 			null,
-			Priority.Low);
+			Priority.Low,
+			null);
 
 		var result = validator.TestValidate(command);
 
@@ -166,7 +169,8 @@ public class TaskValidatorTests
 			longTitle,
 			null,
 			null,
-			Priority.Low);
+			Priority.Low,
+			null);
 
 		var result = validator.TestValidate(command);
 
@@ -184,7 +188,8 @@ public class TaskValidatorTests
 			"Task",
 			null,
 			pastDate,
-			Priority.Medium);
+			Priority.Medium,
+			null);
 
 		var result = validator.TestValidate(command);
 

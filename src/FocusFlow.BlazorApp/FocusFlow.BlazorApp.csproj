@@ -3,6 +3,7 @@
   <ItemGroup>
     <PackageReference Include="Blazored.FluentValidation" />
     <PackageReference Include="Blazored.LocalStorage" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Fluxor" />
     <PackageReference Include="Fluxor.Blazor.Web" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
@@ -18,11 +19,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FocusFlow.Application\FocusFlow.Application.csproj" />
+    <Using Include="FocusFlow.Domain.Enums" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="FocusFlow.Domain.Enums" />
+    <ProjectReference Include="..\FocusFlow.Domain\FocusFlow.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Features\Tasks\UpdateStatus\Store\" />
   </ItemGroup>
 
   <!-- Add this to ensure static assets are copied -->

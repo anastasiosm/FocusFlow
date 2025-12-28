@@ -1,0 +1,13 @@
+using FocusFlow.BlazorApp.Features.Projects.Shared.Models;
+
+namespace FocusFlow.BlazorApp.Features.Dashboard.Store;
+
+/// <summary>
+/// Actions for Dashboard feature
+/// </summary>
+public static class DashboardActions
+{
+	public record LoadDashboardStatistics;
+	public record LoadDashboardStatisticsSuccess(List<ProjectStatisticsDto> Statistics);
+	public record LoadDashboardStatisticsFailure(string ErrorMessage);
+}

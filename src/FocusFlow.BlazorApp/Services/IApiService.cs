@@ -1,12 +1,15 @@
-using FocusFlow.Application.Features.Projects.Common;
-using FocusFlow.Application.Features.Projects.CreateProject;
-using FocusFlow.Application.Features.Projects.GetProjectById;
-using FocusFlow.Application.Features.Projects.UpdateProject;
-using FocusFlow.Application.Features.Tasks.Common;
-using FocusFlow.Application.Features.Tasks.CreateTask;
-using FocusFlow.Application.Features.Dashboard.Common;
+using FocusFlow.BlazorApp.Shared.Models;
 using FocusFlow.BlazorApp.Models;
+using FocusFlow.BlazorApp.Features.Auth.Login.Models;
+using FocusFlow.BlazorApp.Features.Auth.Register.Models;
+using FocusFlow.BlazorApp.Features.Projects.List.Models;
+using FocusFlow.BlazorApp.Features.Projects.Detail.Models;
+using FocusFlow.BlazorApp.Features.Projects.Create.Models;
+using FocusFlow.BlazorApp.Features.Projects.Edit.Models;
+using FocusFlow.BlazorApp.Features.Projects.Shared.Models;
 using FocusFlow.Domain.Enums;
+using FocusFlow.BlazorApp.Features.Tasks.Shared.Models;
+using FocusFlow.BlazorApp.Features.Tasks.Create.Models;
 
 namespace FocusFlow.BlazorApp.Services;
 
@@ -24,11 +27,11 @@ public interface IApiService
 	Task<ApiResult> UpdateProjectAsync(Guid id, UpdateProjectDto dto);
 	
 	// Tasks
-	Task<ApiResult<List<TaskDto>>> GetTasksAsync(Guid projectId);
-	Task<ApiResult<List<TaskDto>>> GetTasksFilteredAsync(ProjectTaskStatus? status = null, Priority? priority = null, bool? isOverdue = null);
-	Task<ApiResult<TaskDto>> GetTaskByIdAsync(Guid id);
-	Task<ApiResult<TaskDto>> CreateTaskAsync(CreateTaskDto dto);
-	Task<ApiResult<TaskDto>> UpdateTaskAsync(Guid id, UpdateTaskDto dto);
+	Task<ApiResult<List<TaskResponse>>> GetTasksAsync(Guid projectId);
+	Task<ApiResult<List<TaskResponse>>> GetTasksFilteredAsync(ProjectTaskStatus? status = null, Priority? priority = null, bool? isOverdue = null);
+	Task<ApiResult<TaskResponse>> GetTaskByIdAsync(Guid id);
+	Task<ApiResult<TaskResponse>> CreateTaskAsync(CreateTaskRequest dto);
+	Task<ApiResult<TaskResponse>> UpdateTaskAsync(Guid id, UpdateTaskRequest dto);
 	Task<ApiResult> UpdateTaskStatusAsync(Guid id, ProjectTaskStatus status);
 	Task<ApiResult> DeleteTaskAsync(Guid id);
 	

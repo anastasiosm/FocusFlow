@@ -1,0 +1,59 @@
+@page "/login"
+@using FocusFlow.BlazorApp.Features.Auth.Login.Models
+@using FocusFlow.BlazorApp.Services
+@using FocusFlow.BlazorApp.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@using Blazored.LocalStorage
+@using FocusFlow.BlazorApp.Shared.Validation
+@using FocusFlow.BlazorApp.Features.Auth.Login.Validation
+@using FocusFlow.BlazorApp.Features.Auth.Login.Store
+@using Fluxor
+@using MudBlazor
+@using MudBlazor.Services
+@using Microsoft.AspNetCore.Components.Forms 
+@using Fluxor.Blazor.Web
+@using FluentValidation 
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IValidator<LoginRequest> _loginRequestValidator
+@inject IDispatcher Dispatcher 
+@inject IState<AuthState> AuthState 
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h5" GutterBottom="true" Align="Align.Center">Login</MudText>
+        <EditForm Model="@_loginRequest" OnValidSubmit="OnValidSubmit">
+            <FluentValidationValidator Validator="@_loginRequestValidator" />
+            <MudTextField Label="Email" @bind-Value="_loginRequest.Email" For="@(() => _loginRequest.Email)" />
+            <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="_loginRequest.Password" For="@(() => _loginRequest.Password)" />
+            
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" Disabled="@AuthState.Value.IsLoading">
+                @if (AuthState.Value.IsLoading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                    <MudText Class="ms-2">Logging in...</MudText>
+                }
+                else
+                {
+                    <MudText>Login</MudText>
+                }
+            </MudButton>
+            @if (!string.IsNullOrWhiteSpace(AuthState.Value.Error))
+            {
+                <MudAlert Severity="MudBlazor.Severity.Error" Class="mt-4">@AuthState.Value.Error</MudAlert>
+            }
+        </EditForm>
+        <MudText Typo="Typo.body2" Class="mt-4" Align="Align.Center">
+            Don't have an account? <MudLink Href="/register">Register here</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private LoginRequest _loginRequest = new();
+
+    private void OnValidSubmit()
+    {
+        Dispatcher.Dispatch(new LoginAction(_loginRequest));
+    }
+}

@@ -1,0 +1,266 @@
+@page "/tasks"
+@attribute [Authorize]
+
+@using Fluxor
+@using FocusFlow.BlazorApp.Features.Tasks.List.Store
+@using FocusFlow.Domain.Enums
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IDispatcher Dispatcher
+@inject IState<TasksListState> TasksListState
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>My Tasks - FocusFlow</PageTitle>
+
+<AuthorizeView>
+	<Authorized>
+		<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+			<MudText Typo="Typo.h3" Class="mb-4">My Tasks</MudText>
+
+			<!-- Filters Section -->
+			<MudPaper Elevation="2" Class="pa-4 mb-4">
+				<MudText Typo="Typo.h6" Class="mb-3">Filters</MudText>
+				<MudGrid>
+					<MudItem xs="12" sm="4">
+						<MudSelect T="ProjectTaskStatus?" 
+								   Label="Status" 
+								   Value="@TasksListState.Value.StatusFilter" 
+								   ValueChanged="@OnStatusFilterChanged"
+								   Clearable="true">
+							<MudSelectItem T="ProjectTaskStatus?" Value="@((ProjectTaskStatus?)null)">All</MudSelectItem>
+							<MudSelectItem T="ProjectTaskStatus?" Value="@ProjectTaskStatus.Todo">To Do</MudSelectItem>
+							<MudSelectItem T="ProjectTaskStatus?" Value="@ProjectTaskStatus.InProgress">In Progress</MudSelectItem>
+							<MudSelectItem T="ProjectTaskStatus?" Value="@ProjectTaskStatus.Done">Done</MudSelectItem>
+						</MudSelect>
+					</MudItem>
+
+					<MudItem xs="12" sm="4">
+						<MudSelect T="Priority?" 
+								   Label="Priority" 
+								   Value="@TasksListState.Value.PriorityFilter" 
+								   ValueChanged="@OnPriorityFilterChanged"
+								   Clearable="true">
+							<MudSelectItem T="Priority?" Value="@((Priority?)null)">All</MudSelectItem>
+							<MudSelectItem T="Priority?" Value="@Priority.Low">Low</MudSelectItem>
+							<MudSelectItem T="Priority?" Value="@Priority.Medium">Medium</MudSelectItem>
+							<MudSelectItem T="Priority?" Value="@Priority.High">High</MudSelectItem>
+						</MudSelect>
+					</MudItem>
+
+					<MudItem xs="12" sm="4">
+						<MudSelect T="bool?" 
+								   Label="Overdue" 
+								   Value="@TasksListState.Value.IsOverdueFilter" 
+								   ValueChanged="@OnOverdueFilterChanged"
+								   Clearable="true">
+							<MudSelectItem T="bool?" Value="@((bool?)null)">All</MudSelectItem>
+							<MudSelectItem T="bool?" Value="@true">Overdue Only</MudSelectItem>
+							<MudSelectItem T="bool?" Value="@false">Not Overdue</MudSelectItem>
+						</MudSelect>
+					</MudItem>
+				</MudGrid>
+
+				<MudStack Row="true" Spacing="2" Class="mt-3">
+					<MudButton Variant="Variant.Filled" 
+							   Color="Color.Primary" 
+							   OnClick="ApplyFilters"
+							   StartIcon="@Icons.Material.Filled.FilterAlt">
+						Apply Filters
+					</MudButton>
+					<MudButton Variant="Variant.Outlined" 
+							   Color="Color.Secondary" 
+							   OnClick="ClearFilters"
+							   StartIcon="@Icons.Material.Filled.Clear">
+						Clear Filters
+					</MudButton>
+				</MudStack>
+			</MudPaper>
+
+			<!-- Tasks List -->
+			@if (TasksListState.Value.IsLoading)
+			{
+				<MudGrid>
+					@for (int i = 0; i < 6; i++)
+					{
+						<MudItem xs="12">
+							<MudCard Elevation="2" Class="pa-3">
+								<MudCardContent>
+									<MudSkeleton Width="60%" Height="1.5rem" Animation="Animation.Wave" Class="mb-2" />
+									<MudSkeleton Width="100%" Height="1rem" Animation="Animation.Wave" Class="mb-1" />
+									<MudSkeleton Width="40%" Height="1rem" Animation="Animation.Wave" />
+								</MudCardContent>
+							</MudCard>
+						</MudItem>
+					}
+				</MudGrid>
+			}
+			else if (!string.IsNullOrEmpty(TasksListState.Value.ErrorMessage))
+			{
+				<MudAlert Severity="MudBlazor.Severity.Error" Class="mb-4">
+					@TasksListState.Value.ErrorMessage
+				</MudAlert>
+			}
+			else if (!TasksListState.Value.Tasks.Any())
+			{
+				<MudAlert Severity="MudBlazor.Severity.Info">
+					No tasks found matching your filters.
+				</MudAlert>
+			}
+			else
+			{
+				<MudText Typo="Typo.subtitle1" Class="mb-3">
+					Showing @TasksListState.Value.Tasks.Count task(s)
+				</MudText>
+
+				<MudGrid>
+					@foreach (var task in TasksListState.Value.Tasks)
+					{
+						<MudItem xs="12">
+							<MudCard Elevation="2" Class="pa-3">
+								<MudCardContent>
+									<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+										<MudButton Variant="Variant.Text" 
+												   Color="Color.Inherit"
+												   Style="flex-grow: 1; justify-content: flex-start; text-align: left; padding: 8px;"
+												   OnClick="@(() => NavigateToTaskDetail(task.Id))">
+											<div>
+												<MudText Typo="Typo.h6">@task.Title</MudText>
+												@if (!string.IsNullOrEmpty(task.Description))
+												{
+													<MudText Typo="Typo.body2" Class="mt-1">@task.Description</MudText>
+												}
+											</div>
+										</MudButton>
+										<MudStack Row="false" Spacing="1" AlignItems="AlignItems.End">
+											<MudChip T="string" Size="Size.Small" Color="@GetStatusColor(task.Status)">
+												@GetStatusText(task.Status)
+											</MudChip>
+											<MudChip T="string" Size="Size.Small" Color="@GetPriorityColor(task.Priority)">
+												@task.Priority Priority
+											</MudChip>
+											@if (task.DueDate.HasValue)
+											{
+												var isOverdue = task.DueDate.Value < DateTime.UtcNow && task.Status != ProjectTaskStatus.Done;
+												<MudChip T="string" 
+														 Size="Size.Small" 
+														 Color="@(isOverdue ? Color.Error : Color.Default)"
+														 Icon="@Icons.Material.Filled.CalendarMonth">
+													@task.DueDate.Value.ToString("MMM dd, yyyy")
+													@if (isOverdue)
+													{
+														<text> (Overdue)</text>
+													}
+												</MudChip>
+											}
+											<MudButton Size="Size.Small" 
+													   Variant="Variant.Text" 
+													   Color="Color.Primary"
+													   StartIcon="@Icons.Material.Filled.Folder"
+													   OnClick="@(() => NavigateToProject(task.ProjectId))">
+												Project
+											</MudButton>
+										</MudStack>
+									</MudStack>
+								</MudCardContent>
+							</MudCard>
+						</MudItem>
+					}
+				</MudGrid>
+			}
+
+		</MudContainer>
+	</Authorized>
+	<NotAuthorized>
+		<MudAlert Severity="MudBlazor.Severity.Warning">Please login to view your tasks.</MudAlert>
+	</NotAuthorized>
+</AuthorizeView>
+
+@code {
+	private bool _hasDispatched = false;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		await base.OnAfterRenderAsync(firstRender);
+		if (_hasDispatched) return;
+
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+		if (authState.User.Identity?.IsAuthenticated == true)
+		{
+			_hasDispatched = true;
+			Dispatcher.Dispatch(new TasksListActions.LoadTasksAction());
+		}
+	}
+
+	private void OnStatusFilterChanged(ProjectTaskStatus? value)
+	{
+		Dispatcher.Dispatch(new TasksListActions.SetStatusFilterAction(value));
+	}
+
+	private void OnPriorityFilterChanged(Priority? value)
+	{
+		Dispatcher.Dispatch(new TasksListActions.SetPriorityFilterAction(value));
+	}
+
+	private void OnOverdueFilterChanged(bool? value)
+	{
+		Dispatcher.Dispatch(new TasksListActions.SetOverdueFilterAction(value));
+	}
+
+	private void ApplyFilters()
+	{
+		Dispatcher.Dispatch(new TasksListActions.LoadTasksAction());
+	}
+
+	private void ClearFilters()
+	{
+		Dispatcher.Dispatch(new TasksListActions.ClearFiltersAction());
+	}
+
+	private void NavigateToProject(Guid projectId)
+	{
+		Navigation.NavigateTo($"/projects/{projectId}");
+	}
+
+	private void NavigateToTaskDetail(Guid taskId)
+	{
+		Navigation.NavigateTo($"/tasks/{taskId}");
+	}
+
+	private Color GetStatusColor(ProjectTaskStatus status)
+	{
+		return status switch
+		{
+			ProjectTaskStatus.Todo => Color.Default,
+			ProjectTaskStatus.InProgress => Color.Info,
+			ProjectTaskStatus.Done => Color.Success,
+			_ => Color.Default
+		};
+	}
+
+	private string GetStatusText(ProjectTaskStatus status)
+	{
+		return status switch
+		{
+			ProjectTaskStatus.Todo => "To Do",
+			ProjectTaskStatus.InProgress => "In Progress",
+			ProjectTaskStatus.Done => "Done",
+			_ => "Unknown"
+		};
+	}
+
+	private Color GetPriorityColor(Priority priority)
+	{
+		return priority switch
+		{
+			Priority.Low => Color.Success,
+			Priority.Medium => Color.Warning,
+			Priority.High => Color.Error,
+			_ => Color.Default
+		};
+	}
+}

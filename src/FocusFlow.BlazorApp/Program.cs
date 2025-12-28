@@ -3,7 +3,12 @@ using FluentValidation;
 using Fluxor;
 using FocusFlow.BlazorApp.Auth;
 using FocusFlow.BlazorApp.Components;
-using FocusFlow.BlazorApp.Models.Validators;
+using FocusFlow.BlazorApp.Features.Projects;
+using FocusFlow.BlazorApp.Features.Dashboard;
+using FocusFlow.BlazorApp.Features.Home;
+using FocusFlow.BlazorApp.Features.Projects.Shared.Services;
+using FocusFlow.BlazorApp.Features.Auth.Login.Validation;
+using FocusFlow.BlazorApp.Features.Auth.Register.Validation;
 using FocusFlow.BlazorApp.Services;
 using FocusFlow.BlazorApp.Services.Api;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -12,6 +17,9 @@ using MudBlazor.Services;
 using Refit;
 using Serilog;
 using System.Text;
+using FocusFlow.BlazorApp.Features.Tasks.Shared.Services;
+using FocusFlow.BlazorApp.Features.Dashboard.Shared.Services;
+using FocusFlow.BlazorApp.Features.Tasks;
 
 // bootstrap logger to log events during startup.
 Log.Logger = new LoggerConfiguration()
@@ -87,6 +95,12 @@ try
 	// Register the main API service
 	builder.Services.AddScoped<IApiService, RefitApiService>();
 
+	// Register Features
+	builder.Services.AddProjectsFeature();
+	builder.Services.AddDashboardFeature();
+	builder.Services.AddHomeFeature();
+	builder.Services.AddTasksFeature();
+
 	// FluentValidation
 	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
@@ -105,7 +119,8 @@ try
 	}
 
 	app.UseHttpsRedirection();
-	app.UseStaticFiles();
+	// serving static files
+	app.UseStaticFiles(); // TODO: in NET9, we use app.MapStaticAssets() instead // same thing but more efficiently: uses e-tags, caching, etc.
 
 	app.UseAntiforgery();
 

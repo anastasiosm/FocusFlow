@@ -1,0 +1,57 @@
+@using FocusFlow.BlazorApp.Features.Projects.List.Models
+@using MudBlazor
+@using MudBlazor.Services
+
+@if (Projects is null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (!Projects.Any())
+{
+    <MudAlert Severity="Severity.Info">
+        No projects found. Create your first project to get started!
+    </MudAlert>
+}
+else
+{
+    <MudGrid>
+        @foreach (var project in Projects)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <ProjectCard Project="project"
+                             OnView="ViewProject"
+                             OnEdit="EditProject"
+                             OnDelete="DeleteProject" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<ProjectDto>? Projects { get; set; }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; } = default!;
+
+    private void ViewProject(Guid id)
+    {
+        Navigation.NavigateTo($"/projects/{id}");
+    }
+
+    private void EditProject(Guid id)
+    {
+        // TODO: Implement edit dialog
+        Snackbar.Add("Edit functionality coming soon!", Severity.Info);
+    }
+
+    private async Task DeleteProject(Guid id)
+    {
+        // TODO: Add confirmation dialog and call API
+        Snackbar.Add("Delete functionality coming soon!", Severity.Info);
+        await Task.CompletedTask;
+    }
+}

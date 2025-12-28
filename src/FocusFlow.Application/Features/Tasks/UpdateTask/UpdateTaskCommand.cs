@@ -12,4 +12,5 @@ public record UpdateTaskCommand(
 	string Title,
 	string? Description,
 	DateTime? DueDate,
-	Priority Priority) : IRequest<TaskDto>;
+	Priority Priority,
+	string? AssignedUserId) : IRequest<TaskDto>;
