@@ -1,94 +1,148 @@
+@* PSEUDOCODE / PLAN
+   - Render a MudDialog with TitleContent, DialogContent and DialogActions.
+   - If _backendError is not null or empty, show a MudAlert with an explicit close icon callback
+     that clears _backendError.
+   - Render a MudForm bound to _model with fields: Title (required), Description, DueDate,
+     Priority (select from Priority enum).
+   - Use proper Razor syntax for @foreach and for embedding C# expressions in attributes.
+   - Provide Cancel and Submit buttons. Submit validates the form, shows a loading state,
+     calls TasksApi.CreateTaskAsync and handles success/failure similarly to the original logic.
+   - Keep all C# code in @code block unchanged aside from formatting fixes.
+*@
+
 @using FocusFlow.BlazorApp.Models
+@using FocusFlow.BlazorApp.Services.Api
 @using FocusFlow.Domain.Enums
 @using MudBlazor
 
+@inject ITasksApi TasksApi
+@inject ISnackbar Snackbar
+
 <MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">Create New Task</MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudForm @ref="_form" @bind-IsValid="@_success" Model="@_model" Class="mt-4">
-            <MudTextField @bind-Value="_model.Title"
-                          For="@(() => _model.Title)"
-                          Label="Title"
-                          Variant="Variant.Outlined"
-                          Required="true"
-                          RequiredError="Title is required." />
+	<TitleContent>
+		<MudText Typo="Typo.h6">Create New Task</MudText>
+	</TitleContent>
 
-            <MudTextField @bind-Value="_model.Description"
-                          For="@(() => _model.Description)"
-                          Label="Description"
-                          Variant="Variant.Outlined"
-                          Lines="3"
-                          Class="mt-3" />
+	<DialogContent>
+		@* Show backend validation errors at the top *@
+		@if (!string.IsNullOrEmpty(_backendError))
+		{
+			<MudAlert Severity="Severity.Error"
+					  Class="mb-4"
+					  CloseIcon="@Icons.Material.Filled.Close"
+					  CloseIconClicked="@( () => _backendError = null )">
+				@_backendError
+			</MudAlert>
+		}
 
-            <MudDatePicker @bind-Date="_model.DueDate"
-                           For="@(() => _model.DueDate)"
-                           Label="Due Date"
-                           Variant="Variant.Outlined"
-                           Class="mt-3" />
+		<MudForm @ref="_form" @bind-IsValid="@_success" Model="@_model" Class="mt-4">
+			<MudTextField @bind-Value="_model.Title"
+						  For="@(() => _model.Title)"
+						  Label="Title"
+						  Variant="Variant.Outlined"
+						  Required="true"
+						  RequiredError="Title is required." />
 
-            <MudSelect @bind-Value="_model.Priority"
-                       For="@(() => _model.Priority)"
-                       Label="Priority"
-                       Variant="Variant.Outlined"
-                       Required="true"
-                       RequiredError="Priority is required."
-                       Class="mt-3">
-                @foreach (var priority in Enum.GetValues<Priority>())
-                {
-                    <MudSelectItem Value="@priority">@priority.ToString()</MudSelectItem>
-                }
-            </MudSelect>
-        </MudForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel" data-testid="cancel-button">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" Disabled="@(!_success)" data-testid="submit-button">Create</MudButton>
-    </DialogActions>
+			<MudTextField @bind-Value="_model.Description"
+						  For="@(() => _model.Description)"
+						  Label="Description"
+						  Variant="Variant.Outlined"
+						  Lines="3"
+						  Class="mt-3" />
+
+			<MudDatePicker @bind-Date="_model.DueDate"
+						   For="@(() => _model.DueDate)"
+						   Label="Due Date"
+						   Variant="Variant.Outlined"
+						   MinDate="@DateTime.Today"
+						   Class="mt-3" />
+
+			<MudSelect @bind-Value="_model.Priority"
+					   For="@(() => _model.Priority)"
+					   Label="Priority"
+					   Variant="Variant.Outlined"
+					   Required="true"
+					   RequiredError="Priority is required."
+					   Class="mt-3">
+				@foreach (var priority in Enum.GetValues<Priority>())
+				{
+					<MudSelectItem Value="@(priority)">@priority.ToString()</MudSelectItem>
+				}
+			</MudSelect>
+		</MudForm>
+	</DialogContent>
+
+	<DialogActions>
+		<MudButton OnClick="Cancel" data-testid="cancel-button" Disabled="@_isSubmitting">
+			Cancel
+		</MudButton>
+
+		<MudButton Color="Color.Primary"
+				   OnClick="Submit"
+				   Disabled="@(!_success || _isSubmitting)"
+				   data-testid="submit-button">
+			@if (_isSubmitting)
+			{
+				<MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+				<span>Creating...</span>
+			}
+			else
+			{
+				<span>Create</span>
+			}
+		</MudButton>
+	</DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter]
-    MudDialogInstance MudDialog { get; set; } = default!;
+	[CascadingParameter]
+	MudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public CreateTaskFormModel? InitialModel { get; set; }
+	[Parameter]
+	public Guid ProjectId { get; set; }
 
-    private bool _success;
-    private MudForm _form = default!;
+	[Parameter]
+	public CreateTaskFormModel? InitialModel { get; set; }
 
-    private CreateTaskFormModel _model = new CreateTaskFormModel();
+	private bool _success;
+	private bool _isSubmitting;
+	private string? _backendError;
+	private MudForm _form = default!;
+	private CreateTaskFormModel _model = new CreateTaskFormModel();
 
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-        if (InitialModel is not null)
-        {
-            // copy values to the internal model
-            _model = new CreateTaskFormModel
-            {
-                Title = InitialModel.Title,
-                Description = InitialModel.Description,
-                DueDate = InitialModel.DueDate,
-                Priority = InitialModel.Priority,
-                AssignedUserId = InitialModel.AssignedUserId
-            };
-        }
-    }
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		if (InitialModel is not null)
+		{
+			// Copy values to the internal model
+			_model = new CreateTaskFormModel
+			{
+				Title = InitialModel.Title,
+				Description = InitialModel.Description,
+				DueDate = InitialModel.DueDate,
+				Priority = InitialModel.Priority,
+				AssignedUserId = InitialModel.AssignedUserId
+			};
+		}
+	}
 
-    private async Task Submit()
-    {
-        if (_form is not null)
-        {
-            await _form.Validate();
-        }
+	private async Task Submit()
+	{
+		// Frontend validation 
+		if (_form is not null)
+		{
+			await _form.Validate();
+		}
 
-        if (_success)
-        {
-            MudDialog.Close(DialogResult.Ok(_model));
-        }
-    }
+		if (_success)
+		{
+			// SIMPLE - Just close dialog with form model
 
-    private void Cancel() => MudDialog.Cancel();
+			// Parent component will dispatch Fluxor action!
+			MudDialog.Close(DialogResult.Ok(_model));
+		}
+	}
+
+	private void Cancel() => MudDialog.Cancel();	
 }

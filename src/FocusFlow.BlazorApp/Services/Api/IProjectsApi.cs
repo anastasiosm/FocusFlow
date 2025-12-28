@@ -1,7 +1,4 @@
-using FocusFlow.Application.Features.Projects.Common;
-using FocusFlow.Application.Features.Projects.CreateProject;
-using FocusFlow.Application.Features.Projects.GetProjectById;
-using FocusFlow.Application.Features.Projects.UpdateProject;
+using FocusFlow.BlazorApp.Models.Dtos;
 using Refit;
 
 namespace FocusFlow.BlazorApp.Services.Api;

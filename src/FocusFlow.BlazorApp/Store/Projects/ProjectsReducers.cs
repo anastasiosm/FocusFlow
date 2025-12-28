@@ -1,5 +1,5 @@
 using Fluxor;
-using FocusFlow.Application.Features.Projects.Common;
+using FocusFlow.BlazorApp.Models.Dtos;
 
 namespace FocusFlow.BlazorApp.Store.Projects;
 

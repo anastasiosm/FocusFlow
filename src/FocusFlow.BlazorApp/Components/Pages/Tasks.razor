@@ -185,33 +185,33 @@
 		if (authState.User.Identity?.IsAuthenticated == true)
 		{
 			_hasDispatched = true;
-			Dispatcher.Dispatch(new TasksActions.LoadTasks());
+			Dispatcher.Dispatch(new TasksActions.LoadTasksAction());
 		}
 	}
 
 	private void OnStatusFilterChanged(ProjectTaskStatus? value)
 	{
-		Dispatcher.Dispatch(new TasksActions.SetStatusFilter(value));
+		Dispatcher.Dispatch(new TasksActions.SetStatusFilterAction(value));
 	}
 
 	private void OnPriorityFilterChanged(Priority? value)
 	{
-		Dispatcher.Dispatch(new TasksActions.SetPriorityFilter(value));
+		Dispatcher.Dispatch(new TasksActions.SetPriorityFilterAction(value));
 	}
 
 	private void OnOverdueFilterChanged(bool? value)
 	{
-		Dispatcher.Dispatch(new TasksActions.SetOverdueFilter(value));
+		Dispatcher.Dispatch(new TasksActions.SetOverdueFilterAction(value));
 	}
 
 	private void ApplyFilters()
 	{
-		Dispatcher.Dispatch(new TasksActions.LoadTasks());
+		Dispatcher.Dispatch(new TasksActions.LoadTasksAction());
 	}
 
 	private void ClearFilters()
 	{
-		Dispatcher.Dispatch(new TasksActions.ClearFilters());
+		Dispatcher.Dispatch(new TasksActions.ClearFiltersAction());
 	}
 
 	private void NavigateToProject(Guid projectId)

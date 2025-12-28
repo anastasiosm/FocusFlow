@@ -3,6 +3,8 @@
 
 @using Fluxor
 @using FocusFlow.BlazorApp.Store.Tasks
+@using FocusFlow.BlazorApp.Models.Tasks
+@using FocusFlow.BlazorApp.Extensions
 @using FocusFlow.Domain.Enums
 @using Microsoft.AspNetCore.Components.Authorization
 
@@ -207,7 +209,7 @@
         if (authState.User.Identity?.IsAuthenticated == true)
         {
             _hasDispatched = true;
-            Dispatcher.Dispatch(new TasksActions.LoadTaskById(TaskId));
+            Dispatcher.Dispatch(new TasksActions.LoadTaskByIdAction(TaskId));
         }
     }
 
@@ -215,7 +217,7 @@
     {
         if (_hasDispatched && TasksState.Value.SelectedTask?.Id != TaskId)
         {
-            Dispatcher.Dispatch(new TasksActions.LoadTaskById(TaskId));
+            Dispatcher.Dispatch(new TasksActions.LoadTaskByIdAction(TaskId));
         }
     }
 
@@ -223,7 +225,7 @@
     {
         if (TasksState.Value.SelectedTask?.Status != newStatus)
         {
-            Dispatcher.Dispatch(new TasksActions.UpdateTaskStatus(TaskId, newStatus));
+            Dispatcher.Dispatch(new TasksActions.UpdateTaskStatusAction(TaskId, newStatus));
         }
     }
 
@@ -246,12 +248,8 @@
         var result = await dialog.Result;
         if (!result.Canceled && result.Data is TaskEditResult editResult)
         {
-            Dispatcher.Dispatch(new TasksActions.UpdateTask(
-                TaskId, 
-                editResult.Title, 
-                editResult.Description, 
-                editResult.DueDate, 
-                editResult.Priority));
+            // ✅ Use extension method for clean conversion
+            Dispatcher.Dispatch(new TasksActions.UpdateTaskFromResultAction(TaskId, editResult));
         }
     }
 
@@ -267,7 +265,7 @@
 
         if (confirmed == true)
         {
-            Dispatcher.Dispatch(new TasksActions.DeleteTask(TaskId));
+            Dispatcher.Dispatch(new TasksActions.DeleteTaskAction(TaskId));
             Snackbar.Add("Task deleted successfully", MudBlazor.Severity.Success);
             Navigation.NavigateTo("/tasks");
         }

@@ -1,8 +1,6 @@
 using Fluxor;
 using FocusFlow.BlazorApp.Services;
-using FocusFlow.Application.Features.Projects.CreateProject;
-using FocusFlow.Application.Features.Projects.UpdateProject;
-using FocusFlow.Application.Features.Projects.Common; // For ProjectDto
+using FocusFlow.BlazorApp.Models.Dtos;
 using FocusFlow.BlazorApp.Components.Pages; // For form models
 
 namespace FocusFlow.BlazorApp.Store.Projects;

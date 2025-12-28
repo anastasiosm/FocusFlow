@@ -1,8 +1,7 @@
-using FocusFlow.Application.Features.Tasks.Common;
-using FocusFlow.Application.Features.Tasks.CreateTask;
+using FocusFlow.BlazorApp.Models.Dtos;
 using FocusFlow.BlazorApp.Models;
-using FocusFlow.Domain.Enums;
 using Refit;
+using FocusFlow.Domain.Enums;
 
 namespace FocusFlow.BlazorApp.Services.Api;
 
@@ -21,7 +20,7 @@ public interface ITasksApi
     Task<TaskDto> GetTaskByIdAsync(Guid id);
 
     [Post("/api/tasks")]
-    Task<TaskDto> CreateTaskAsync([Body] CreateTaskDto dto);
+    Task<TaskDto> CreateTaskAsync([Body] CreateTaskRequest dto);
 
     [Put("/api/tasks/{id}")]
     Task<TaskDto> UpdateTaskAsync(Guid id, [Body] UpdateTaskRequest dto);

@@ -1,7 +1,8 @@
-@using FocusFlow.Application.Features.Tasks.Common
+@using FocusFlow.BlazorApp.Models.Dtos
+@using FocusFlow.BlazorApp.Validation.Tasks
 @using FocusFlow.Domain.Enums
-@using FocusFlow.BlazorApp.Models
-@using FocusFlow.BlazorApp.Validators
+@using FocusFlow.BlazorApp.Models.Tasks
+
 @using FluentValidation
 
 <MudDialog>
@@ -50,8 +51,8 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" 
-                   Variant="Variant.Filled" 
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
                    OnClick="Save"
                    Disabled="@(!isFormValid)">
             Save Changes
@@ -64,20 +65,21 @@
     [Parameter] public TaskDto Task { get; set; } = null!;
 
     private MudForm? form;
-    private TaskEditModel editModel = new();
-    private readonly TaskEditModelValidator validator = new();
+    private TaskFormModel editModel = new();
+    private readonly TaskFormModelValidator validator = new();
     private bool isFormValid = false;
 
     protected override void OnInitialized()
     {
-        editModel = new TaskEditModel
+        // Initialize form model from TaskDto
+        editModel = new TaskFormModel
         {
             Title = Task.Title,
             Description = Task.Description,
             DueDate = Task.DueDate,
             Priority = Task.Priority
         };
-        
+
         // Initial validation
         ValidateForm();
     }
@@ -107,12 +109,14 @@
             await form.Validate();
             if (form.IsValid)
             {
+                // Create immutable result record from form model
                 var result = new TaskEditResult(
                     editModel.Title,
                     editModel.Description,
                     editModel.DueDate,
-                    editModel.Priority);
-                
+                    editModel.Priority
+                );
+
                 MudDialog.Close(DialogResult.Ok(result));
             }
         }

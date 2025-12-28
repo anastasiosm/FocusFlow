@@ -1,10 +1,8 @@
 @page "/projects/{Id:guid}"
 @attribute [Authorize]
 
-@using FocusFlow.Application.Features.Projects.GetProjectById
-@using FocusFlow.Application.Features.Tasks.CreateTask
 @using FocusFlow.BlazorApp.Components.Tasks
-@using FocusFlow.Application.Features.Tasks.Common
+@using FocusFlow.BlazorApp.Models.Dtos
 @using FocusFlow.BlazorApp.Models
 @using FocusFlow.BlazorApp.Store.ProjectDetail
 @using FocusFlow.Domain.Enums
@@ -61,10 +59,30 @@ else if (ProjectDetailState.Value.Project is not null)
                     <MudText Typo="Typo.subtitle1" Class="mb-4">@project.Description</MudText>
                 }
             </div>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateTaskDialog" StartIcon="@Icons.Material.Filled.Add">
-                New Task
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      OnClick="OpenCreateTaskDialog" 
+                      StartIcon="@Icons.Material.Filled.Add"
+                      Disabled="@ProjectDetailState.Value.IsCreatingTask">
+                @if (ProjectDetailState.Value.IsCreatingTask)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <span class="ml-2">Creating...</span>
+                }
+                else
+                {
+                    <span>New Task</span>
+                }
             </MudButton>
         </div>
+
+        @* ✅ Error automatically shows from state *@
+        @if (!string.IsNullOrEmpty(ProjectDetailState.Value.ErrorMessage))
+        {
+            <MudAlert Severity="MudBlazor.Severity.Error" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="ClearErrorMessage">
+                @ProjectDetailState.Value.ErrorMessage
+            </MudAlert>
+        }
 
         <MudGrid>
             <MudItem xs="12">
@@ -168,10 +186,10 @@ else
         var dialog = DialogService.Show<CreateTaskDialog>("Create New Task", new DialogParameters());
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is CreateTaskFormModel newTask)
+        if (!result.Canceled && result.Data is CreateTaskFormModel formModel)
         {
-            var command = new CreateTaskCommand(Id, newTask.Title, newTask.Description, newTask.DueDate, newTask.Priority, newTask.AssignedUserId);
-            Dispatcher.Dispatch(new CreateTaskAction(command));
+            // ✅ Dispatch action with ProjectId and FormModel (no Application layer dependency)
+            Dispatcher.Dispatch(new CreateTaskAction(Id, formModel));
         }
     }
 
@@ -194,5 +212,11 @@ else
     private void NavigateToTaskDetail(Guid taskId)
     {
         Navigation.NavigateTo($"/tasks/{taskId}");
+    }
+
+    private void ClearErrorMessage()
+    {
+        // ✅ Dispatch clear error action
+        Dispatcher.Dispatch(new ClearProjectDetailErrorAction());
     }
 }

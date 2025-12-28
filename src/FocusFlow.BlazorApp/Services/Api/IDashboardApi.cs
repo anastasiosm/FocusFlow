@@ -1,4 +1,4 @@
-using FocusFlow.Application.Features.Dashboard.Common;
+using FocusFlow.BlazorApp.Models.Dtos;
 using Refit;
 
 namespace FocusFlow.BlazorApp.Services.Api;

@@ -1,10 +1,4 @@
-using FocusFlow.Application.Features.Dashboard.Common;
-using FocusFlow.Application.Features.Projects.Common;
-using FocusFlow.Application.Features.Projects.CreateProject;
-using FocusFlow.Application.Features.Projects.GetProjectById;
-using FocusFlow.Application.Features.Projects.UpdateProject;
-using FocusFlow.Application.Features.Tasks.Common;
-using FocusFlow.Application.Features.Tasks.CreateTask;
+using FocusFlow.BlazorApp.Models.Dtos;
 using FocusFlow.BlazorApp.Models;
 using FocusFlow.BlazorApp.Services.Api;
 using FocusFlow.Domain.Enums;
@@ -221,7 +215,17 @@ public class RefitApiService : IApiService
     {
         try
         {
-            var result = await _tasksApi.CreateTaskAsync(dto);
+            var request = new CreateTaskRequest
+            {
+                ProjectId = dto.ProjectId,
+                Title = dto.Title,
+                Description = dto.Description,
+                DueDate = dto.DueDate,
+                Priority = dto.Priority,
+                AssignedUserId = dto.AssignedUserId
+            };
+            
+            var result = await _tasksApi.CreateTaskAsync(request);
             return ApiResult<TaskDto>.Success(result ?? throw new InvalidOperationException("Failed to create task"));
         }
         catch (ApiException apiEx)

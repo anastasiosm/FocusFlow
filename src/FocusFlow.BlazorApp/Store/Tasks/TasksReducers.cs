@@ -8,7 +8,7 @@ namespace FocusFlow.BlazorApp.Store.Tasks;
 public static class TasksReducers
 {
 	[ReducerMethod]
-	public static TasksState OnLoadTasks(TasksState state, TasksActions.LoadTasks action)
+	public static TasksState OnLoadTasks(TasksState state, TasksActions.LoadTasksAction action)
 	{
 		return state with
 		{
@@ -18,7 +18,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnLoadTasksSuccess(TasksState state, TasksActions.LoadTasksSuccess action)
+	public static TasksState OnLoadTasksSuccess(TasksState state, TasksActions.LoadTasksSuccessAction action)
 	{
 		return state with
 		{
@@ -29,7 +29,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnLoadTasksFailure(TasksState state, TasksActions.LoadTasksFailure action)
+	public static TasksState OnLoadTasksFailure(TasksState state, TasksActions.LoadTasksFailureAction action)
 	{
 		return state with
 		{
@@ -39,7 +39,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnSetStatusFilter(TasksState state, TasksActions.SetStatusFilter action)
+	public static TasksState OnSetStatusFilter(TasksState state, TasksActions.SetStatusFilterAction action)
 	{
 		return state with
 		{
@@ -49,7 +49,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnSetPriorityFilter(TasksState state, TasksActions.SetPriorityFilter action)
+	public static TasksState OnSetPriorityFilter(TasksState state, TasksActions.SetPriorityFilterAction action)
 	{
 		return state with
 		{
@@ -59,7 +59,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnSetOverdueFilter(TasksState state, TasksActions.SetOverdueFilter action)
+	public static TasksState OnSetOverdueFilter(TasksState state, TasksActions.SetOverdueFilterAction action)
 	{
 		return state with
 		{
@@ -69,7 +69,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnClearFilters(TasksState state, TasksActions.ClearFilters action)
+	public static TasksState OnClearFilters(TasksState state, TasksActions.ClearFiltersAction action)
 	{
 		return state with
 		{
@@ -82,7 +82,7 @@ public static class TasksReducers
 
 	// Task Detail reducers
 	[ReducerMethod]
-	public static TasksState OnLoadTaskById(TasksState state, TasksActions.LoadTaskById action)
+	public static TasksState OnLoadTaskById(TasksState state, TasksActions.LoadTaskByIdAction action)
 	{
 		return state with
 		{
@@ -92,7 +92,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnLoadTaskByIdSuccess(TasksState state, TasksActions.LoadTaskByIdSuccess action)
+	public static TasksState OnLoadTaskByIdSuccess(TasksState state, TasksActions.LoadTaskByIdSuccessAction action)
 	{
 		return state with
 		{
@@ -103,7 +103,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnLoadTaskByIdFailure(TasksState state, TasksActions.LoadTaskByIdFailure action)
+	public static TasksState OnLoadTaskByIdFailure(TasksState state, TasksActions.LoadTaskByIdFailureAction action)
 	{
 		return state with
 		{
@@ -114,7 +114,7 @@ public static class TasksReducers
 
 	// Update Task reducers
 	[ReducerMethod]
-	public static TasksState OnUpdateTask(TasksState state, TasksActions.UpdateTask action)
+	public static TasksState OnUpdateTask(TasksState state, TasksActions.UpdateTaskFromResultAction action)
 	{
 		return state with
 		{
@@ -124,7 +124,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnUpdateTaskSuccess(TasksState state, TasksActions.UpdateTaskSuccess action)
+	public static TasksState OnUpdateTaskSuccess(TasksState state, TasksActions.UpdateTaskSuccessAction action)
 	{
 		var updatedTasks = state.Tasks.Select(t => t.Id == action.Task.Id ? action.Task : t).ToList();
 		
@@ -138,7 +138,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnUpdateTaskFailure(TasksState state, TasksActions.UpdateTaskFailure action)
+	public static TasksState OnUpdateTaskFailure(TasksState state, TasksActions.UpdateTaskFailureAction action)
 	{
 		return state with
 		{
@@ -149,7 +149,7 @@ public static class TasksReducers
 
 	// Update Task Status reducers
 	[ReducerMethod]
-	public static TasksState OnUpdateTaskStatus(TasksState state, TasksActions.UpdateTaskStatus action)
+	public static TasksState OnUpdateTaskStatus(TasksState state, TasksActions.UpdateTaskStatusAction action)
 	{
 		return state with
 		{
@@ -159,7 +159,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnUpdateTaskStatusSuccess(TasksState state, TasksActions.UpdateTaskStatusSuccess action)
+	public static TasksState OnUpdateTaskStatusSuccess(TasksState state, TasksActions.UpdateTaskStatusSuccessAction action)
 	{
 		var updatedTasks = state.Tasks.Select(t => t.Id == action.Task.Id ? action.Task : t).ToList();
 		
@@ -173,7 +173,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnUpdateTaskStatusFailure(TasksState state, TasksActions.UpdateTaskStatusFailure action)
+	public static TasksState OnUpdateTaskStatusFailure(TasksState state, TasksActions.UpdateTaskStatusFailureAction action)
 	{
 		return state with
 		{
@@ -184,7 +184,7 @@ public static class TasksReducers
 
 	// Delete Task reducers
 	[ReducerMethod]
-	public static TasksState OnDeleteTask(TasksState state, TasksActions.DeleteTask action)
+	public static TasksState OnDeleteTask(TasksState state, TasksActions.DeleteTaskAction action)
 	{
 		return state with
 		{
@@ -194,7 +194,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnDeleteTaskSuccess(TasksState state, TasksActions.DeleteTaskSuccess action)
+	public static TasksState OnDeleteTaskSuccess(TasksState state, TasksActions.DeleteTaskSuccessAction action)
 	{
 		var updatedTasks = state.Tasks.Where(t => t.Id != action.TaskId).ToList();
 		
@@ -208,7 +208,7 @@ public static class TasksReducers
 	}
 
 	[ReducerMethod]
-	public static TasksState OnDeleteTaskFailure(TasksState state, TasksActions.DeleteTaskFailure action)
+	public static TasksState OnDeleteTaskFailure(TasksState state, TasksActions.DeleteTaskFailureAction action)
 	{
 		return state with
 		{

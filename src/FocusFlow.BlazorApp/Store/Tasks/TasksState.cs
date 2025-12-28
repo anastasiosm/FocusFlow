@@ -1,4 +1,4 @@
-using FocusFlow.Application.Features.Tasks.Common;
+using FocusFlow.BlazorApp.Models.Dtos;
 using FocusFlow.Domain.Enums;
 using Fluxor;
 

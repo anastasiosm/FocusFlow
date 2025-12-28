@@ -105,7 +105,8 @@ try
 	}
 
 	app.UseHttpsRedirection();
-	app.UseStaticFiles();
+	// serving static files
+	app.UseStaticFiles(); // TODO: in NET9, we use app.MapStaticAssets() instead // same thing but more efficiently: uses e-tags, caching, etc.
 
 	app.UseAntiforgery();
 
