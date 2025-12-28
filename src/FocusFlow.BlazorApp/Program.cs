@@ -3,7 +3,10 @@ using FluentValidation;
 using Fluxor;
 using FocusFlow.BlazorApp.Auth;
 using FocusFlow.BlazorApp.Components;
-using FocusFlow.BlazorApp.Models.Validators;
+using FocusFlow.BlazorApp.Features.Projects;
+using FocusFlow.BlazorApp.Features.Projects.Shared.Services;
+using FocusFlow.BlazorApp.Features.Auth.Login.Validation;
+using FocusFlow.BlazorApp.Features.Auth.Register.Validation;
 using FocusFlow.BlazorApp.Services;
 using FocusFlow.BlazorApp.Services.Api;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -86,6 +89,9 @@ try
 
 	// Register the main API service
 	builder.Services.AddScoped<IApiService, RefitApiService>();
+
+	// Register Features
+	builder.Services.AddProjectsFeature();
 
 	// FluentValidation
 	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();

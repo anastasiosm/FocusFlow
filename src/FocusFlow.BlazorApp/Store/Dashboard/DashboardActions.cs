@@ -1,4 +1,4 @@
-using FocusFlow.BlazorApp.Models.Dtos;
+using FocusFlow.BlazorApp.Features.Projects.Shared.Models;
 
 namespace FocusFlow.BlazorApp.Store.Dashboard;
 

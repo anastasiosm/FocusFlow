@@ -1,5 +1,12 @@
 using FocusFlow.BlazorApp.Models.Dtos;
 using FocusFlow.BlazorApp.Models;
+using FocusFlow.BlazorApp.Features.Auth.Login.Models;
+using FocusFlow.BlazorApp.Features.Auth.Register.Models;
+using FocusFlow.BlazorApp.Features.Projects.List.Models;
+using FocusFlow.BlazorApp.Features.Projects.Detail.Models;
+using FocusFlow.BlazorApp.Features.Projects.Create.Models;
+using FocusFlow.BlazorApp.Features.Projects.Edit.Models;
+using FocusFlow.BlazorApp.Features.Projects.Shared.Models;
 using FocusFlow.Domain.Enums;
 
 namespace FocusFlow.BlazorApp.Services;
