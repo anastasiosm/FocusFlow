@@ -1,4 +1,6 @@
-﻿namespace FocusFlow.BlazorApp.Features.Tasks.Edit.Models;
+﻿using FocusFlow.Domain.Enums;
+
+namespace FocusFlow.BlazorApp.Features.Tasks.Edit.Models;
 
 /// <summary>
 /// Form model for creating and updating tasks.

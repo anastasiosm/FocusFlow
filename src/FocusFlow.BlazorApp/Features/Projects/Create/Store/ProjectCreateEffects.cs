@@ -25,11 +25,9 @@ public class ProjectCreateEffects
             // Dispatch success to Create state
             dispatcher.Dispatch(new CreateProjectSuccessAction(result.Data!));
             
-            // Also update the Projects List state by adding the new project
-            // This ensures the list is updated without needing to reload
-            dispatcher.Dispatch(new LoadProjectsSuccessAction(
-                new List<FocusFlow.BlazorApp.Features.Projects.List.Models.ProjectDto> { result.Data! }
-            ));
+            // Add the new project to the existing Projects List
+             // This ensures the list is updated without needing to reload            
+            dispatcher.Dispatch(new AddProjectToListAction(result.Data!));
         }
         else
         {

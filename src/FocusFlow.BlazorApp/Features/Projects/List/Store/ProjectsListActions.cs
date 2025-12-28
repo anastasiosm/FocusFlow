@@ -31,6 +31,17 @@ public record LoadProjectsSuccessAction(List<ProjectDto> Projects);
 public record LoadProjectsFailureAction(string Error);
 
 // ============================================================================
+// Add Project (when created from other features)
+// ============================================================================
+
+/// <summary>
+/// Adds a newly created project to the projects list.
+/// Used when a project is created from other features.
+/// </summary>
+/// <param name="Project">The newly created project to add to the list</param>
+public record AddProjectToListAction(ProjectDto Project);
+
+// ============================================================================
 // Delete Project (από το List view)
 // ============================================================================
 

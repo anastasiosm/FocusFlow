@@ -17,6 +17,10 @@ public static class ProjectsListReducers
         state with { IsLoading = false, Error = action.Error };
 
     [ReducerMethod]
+    public static ProjectsListState ReduceAddProjectToListAction(ProjectsListState state, AddProjectToListAction action) =>
+        state with { Projects = [..state.Projects, action.Project] };
+
+    [ReducerMethod]
     public static ProjectsListState ReduceDeleteProjectAction(ProjectsListState state, DeleteProjectAction action) =>
         state with { IsLoading = true, Error = null };
 
