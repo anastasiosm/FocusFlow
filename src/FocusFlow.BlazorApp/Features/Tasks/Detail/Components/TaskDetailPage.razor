@@ -181,7 +181,7 @@
                 </MudCard>
 
                 <!-- Project Link -->
-                <MudCard Elevation="1" Class="pa-4" Style="cursor: pointer;" @onclick="@(() => Navigation.NavigateTo($"/projects/{task.ProjectId}"))">
+                <MudCard Elevation="1" Class="pa-4" Style="cursor: pointer;" OnClick="@(() => Navigation.NavigateTo($"/projects/{task.ProjectId}"))">
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                         <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" />
                         <MudText Typo="Typo.body1">View Project</MudText>
