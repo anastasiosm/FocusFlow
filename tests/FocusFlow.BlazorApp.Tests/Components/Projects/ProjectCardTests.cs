@@ -1,6 +1,6 @@
 using Bunit;
-using FocusFlow.BlazorApp.Components.Projects;
-using FocusFlow.Application.Features.Projects.Common;
+using FocusFlow.BlazorApp.Features.Projects.List.Components;
+using FocusFlow.BlazorApp.Features.Projects.List.Models;
 using MudBlazor.Services;
 using MudBlazor;
 using FluentAssertions;

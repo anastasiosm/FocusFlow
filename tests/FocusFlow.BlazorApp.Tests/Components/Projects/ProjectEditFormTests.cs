@@ -1,9 +1,9 @@
 using Bunit;
-using FocusFlow.Application.Features.Projects.Common;
-using FocusFlow.BlazorApp.Components.Projects;
-using FocusFlow.BlazorApp.Models;
-using FocusFlow.BlazorApp.Models.Validators;
-using FocusFlow.BlazorApp.Store.Projects;
+using FocusFlow.BlazorApp.Features.Projects.Edit.Components;
+using FocusFlow.BlazorApp.Features.Projects.Edit.Models;
+using FocusFlow.BlazorApp.Features.Projects.Edit.Validation;
+using FocusFlow.BlazorApp.Features.Projects.List.Store;
+using FocusFlow.BlazorApp.Features.Projects.List.Models;
 using Fluxor;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,16 +16,16 @@ namespace FocusFlow.BlazorApp.Tests.Components.Projects;
 public class ProjectEditFormTests : TestContextBase
 {
     private readonly IDispatcher _mockDispatcher;
-    private readonly IState<ProjectsState> _mockProjectsState;
+    private readonly IState<ProjectsListState> _mockProjectsState;
     private readonly ISnackbar _mockSnackbar;
 
     public ProjectEditFormTests()
     {
         _mockDispatcher = Substitute.For<IDispatcher>();
-        _mockProjectsState = Substitute.For<IState<ProjectsState>>();
+        _mockProjectsState = Substitute.For<IState<ProjectsListState>>();
         _mockSnackbar = Substitute.For<ISnackbar>();
         
-        _mockProjectsState.Value.Returns(new ProjectsState(
+        _mockProjectsState.Value.Returns(new ProjectsListState(
             isLoading: false,
             error: null,
             projects: new List<ProjectDto>()

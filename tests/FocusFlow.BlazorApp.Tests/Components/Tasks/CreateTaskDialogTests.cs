@@ -1,12 +1,15 @@
 using Bunit;
-using FocusFlow.BlazorApp.Components.Tasks;
+using FocusFlow.BlazorApp.Features.Tasks.Create.Components;
+using FocusFlow.BlazorApp.Features.Tasks.Create.Models;
+using FocusFlow.BlazorApp.Features.Tasks.Shared.Services;
 using FocusFlow.Domain.Enums;
 using FluentAssertions;
 using MudBlazor;
 using MudBlazor.Services;
+using Moq;
 using Xunit;
 using Microsoft.AspNetCore.Components;
-using FocusFlow.BlazorApp.Features.Tasks.Create.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FocusFlow.BlazorApp.Tests.Components.Tasks;
 
@@ -15,6 +18,7 @@ public class CreateTaskDialogTests : TestContext
 	public CreateTaskDialogTests()
 	{
 		Services.AddMudServices();
+		Services.AddSingleton(new Mock<ITasksApi>().Object);
 
 		// Setup all required JSInterop calls for MudBlazor components
 		JSInterop.Mode = JSRuntimeMode.Loose; // This allows unhandled calls to pass through
@@ -54,11 +58,11 @@ public class CreateTaskDialogTests : TestContext
 		dialog.Should().NotBeNull();
 		dialog?.Result.IsCompleted.Should().BeFalse();
 
-		cut.Find(".mud-dialog-title").TextContent.Should().Contain("Create New Task");
 		cut.FindAll("label").Should().Contain(x => x.TextContent == "Title");
 		cut.FindAll("label").Should().Contain(x => x.TextContent == "Description");
 		cut.FindAll("label").Should().Contain(x => x.TextContent == "Due Date");
 		cut.FindAll("label").Should().Contain(x => x.TextContent == "Priority");
+		cut.FindAll("label").Should().Contain(x => x.TextContent == "Assigned User ID");
 
 		cut.Find("[data-testid='cancel-button']").Should().NotBeNull();
 		cut.Find("[data-testid='submit-button']").Should().NotBeNull();

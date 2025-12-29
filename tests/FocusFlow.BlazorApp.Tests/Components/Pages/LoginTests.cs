@@ -1,8 +1,8 @@
 using Bunit;
-using FocusFlow.BlazorApp.Components.Pages;
-using FocusFlow.BlazorApp.Models;
-using FocusFlow.BlazorApp.Models.Validators;
-using FocusFlow.BlazorApp.Store.Auth;
+using FocusFlow.BlazorApp.Features.Auth.Login.Components;
+using FocusFlow.BlazorApp.Features.Auth.Login.Models;
+using FocusFlow.BlazorApp.Features.Auth.Login.Validation;
+using FocusFlow.BlazorApp.Features.Auth.Login.Store;
 using Fluxor;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,7 +43,7 @@ public class LoginTests : TestContextBase
     public void Login_ShouldRenderLoginForm()
     {
         // Arrange & Act
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Assert
         var heading = cut.Find(".mud-typography-h5");
@@ -54,7 +54,7 @@ public class LoginTests : TestContextBase
     public void Login_ShouldRenderEmailAndPasswordFields()
     {
         // Arrange & Act
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Assert
         var textFields = cut.FindComponents<MudTextField<string>>();
@@ -72,7 +72,7 @@ public class LoginTests : TestContextBase
     public void Login_ShouldRenderSubmitButton()
     {
         // Arrange & Act
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Assert
         var submitButton = cut.Find("button[type='submit']");
@@ -84,7 +84,7 @@ public class LoginTests : TestContextBase
     public void Login_ShouldRenderRegisterLink()
     {
         // Arrange & Act
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Assert
         var registerLink = cut.FindAll("a").FirstOrDefault(a => a.GetAttribute("href") == "/register");
@@ -95,7 +95,7 @@ public class LoginTests : TestContextBase
     public void Login_ShouldDispatchLoginActionOnValidSubmit()
     {
         // Arrange
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Act - Fill in the form with valid data
         var inputs = cut.FindAll("input");
@@ -125,7 +125,7 @@ public class LoginTests : TestContextBase
         ));
 
         // Act
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Assert
         var progressCircular = cut.FindComponent<MudProgressCircular>();
@@ -148,7 +148,7 @@ public class LoginTests : TestContextBase
         ));
 
         // Act
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Assert
         var submitButton = cut.Find("button[type='submit']");
@@ -169,7 +169,7 @@ public class LoginTests : TestContextBase
         ));
 
         // Act
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Assert
         var alert = cut.FindComponent<MudAlert>();
@@ -184,7 +184,7 @@ public class LoginTests : TestContextBase
     public void Login_ShouldNotDispatchWhenEmailIsInvalid()
     {
         // Arrange
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Act - Fill with invalid email
         var inputs = cut.FindAll("input");
@@ -205,7 +205,7 @@ public class LoginTests : TestContextBase
     public void Login_ShouldNotDispatchWhenPasswordIsEmpty()
     {
         // Arrange
-        var cut = RenderComponent<Login>();
+        var cut = RenderComponent<LoginPage>();
 
         // Act - Fill with empty password
         var inputs = cut.FindAll("input");

@@ -1,7 +1,7 @@
 using Bunit;
-using FocusFlow.Application.Features.Dashboard.Common;
-using FocusFlow.BlazorApp.Components.Pages;
-using FocusFlow.BlazorApp.Store.Dashboard;
+using FocusFlow.BlazorApp.Features.Dashboard.Components;
+using FocusFlow.BlazorApp.Features.Dashboard.Store;
+using FocusFlow.BlazorApp.Features.Projects.Shared.Models;
 using Fluxor;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Components.Authorization;
