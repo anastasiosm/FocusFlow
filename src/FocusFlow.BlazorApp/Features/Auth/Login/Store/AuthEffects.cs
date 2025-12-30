@@ -1,4 +1,3 @@
-using Blazored.LocalStorage;
 using Fluxor;
 using FocusFlow.BlazorApp.Auth;
 using FocusFlow.BlazorApp.Services;
@@ -8,11 +7,19 @@ using System.Security.Claims; // For JwtParser
 
 namespace FocusFlow.BlazorApp.Features.Auth.Login.Store;
 
+/// <summary>
+/// Provides authentication-related side effects for login, logout, registration, and authentication state hydration
+/// within a Fluxor-based Blazor application.
+/// </summary>
+/// <remarks>This class contains effect methods that respond to authentication actions by interacting with API
+/// services, managing authentication tokens, updating authentication state, and performing navigation. It is intended
+/// to be registered with Fluxor's effect system and relies on dependency injection for required services. All effect
+/// methods are asynchronous and are triggered by corresponding authentication actions dispatched within the
+/// application.</remarks>
 public class AuthEffects
 {
 	private readonly IApiService _apiService;
 	private readonly ITokenProvider _tokenProvider;
-	private readonly ILocalStorageService _localStorage;
 	private readonly NavigationManager _navigationManager;
 	private readonly CustomAuthenticationStateProvider _authStateProvider;
 	private readonly ILogger<AuthEffects> _logger;
@@ -20,14 +27,12 @@ public class AuthEffects
 	public AuthEffects(
 		IApiService apiService,
 		ITokenProvider tokenProvider,
-		ILocalStorageService localStorage,
 		NavigationManager navigationManager,
 		AuthenticationStateProvider authStateProvider,
 		ILogger<AuthEffects> logger)
 	{
 		_apiService = apiService;
 		_tokenProvider = tokenProvider;
-		_localStorage = localStorage;
 		_navigationManager = navigationManager;
 		_authStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
 		_logger = logger;
@@ -50,11 +55,14 @@ public class AuthEffects
 				var username = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
 							   ?? action.Request.Email;
 
-				// Store token in ITokenProvider (in-memory + localStorage)
-				await _tokenProvider.SetTokenAsync(token, _localStorage);
+				// Store token in ITokenProvider (in-memory + ProtectedLocalStorage)
+				await _tokenProvider.SetTokenAsync(token);
 
 				// Update authentication state
-				await _authStateProvider.MarkUserAsAuthenticatedAsync(token, _localStorage);
+				await _authStateProvider.MarkUserAsAuthenticatedAsync(token);
+
+				// 👇 Allow Blazor to process auth state + storage
+				await Task.Yield();
 
 				// Dispatch success action
 				dispatcher.Dispatch(new LoginSuccessAction(token, username));
@@ -85,11 +93,11 @@ public class AuthEffects
 
 		try
 		{
-			// Clear token from ITokenProvider (in-memory + localStorage)
-			await _tokenProvider.ClearTokenAsync(_localStorage);
+			// Clear token from ITokenProvider (in-memory + ProtectedLocalStorage)
+			await _tokenProvider.ClearTokenAsync();
 
 			// Update authentication state
-			await _authStateProvider.MarkUserAsLoggedOutAsync(_localStorage);
+			await _authStateProvider.MarkUserAsLoggedOutAsync();
 
 			_logger.LogInformation("Logout successful");
 
@@ -137,10 +145,8 @@ public class AuthEffects
 
 		try
 		{
-			// Initialize TokenProvider from localStorage (if token exists)
-			await _tokenProvider.InitializeAsync(_localStorage);
-
-			var token = _tokenProvider.GetToken();
+			// Get token from TokenProvider (async)
+			var token = await _tokenProvider.GetTokenAsync();
 			string? username = null;
 
 			if (!string.IsNullOrEmpty(token))
@@ -156,7 +162,7 @@ public class AuthEffects
 				{
 					_logger.LogError(ex, "Error parsing token during initialization");
 					// Clear invalid token
-					await _tokenProvider.ClearTokenAsync(_localStorage);
+					await _tokenProvider.ClearTokenAsync();
 					token = null;
 				}
 			}

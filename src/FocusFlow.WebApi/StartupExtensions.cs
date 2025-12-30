@@ -3,11 +3,13 @@ using FocusFlow.Infrastructure;
 using FocusFlow.Infrastructure.Identity;
 using FocusFlow.WebApi.Authorization.ProjectOwnership;
 using FocusFlow.WebApi.Authorization.TaskOwnership;
+using FocusFlow.WebApi.Hubs;
 using FocusFlow.WebApi.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
@@ -54,6 +56,24 @@ public static class StartupExtensions
 				ValidIssuer = jwtSettings["Issuer"],
 				ValidAudience = jwtSettings["Audience"],
 				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+			};
+
+			// Configure JWT for SignalR
+			options.Events = new JwtBearerEvents
+			{
+				OnMessageReceived = context =>
+				{
+					var accessToken = context.Request.Query["access_token"];
+
+					// If the request is for our hub...
+					var path = context.HttpContext.Request.Path;
+					if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+					{
+						// Read the token out of the query string
+						context.Token = accessToken;
+					}
+					return Task.CompletedTask;
+				}
 			};
 		});
 
@@ -111,14 +131,27 @@ public static class StartupExtensions
 		builder.Services.AddCors(
 			options => options.AddPolicy(
 				"open",
-				policy => policy.WithOrigins([builder.Configuration["ApiUrl"] ??
-				"http://localhost:3000",
-					builder.Configuration["BlazorUrl"] ??
-					"http://localhost:5050"])
+				policy => policy.WithOrigins([
+					builder.Configuration["ApiUrl"] ?? "http://localhost:8080",
+					builder.Configuration["BlazorUrl"] ?? "http://localhost:5050",
+					"https://localhost:5051"  // Add HTTPS Blazor URL
+				])
 				.AllowAnyMethod()
 				.SetIsOriginAllowed(pol => true) // this setting is to allow subdomains
 				.AllowAnyHeader()
-				.AllowCredentials()));
+				.AllowCredentials())); // Required for SignalR
+
+		// Register SignalR services
+		builder.Services.AddSignalR(options =>
+		{
+			options.EnableDetailedErrors = true;  // For debugging
+			options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+			options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+		});
+
+		// Register hub context mapping for dependency injection
+		builder.Services.AddSingleton<IHubContext<Hub>>(provider =>
+			provider.GetRequiredService<IHubContext<TasksHub>>());
 
 		// Exception handling
 		builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -132,6 +165,9 @@ public static class StartupExtensions
 	{
 		// Global exception handler (must be first)
 		app.UseExceptionHandler(); // Αυτό καλεί το registered IExceptionHandler
+
+		// Enable endpoint routing before CORS / Authentication / Authorization
+		app.UseRouting();
 
 		app.UseCors("open");
 
@@ -165,9 +201,12 @@ public static class StartupExtensions
 		
 		// Serilog request logging
 		app.UseSerilogRequestLogging();
-		
+				
 		//app.UseHttpsRedirection();
 		app.MapControllers();
+
+		// Map SignalR hub endpoint
+		app.MapHub<TasksHub>("/hubs/tasks");
 
 		return app;
 	}	

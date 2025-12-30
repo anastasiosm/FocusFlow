@@ -16,7 +16,8 @@ public class UpdateTaskStatusCommandTests : TestBase
 		_handler = new UpdateTaskStatusCommandHandler(
 			MockTaskRepository.Object,
 			MockUnitOfWork.Object,
-			Mapper);
+			Mapper,
+			MockEventPublisher.Object);
 	}
 
 	[Fact]

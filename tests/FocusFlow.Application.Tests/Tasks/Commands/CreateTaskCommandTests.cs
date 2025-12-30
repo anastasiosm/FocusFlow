@@ -17,7 +17,8 @@ public class CreateTaskCommandTests : TestBase
 			MockTaskRepository.Object,
 			MockProjectRepository.Object,
 			MockUnitOfWork.Object,
-			Mapper);
+			Mapper,
+			MockEventPublisher.Object);
 	}
 
 	[Fact]

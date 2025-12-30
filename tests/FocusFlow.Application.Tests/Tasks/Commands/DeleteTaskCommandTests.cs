@@ -1,3 +1,4 @@
+using FocusFlow.Application.Common.Events;
 using FocusFlow.Application.Interfaces;
 using FocusFlow.Application.Features.Tasks.DeleteTask;
 using FocusFlow.Domain.Entities;
@@ -17,9 +18,11 @@ namespace FocusFlow.Application.Tests.Tasks.Commands
 		{
 			_taskRepositoryMock = new Mock<ITaskRepository>();
 			_unitOfWorkMock = new Mock<IUnitOfWork>();
+			var eventPublisherMock = new Mock<IEventPublisher>();
 			_handler = new DeleteTaskCommandHandler(
 				_taskRepositoryMock.Object,
-				_unitOfWorkMock.Object);
+				_unitOfWorkMock.Object,
+				eventPublisherMock.Object);
 		}
 
 		[Fact]

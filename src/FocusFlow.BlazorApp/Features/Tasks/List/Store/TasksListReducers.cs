@@ -216,4 +216,64 @@ public static class TasksListReducers
 			ErrorMessage = action.ErrorMessage
 		};
 	}
+
+	// ============================================================================
+	// NEW: SignalR Reducers - Handle External Events
+	// ============================================================================
+
+	/// <summary>
+	/// Add a new task to the list (from SignalR notification)
+	/// </summary>
+	[ReducerMethod]
+	public static TasksListState OnAddTaskToList(TasksListState state, TasksListActions.AddTaskToListAction action)
+	{
+		// Check if task already exists to avoid duplicates
+		if (state.Tasks.Any(t => t.Id == action.Task.Id))
+		{
+			return state; // Task already exists, no change
+		}
+
+		var updatedTasks = new List<FocusFlow.BlazorApp.Features.Tasks.Shared.Models.TaskResponse>(state.Tasks)
+		{
+			action.Task
+		};
+
+		return state with
+		{
+			Tasks = updatedTasks,
+			ErrorMessage = null
+		};
+	}
+
+	/// <summary>
+	/// Update an existing task in the list (from SignalR notification)
+	/// </summary>
+	[ReducerMethod]
+	public static TasksListState OnUpdateTaskInList(TasksListState state, TasksListActions.UpdateTaskInListAction action)
+	{
+		var updatedTasks = state.Tasks.Select(t => t.Id == action.Task.Id ? action.Task : t).ToList();
+		
+		return state with
+		{
+			Tasks = updatedTasks,
+			SelectedTask = state.SelectedTask?.Id == action.Task.Id ? action.Task : state.SelectedTask,
+			ErrorMessage = null
+		};
+	}
+
+	/// <summary>
+	/// Remove a task from the list (from SignalR notification)
+	/// </summary>
+	[ReducerMethod]
+	public static TasksListState OnRemoveTaskFromList(TasksListState state, TasksListActions.RemoveTaskFromListAction action)
+	{
+		var updatedTasks = state.Tasks.Where(t => t.Id != action.TaskId).ToList();
+		
+		return state with
+		{
+			Tasks = updatedTasks,
+			SelectedTask = state.SelectedTask?.Id == action.TaskId ? null : state.SelectedTask,
+			ErrorMessage = null
+		};
+	}
 }

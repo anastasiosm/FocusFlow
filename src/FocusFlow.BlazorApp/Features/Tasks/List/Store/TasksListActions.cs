@@ -127,4 +127,48 @@ public static class TasksListActions
 	/// Dispatched when task deletion fails
 	/// </summary>
 	public record DeleteTaskFailureAction(string ErrorMessage);
+
+	// ============================================================================
+	// NEW: SignalR Actions (External Events)
+	// ============================================================================
+
+	/// <summary>
+	/// Dispatched when SignalR notifies us that a task was created.
+	/// This is DIFFERENT from CreateTaskAction (which is user-initiated).
+	/// </summary>
+	public record TaskCreatedFromSignalRAction(Guid TaskId, Guid ProjectId);
+
+	/// <summary>
+	/// Dispatched when SignalR notifies us that a task was updated by someone else.
+	/// </summary>
+	public record TaskUpdatedFromSignalRAction(Guid TaskId, Guid ProjectId);
+
+	/// <summary>
+	/// Dispatched when SignalR notifies us about status change.
+	/// </summary>
+	public record TaskStatusChangedFromSignalRAction(Guid TaskId, Guid ProjectId, ProjectTaskStatus NewStatus);
+
+	/// <summary>
+	/// Dispatched when SignalR notifies us that a task was deleted.
+	/// </summary>
+	public record TaskDeletedFromSignalRAction(Guid TaskId, Guid ProjectId);
+
+	// ============================================================================
+	// Internal actions used by effects
+	// ============================================================================
+
+	/// <summary>
+	/// Internal action to add a task to the list (used by SignalR effects)
+	/// </summary>
+	public record AddTaskToListAction(TaskResponse Task);
+
+	/// <summary>
+	/// Internal action to update a task in the list (used by SignalR effects)
+	/// </summary>
+	public record UpdateTaskInListAction(TaskResponse Task);
+
+	/// <summary>
+	/// Internal action to remove a task from the list (used by SignalR effects)
+	/// </summary>
+	public record RemoveTaskFromListAction(Guid TaskId);
 }

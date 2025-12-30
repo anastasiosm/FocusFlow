@@ -1,4 +1,5 @@
 using AutoMapper;
+using FocusFlow.Application.Common.Events;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Interfaces;
 using FocusFlow.Domain.Entities;
@@ -13,17 +14,20 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
 	private readonly IProjectRepository _projectRepository;
 	private readonly IUnitOfWork _unitOfWork;
 	private readonly IMapper _mapper;
+	private readonly IEventPublisher _eventPublisher;
 
 	public CreateTaskCommandHandler(
 		ITaskRepository taskRepository,
 		IProjectRepository projectRepository,
 		IUnitOfWork unitOfWork,
-		IMapper mapper)
+		IMapper mapper,
+		IEventPublisher eventPublisher)
 	{
 		_taskRepository = taskRepository;
 		_projectRepository = projectRepository;
 		_unitOfWork = unitOfWork;
 		_mapper = mapper;
+		_eventPublisher = eventPublisher;
 	}
 
 	public async Task<TaskDto> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
@@ -42,6 +46,9 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
 
 		await _taskRepository.AddAsync(task, cancellationToken);
 		await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+		// Publish event after successful creation
+		await _eventPublisher.PublishTaskCreatedAsync(task.Id, task.ProjectId, task.Title, cancellationToken);
 
 		return _mapper.Map<TaskDto>(task);
 	}

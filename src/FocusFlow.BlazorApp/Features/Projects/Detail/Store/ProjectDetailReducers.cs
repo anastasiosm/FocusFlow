@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace FocusFlow.BlazorApp.Features.Projects.Detail.Store;
 
+/// <summary>
+/// Reducers for handling project detail state changes.
+/// </summary>
 public static class ProjectDetailReducers
 {
     [ReducerMethod]
@@ -45,8 +48,68 @@ public static class ProjectDetailReducers
     public static ProjectDetailState ReduceCreateTaskFailureAction(ProjectDetailState state, CreateTaskFailureAction action) =>
         state with { IsCreatingTask = false, ErrorMessage = action.ErrorMessage };
 
-    // ✅ Reducer for clearing error messages
+    // Reducer for clearing error messages
     [ReducerMethod]
     public static ProjectDetailState ReduceClearError(ProjectDetailState state, ClearProjectDetailErrorAction action) =>
         state with { ErrorMessage = null };
+
+    //////// SignalR Reducers for real-time task updates
+    
+    /// <summary>
+    /// Adds a new task to the project from SignalR notification
+    /// </summary>
+    [ReducerMethod]
+    public static ProjectDetailState ReduceAddTaskToProjectSuccess(ProjectDetailState state, AddTaskToProjectSuccessAction action)
+    {
+        if (state.Project is null)
+            return state;
+
+        var newTasks = state.Project.Tasks.ToList();
+        
+        // Only add if not already present (prevent duplicates)
+        if (!newTasks.Any(t => t.Id == action.Task.Id))
+        {
+            newTasks.Add(action.Task);
+            var updatedProject = state.Project with { Tasks = newTasks };
+            return state with { Project = updatedProject };
+        }
+
+        return state;
+    }
+
+    /// <summary>
+    /// Updates an existing task in the project from SignalR notification
+    /// </summary>
+    [ReducerMethod]
+    public static ProjectDetailState ReduceUpdateTaskInProjectSuccess(ProjectDetailState state, UpdateTaskInProjectSuccessAction action)
+    {
+        if (state.Project is null)
+            return state;
+
+        var tasks = state.Project.Tasks.ToList();
+        var existingTaskIndex = tasks.FindIndex(t => t.Id == action.Task.Id);
+        
+        if (existingTaskIndex >= 0)
+        {
+            tasks[existingTaskIndex] = action.Task;
+            var updatedProject = state.Project with { Tasks = tasks };
+            return state with { Project = updatedProject };
+        }
+
+        return state;
+    }
+
+    /// <summary>
+    /// Removes a task from the project from SignalR notification
+    /// </summary>
+    [ReducerMethod]
+    public static ProjectDetailState ReduceRemoveTaskFromProjectSuccess(ProjectDetailState state, RemoveTaskFromProjectSuccessAction action)
+    {
+        if (state.Project is null)
+            return state;
+
+        var tasks = state.Project.Tasks.Where(t => t.Id != action.TaskId).ToList();
+        var updatedProject = state.Project with { Tasks = tasks };
+        return state with { Project = updatedProject };
+    }
 }

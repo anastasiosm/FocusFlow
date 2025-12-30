@@ -1,8 +1,8 @@
-using Blazored.LocalStorage;
 using FluentValidation;
 using Fluxor;
 using FocusFlow.BlazorApp.Auth;
 using FocusFlow.BlazorApp.Components;
+using Microsoft.AspNetCore.Authentication;
 using FocusFlow.BlazorApp.Features.Projects;
 using FocusFlow.BlazorApp.Features.Dashboard;
 using FocusFlow.BlazorApp.Features.Home;
@@ -11,6 +11,7 @@ using FocusFlow.BlazorApp.Features.Auth.Login.Validation;
 using FocusFlow.BlazorApp.Features.Auth.Register.Validation;
 using FocusFlow.BlazorApp.Services;
 using FocusFlow.BlazorApp.Services.Api;
+using FocusFlow.BlazorApp.Shared.Services.SignalR;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using MudBlazor.Services;
@@ -25,7 +26,7 @@ using FocusFlow.BlazorApp.Features.Tasks;
 Log.Logger = new LoggerConfiguration()
 	.WriteTo.Console()
 	.WriteTo.BrowserConsole()
-	// .WriteTo.Seq("http://focusflow-seq:5341")
+	.WriteTo.Seq("http://focusflow-seq:5341")
 	.CreateBootstrapLogger();
 
 Log.Information("FocusFlow.BlazorApp starting up...");
@@ -61,18 +62,29 @@ try
 	// Add MudBlazor services
 	builder.Services.AddMudServices();
 
-	// Blazored.LocalStorage
-	builder.Services.AddBlazoredLocalStorage();
+	// ❌ REMOVE Blazored.LocalStorage - doesn't work with Blazor Server!
+	// Use ProtectedBrowserStorage instead (built-in)
+	// builder.Services.AddBlazoredLocalStorage();
 
+	// Add minimal authentication scheme for Blazor Server
+	// This is required to use [Authorize] attributes in Blazor Server
+	builder.Services.AddAuthentication(options =>
+	{
+		// Set a default scheme (required by ASP.NET Core)
+		options.DefaultScheme = "BlazorAuth";
+		options.DefaultChallengeScheme = "BlazorAuth";
+	})
+	.AddScheme<AuthenticationSchemeOptions, BlazorAuthenticationHandler>("BlazorAuth", null);
+
+	// Authorization (not Authentication - that's handled by JWT)
 	builder.Services.AddAuthorizationCore();
 
-	// Custom AuthenticationStateProvider
-	builder.Services.AddSingleton<ITokenProvider, TokenProvider>();
+	// Custom AuthenticationStateProvider for JWT
+	builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 	builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
-	// HTTP Client + API service with Refit
+	// Register Refit HTTP clients and the API service (adds AuthHeaderHandler and base address).
 	builder.Services.AddTransient<AuthHeaderHandler>();
-
 	var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "https://localhost:7001";
 	
 	// Register Refit clients
@@ -101,6 +113,10 @@ try
 	builder.Services.AddHomeFeature();
 	builder.Services.AddTasksFeature();
 
+	// SignalR Services - use Scoped so it can consume scoped services (e.g. ITokenProvider)
+	builder.Services.AddScoped<ISignalRService, SignalRService>();
+	builder.Services.AddScoped<SignalRTasksListener>();
+
 	// FluentValidation
 	builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
@@ -122,9 +138,17 @@ try
 	// serving static files
 	app.UseStaticFiles(); // TODO: in NET9, we use app.MapStaticAssets() instead // same thing but more efficiently: uses e-tags, caching, etc.
 
-	app.UseAntiforgery();
+	// TODO: Remove UseAntiforgery() - not needed for API-first architecture with JWT authentication
+	app.UseAntiforgery(); // CSRF protection handled by JWT tokens and Same-Origin Policy
 
-	app.UseAuthentication(); 
+	/*
+	 * Because this app uses a custom AuthenticationStateProvider / token-based approach for Blazor Server UI, 
+	 * and authorisation inside components is driven by that provider — 
+	 * so the HTTP authentication middleware (UseAuthentication) was intentionally omitted. 
+	 * 
+	 * UseAuthorization is still needed for policy checks that run on requests or for [Authorize] on 
+	 * RazorPages; Blazor component authorization uses the AuthenticationStateProvider instead.
+	 */
 	app.UseAuthorization();
 
 	app.UseSerilogRequestLogging();

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FocusFlow.Application.Common.Events;
 using FocusFlow.Application.Features.Projects.Common;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Interfaces;
@@ -14,6 +15,7 @@ public abstract class TestBase
 	protected readonly Mock<IProjectRepository> MockProjectRepository;
 	protected readonly Mock<ITaskRepository> MockTaskRepository;
 	protected readonly Mock<IUnitOfWork> MockUnitOfWork;
+	protected readonly Mock<IEventPublisher> MockEventPublisher;
 	protected readonly IMapper Mapper;
 
 	protected TestBase()
@@ -21,6 +23,7 @@ public abstract class TestBase
 		MockProjectRepository = new Mock<IProjectRepository>();
 		MockTaskRepository = new Mock<ITaskRepository>();
 		MockUnitOfWork = new Mock<IUnitOfWork>();
+		MockEventPublisher = new Mock<IEventPublisher>();
 
 		// Setup AutoMapper
 		var config = new MapperConfiguration(cfg =>

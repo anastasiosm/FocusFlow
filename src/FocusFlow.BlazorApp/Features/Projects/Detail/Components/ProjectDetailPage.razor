@@ -8,6 +8,7 @@
 @using FocusFlow.BlazorApp.Features.Tasks.Create.Components
 @using FocusFlow.BlazorApp.Features.Tasks.Create.Models
 @using FocusFlow.BlazorApp.Features.Projects.Detail.Store
+@using FocusFlow.BlazorApp.Shared.Services.SignalR
 @using FocusFlow.Domain.Enums
 @using Fluxor
 @using Microsoft.AspNetCore.Components.Authorization
@@ -22,6 +23,8 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILogger<ProjectDetailPage> Logger
 @inject NavigationManager Navigation
+@inject ISignalRService SignalRService
+@implements IAsyncDisposable
 
 <PageTitle>Project Detail - FocusFlow</PageTitle>
 
@@ -93,7 +96,7 @@ else if (ProjectDetailState.Value.Project is not null)
 
         <MudGrid>
             <MudItem xs="12">
-                <MudText Typo="Typo.h5" Class="mb-3">Tasks</MudText>
+                <MudText Typo="Typo.h5" Class="mb-3">Tasks (@(project.Tasks.Count)) | Last updated: @DateTime.Now.ToString("HH:mm:ss")</MudText>
                 @if (!project.Tasks.Any())
                 {
                     <MudAlert Severity="MudBlazor.Severity.Info" Class="mt-4">
@@ -154,6 +157,7 @@ else
     // This solves the issue where navigating between different projects
     // wouldn't reload the data properly
     private Guid _lastLoadedId = Guid.Empty;
+    private Guid _currentSignalRProject = Guid.Empty;
 
     // SOLUTION: Use OnParametersSetAsync instead of OnAfterRenderAsync
     // 
@@ -185,6 +189,38 @@ else
             Logger.LogInformation("Loading project {ProjectId}", Id);
             Dispatcher.Dispatch(new LoadProjectDetailAction(Id));
             _lastLoadedId = Id; // Remember which project we just loaded
+
+            // Manage SignalR project groups
+            await ManageSignalRProjectGroup();
+        }
+    }
+
+    /// <summary>
+    /// Manages SignalR project group membership.
+    /// Leaves the previous project group and joins the new one.
+    /// </summary>
+    private async Task ManageSignalRProjectGroup()
+    {
+        try
+        {
+            // Leave previous project group if we were in one
+            if (_currentSignalRProject != Guid.Empty && _currentSignalRProject != Id)
+            {
+                await SignalRService.LeaveProjectAsync(_currentSignalRProject);
+                Logger.LogInformation("👋 Left SignalR group for project: {ProjectId}", _currentSignalRProject);
+            }
+
+            // Join new project group
+            if (Id != Guid.Empty && SignalRService.IsConnected)
+            {
+                await SignalRService.JoinProjectAsync(Id);
+                _currentSignalRProject = Id;
+                Logger.LogInformation("👥 Joined SignalR group for project: {ProjectId}", Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "❌ Error managing SignalR project group for project: {ProjectId}", Id);
         }
     }
 
@@ -195,7 +231,7 @@ else
 
         if (!result.Canceled && result.Data is CreateTaskFormModel formModel)
         {
-            // ✅ Dispatch action with ProjectId and FormModel (no Application layer dependency)
+            // Dispatch action with ProjectId and FormModel (no Application layer dependency)
             Dispatcher.Dispatch(new CreateTaskAction(Id, formModel));
         }
     }
@@ -223,7 +259,27 @@ else
 
     private void ClearErrorMessage()
     {
-        // ✅ Dispatch clear error action
+        // Dispatch clear error action
         Dispatcher.Dispatch(new ClearProjectDetailErrorAction());
+    }
+
+    public new async ValueTask DisposeAsync()
+    {
+        try
+        {
+            // Leave SignalR project group when component is disposed
+            if (_currentSignalRProject != Guid.Empty)
+            {
+                await SignalRService.LeaveProjectAsync(_currentSignalRProject);
+                Logger.LogInformation("👋 Left SignalR group on dispose: {ProjectId}", _currentSignalRProject);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "❌ Error leaving SignalR group on dispose");
+        }
+        
+        // Call base dispose
+        await base.DisposeAsync();
     }
 }

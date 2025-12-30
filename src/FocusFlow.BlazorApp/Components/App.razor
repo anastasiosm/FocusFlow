@@ -1,4 +1,8 @@
 @using Fluxor.Blazor.Web
+@using FocusFlow.BlazorApp.Shared.Services.SignalR
+@inject ISignalRService SignalRService
+@inject ILogger<App> Logger
+@implements IAsyncDisposable
 
 <!DOCTYPE html>
 <html lang="en">
@@ -25,3 +29,41 @@
 </body>
 
 </html>
+
+@code {
+    /*     
+        Why override is used here
+        •   OnAfterRenderAsync is a virtual method on ComponentBase (the Blazor base class). 
+            Using override replaces the base implementation with your custom code so the Blazor runtime will call your method at the right lifecycle moment.
+        
+        What this method does (high-level)
+        •	OnAfterRenderAsync(bool firstRender) runs after the component has finished rendering to the DOM.
+        •	The firstRender parameter is true only the first time the component has rendered; it will be false on later re-renders.
+        •	In your code it starts a SignalR connection exactly once (on the first render) and logs success or failure.
+     */
+
+	// OnAfterRenderAsync is overridden to start the SignalR connection when the app first renders.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Logger.LogInformation("🚀 App initialized, starting SignalR...");
+            try
+            {
+                // Start SignalR connection on app startup
+                await SignalRService.StartAsync();
+                Logger.LogInformation("✅ SignalR started successfully");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "❌ Failed to start SignalR");
+            }
+        }
+    }
+
+	// DisposeAsync is implemented to stop the SignalR connection when the app is disposed.
+    public async ValueTask DisposeAsync()
+    {
+        await SignalRService.StopAsync();
+    }
+}

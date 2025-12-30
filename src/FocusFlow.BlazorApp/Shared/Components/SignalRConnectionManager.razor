@@ -1,0 +1,119 @@
+@using FocusFlow.BlazorApp.Shared.Services.SignalR
+@using Microsoft.AspNetCore.Components.Authorization
+@implements IAsyncDisposable
+@inject ISignalRService SignalRService
+@inject SignalRTasksListener SignalRTasksListener
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<SignalRConnectionManager> Logger
+
+@* This component manages SignalR connection lifecycle *@
+@* It should be included in the main layout to ensure connection is active *@
+
+@code {
+    private bool _isInitialized = false;
+
+    // subscribes to AuthenticationStateProvider.AuthenticationStateChanged and checks the current authentication state; 
+    // if authenticated it calls InitializeSignalRAsync
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Subscribe to authentication state changes
+            AuthStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+            // Check if user is already authenticated
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                await InitializeSignalRAsync();
+            }
+
+            Logger.LogInformation("🔌 SignalRConnectionManager initialized");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "❌ Error initializing SignalRConnectionManager");
+        }
+    }
+
+    // reacts to login/logout events and starts (InitializeSignalRAsync) or stops (CleanupSignalRAsync) the connection accordingly.
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        try
+        {
+            var authState = await task;
+            
+            if (authState.User.Identity?.IsAuthenticated == true && !_isInitialized)
+            {
+                await InitializeSignalRAsync();
+            }
+            else if (authState.User.Identity?.IsAuthenticated == false && _isInitialized)
+            {
+                await CleanupSignalRAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "❌ Error handling authentication state change");
+        }
+    }
+
+	// starts the SignalR connection and ensures the SignalRTasksListener is active
+    private async Task InitializeSignalRAsync()
+    {
+        if (_isInitialized) return;
+
+        try
+        {
+            Logger.LogInformation("🚀 Starting SignalR connection...");
+            
+            // Start SignalR connection
+            await SignalRService.StartAsync();
+            
+            // The SignalRTasksListener is automatically initialized via DI
+            // and will start listening to SignalR events
+            
+            _isInitialized = true;
+            Logger.LogInformation("✅ SignalR connection and listener initialized");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "❌ Failed to initialize SignalR");
+        }
+    }
+
+	// stops the SignalR connection and cleans up resources
+    private async Task CleanupSignalRAsync()
+    {
+        if (!_isInitialized) return;
+
+        try
+        {
+            Logger.LogInformation("🛑 Stopping SignalR connection...");
+            
+            await SignalRService.StopAsync();
+            
+            _isInitialized = false;
+            Logger.LogInformation("✅ SignalR connection stopped");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "❌ Error stopping SignalR connection");
+        }
+    }
+
+    // cleans up event subscriptions (unsubscribes from the auth changed event) 
+    // and stops the SignalR connection when the component is disposed.
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+            await CleanupSignalRAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "❌ Error disposing SignalRConnectionManager");
+        }
+    }
+}

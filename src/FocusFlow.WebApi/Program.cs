@@ -6,6 +6,7 @@ using Serilog;
 // Use a bootstrap logger to log events during startup.
 Log.Logger = new LoggerConfiguration()
 	.WriteTo.Console()
+	.WriteTo.Seq("http://focusflow-seq:5341")
 	.CreateBootstrapLogger();
 
 Log.Information("FocusFlow.WebApi starting up...");

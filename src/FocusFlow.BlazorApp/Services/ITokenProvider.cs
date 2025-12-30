@@ -1,9 +1,14 @@
-using Blazored.LocalStorage;
+namespace FocusFlow.BlazorApp.Services;
 
 public interface ITokenProvider
 {
-	string? GetToken();
-	Task SetTokenAsync(string token, ILocalStorageService localStorage);
-	Task ClearTokenAsync(ILocalStorageService localStorage);
-	Task InitializeAsync(ILocalStorageService localStorage);
+    // Async methods for ProtectedLocalStorage
+    Task<string?> GetTokenAsync();
+    Task SetTokenAsync(string? token);
+    Task ClearTokenAsync();
+
+    // Backward compatibility methods
+    string? GetToken();
+    void SetToken(string? token);
+    void ClearToken();
 }

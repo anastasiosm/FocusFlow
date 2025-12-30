@@ -163,4 +163,186 @@ public class TasksListEffects
             dispatcher.Dispatch(new TasksListActions.DeleteTaskFailureAction(result.Error ?? "Unknown error"));
         }
     }
+
+    // ============================================================================
+    // NEW: SignalR Effects - Handle External Events
+    // ============================================================================
+
+    /// <summary>
+    /// When SignalR notifies us about a task creation, fetch the full task data
+    /// and add it to our list if it matches current filters.
+    /// </summary>
+    [EffectMethod]
+    public async Task HandleTaskCreatedFromSignalR(TasksListActions.TaskCreatedFromSignalRAction action, IDispatcher dispatcher)
+    {
+        _logger.LogInformation("🔔 Handling SignalR TaskCreated | TaskId: {TaskId}", action.TaskId);
+
+        try
+        {
+            // Fetch the full task data from API
+            var result = await _apiService.GetTaskByIdAsync(action.TaskId);
+
+            if (result.Succeeded && result.Data != null)
+            {
+                // Check if task matches current filters before adding
+                var task = result.Data;
+                _logger.LogInformation("🔍 Task fetched from API | TaskId: {TaskId} | Title: {Title}", task.Id, task.Title);
+                
+                if (TaskMatchesCurrentFilters(task))
+                {
+                    _logger.LogInformation("✅ Task matches filters, dispatching AddTaskToListAction | TaskId: {TaskId}", task.Id);
+                    dispatcher.Dispatch(new TasksListActions.AddTaskToListAction(task));
+                    _logger.LogInformation("✅ Added new task to list from SignalR");
+                }
+                else
+                {
+                    _logger.LogInformation("ℹ️ Task doesn't match current filters, not adding to list");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("⚠️ Failed to fetch task data for SignalR created task: {TaskId}", action.TaskId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error handling SignalR TaskCreated for task: {TaskId}", action.TaskId);
+        }
+    }
+
+    /// <summary>
+    /// When SignalR notifies us about a task update, fetch the latest data
+    /// and update our list.
+    /// </summary>
+    [EffectMethod]
+    public async Task HandleTaskUpdatedFromSignalR(TasksListActions.TaskUpdatedFromSignalRAction action, IDispatcher dispatcher)
+    {
+        _logger.LogInformation("🔔 Handling SignalR TaskUpdated | TaskId: {TaskId}", action.TaskId);
+
+        try
+        {
+            // Fetch the updated task data from API
+            var result = await _apiService.GetTaskByIdAsync(action.TaskId);
+
+            if (result.Succeeded && result.Data != null)
+            {
+                var task = result.Data;
+                
+                // Check if task still matches current filters
+                if (TaskMatchesCurrentFilters(task))
+                {
+                    dispatcher.Dispatch(new TasksListActions.UpdateTaskInListAction(task));
+                    _logger.LogInformation("✅ Updated task in list from SignalR");
+                }
+                else
+                {
+                    // Task no longer matches filters, remove it
+                    dispatcher.Dispatch(new TasksListActions.RemoveTaskFromListAction(action.TaskId));
+                    _logger.LogInformation("ℹ️ Task no longer matches filters, removed from list");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("⚠️ Failed to fetch updated task data for SignalR: {TaskId}", action.TaskId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error handling SignalR TaskUpdated for task: {TaskId}", action.TaskId);
+        }
+    }
+
+    /// <summary>
+    /// When SignalR notifies us about a status change, fetch the latest data
+    /// and update our list.
+    /// </summary>
+    [EffectMethod]
+    public async Task HandleTaskStatusChangedFromSignalR(TasksListActions.TaskStatusChangedFromSignalRAction action, IDispatcher dispatcher)
+    {
+        _logger.LogInformation("🔔 Handling SignalR TaskStatusChanged | TaskId: {TaskId} | Status: {Status}", 
+            action.TaskId, action.NewStatus);
+
+        try
+        {
+            // Fetch the updated task data from API
+            var result = await _apiService.GetTaskByIdAsync(action.TaskId);
+
+            if (result.Succeeded && result.Data != null)
+            {
+                var task = result.Data;
+                
+                // Check if task still matches current filters
+                if (TaskMatchesCurrentFilters(task))
+                {
+                    dispatcher.Dispatch(new TasksListActions.UpdateTaskInListAction(task));
+                    _logger.LogInformation("✅ Updated task status in list from SignalR");
+                }
+                else
+                {
+                    // Task no longer matches filters, remove it
+                    dispatcher.Dispatch(new TasksListActions.RemoveTaskFromListAction(action.TaskId));
+                    _logger.LogInformation("ℹ️ Task no longer matches filters after status change, removed from list");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("⚠️ Failed to fetch updated task data for SignalR status change: {TaskId}", action.TaskId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error handling SignalR TaskStatusChanged for task: {TaskId}", action.TaskId);
+        }
+    }
+
+    /// <summary>
+    /// When SignalR notifies us about a task deletion, remove it from our list.
+    /// </summary>
+    [EffectMethod]
+    public async Task HandleTaskDeletedFromSignalR(TasksListActions.TaskDeletedFromSignalRAction action, IDispatcher dispatcher)
+    {
+        _logger.LogInformation("🔔 Handling SignalR TaskDeleted | TaskId: {TaskId}", action.TaskId);
+
+        try
+        {
+            dispatcher.Dispatch(new TasksListActions.RemoveTaskFromListAction(action.TaskId));
+            _logger.LogInformation("✅ Removed deleted task from list via SignalR");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error handling SignalR TaskDeleted for task: {TaskId}", action.TaskId);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Helper method to check if a task matches the current filters.
+    /// This prevents adding/keeping tasks that don't belong in the current view.
+    /// </summary>
+    private bool TaskMatchesCurrentFilters(FocusFlow.BlazorApp.Features.Tasks.Shared.Models.TaskResponse task)
+    {
+        var state = _state.Value;
+
+        // Check status filter
+        if (state.StatusFilter.HasValue && task.Status != state.StatusFilter.Value)
+            return false;
+
+        // Check priority filter
+        if (state.PriorityFilter.HasValue && task.Priority != state.PriorityFilter.Value)
+            return false;
+
+        // Check overdue filter
+        if (state.IsOverdueFilter.HasValue)
+        {
+            var isOverdue = task.DueDate.HasValue && 
+                           task.DueDate.Value < DateTime.UtcNow && 
+                           task.Status != ProjectTaskStatus.Done;
+            
+            if (state.IsOverdueFilter.Value != isOverdue)
+                return false;
+        }
+
+        return true;
+    }
 }

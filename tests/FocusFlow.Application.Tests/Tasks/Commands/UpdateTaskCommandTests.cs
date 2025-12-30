@@ -1,4 +1,5 @@
 using AutoMapper;
+using FocusFlow.Application.Common.Events;
 using FocusFlow.Application.Features.Tasks.Common;
 using FocusFlow.Application.Features.Tasks.UpdateTask;
 using FocusFlow.Application.Interfaces;
@@ -21,10 +22,12 @@ public class UpdateTaskCommandTests
 		_taskRepositoryMock = new Mock<ITaskRepository>();
 		_unitOfWorkMock = new Mock<IUnitOfWork>();
 		_mapperMock = new Mock<IMapper>();
+		var eventPublisherMock = new Mock<IEventPublisher>();
 		_handler = new UpdateTaskCommandHandler(
 			_taskRepositoryMock.Object,
 			_unitOfWorkMock.Object,
-			_mapperMock.Object);
+			_mapperMock.Object,
+			eventPublisherMock.Object);
 	}
 
 	[Fact]

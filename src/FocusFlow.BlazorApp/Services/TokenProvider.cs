@@ -1,128 +1,174 @@
-using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
+
+namespace FocusFlow.BlazorApp.Services;
 
 /// <summary>
-/// TokenProvider that uses a static ConcurrentDictionary to share state across all instances.
-/// This implementation DOES NOT depend on scoped services in the constructor so it can be registered as a Singleton.
-/// Persistence operations that require the scoped ILocalStorageService are performed via method parameters.
+/// Provides methods to get, set, and clear authentication tokens using ProtectedLocalStorage with static caching. 
 /// </summary>
 public class TokenProvider : ITokenProvider
 {
-	// Static storage shared across all instances - keyed by circuit ID
-	private static readonly ConcurrentDictionary<string, string> _tokens = new();
+    private readonly ProtectedLocalStorage _protectedLocalStorage;
+    private readonly ILogger<TokenProvider> _logger;
+    	
+	// Static cache uses a static ConcurrentDictionary to share state across all instances.
+	private static readonly ConcurrentDictionary<string, string?> _tokenCache = new();
+    private static readonly object _initLock = new();
+    private static bool _initialized = false;
+    
+    private const string TOKEN_KEY = "focusflow_auth_token";
+    private const string CACHE_KEY = "current_token";
 
-	private readonly ILogger<TokenProvider> _logger;
-	private readonly string _circuitId;
-	private const string TokenKey = "authToken";
+    public TokenProvider(
+        ProtectedLocalStorage protectedLocalStorage,
+        ILogger<TokenProvider> logger)
+    {
+        _protectedLocalStorage = protectedLocalStorage;
+        _logger = logger;
+    }
 
-	public TokenProvider(ILogger<TokenProvider> logger)
-	{
-		_logger = logger;
-		// Simple circuit id placeholder; replace with per-circuit id if you obtain it from SignalR/circuit context.
-		_circuitId = GetOrCreateCircuitId();
-	}
+    /// <summary>
+    /// Asynchronously retrieves the current authentication token from the cache or underlying storage.
+    /// </summary>
+    /// <remarks>If the token is not present in the cache, the method attempts to initialize and retrieve it
+    /// from persistent storage. Subsequent calls may return a cached value for improved performance.</remarks>
+    /// <returns>A string containing the authentication token if available; otherwise, null.</returns>
+    public async Task<string?> GetTokenAsync()
+    {
+        // Try to get from static cache first
+        if (_tokenCache.TryGetValue(CACHE_KEY, out var cachedToken) && !string.IsNullOrEmpty(cachedToken))
+        {
+            return cachedToken;
+        }
 
-	private string GetOrCreateCircuitId()
-	{
-		// For now we use a single default key so the same token is visible across scopes.
-		// If you want per-circuit isolation, change this to use real circuit IDs.
-		return "default";
-	}
+        // Initialize from storage if not already done
+        if (!_initialized)
+        {
+            await InitializeAsync();
+        }
 
-	public string? GetToken()
-	{
-		var hasToken = _tokens.TryGetValue(_circuitId, out var token);
-		_logger.LogDebug("🔍 TokenProvider.GetToken (Circuit: {CircuitId}): HasToken={HasToken}",
-			_circuitId, hasToken);
-		return token;
-	}
+        // Return cached token after initialization
+        _tokenCache.TryGetValue(CACHE_KEY, out var token);
+        return token;
+    }
 
-	public async Task SetTokenAsync(string token, ILocalStorageService localStorage)
-	{
-		if (string.IsNullOrWhiteSpace(token))
-		{
-			throw new ArgumentException("Token cannot be null or empty", nameof(token));
-		}
+    /// <summary>
+    /// Asynchronously sets or removes the authentication token in both memory and protected local storage.
+    /// </summary>
+    /// <remarks>This method updates an in-memory cache immediately and persists the token to protected local
+    /// storage. If the token is removed, any previously stored token is deleted. The method is thread-safe and can be
+    /// called multiple times. Logging is performed for both successful and failed storage operations.</remarks>
+    /// <param name="token">The authentication token to store. If null or empty, the existing token is removed from storage.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task SetTokenAsync(string? token)
+    {
+        // Update static cache immediately
+        if (string.IsNullOrEmpty(token))
+        {
+            _tokenCache.TryRemove(CACHE_KEY, out _);
+        }
+        else
+        {
+            _tokenCache[CACHE_KEY] = token;
+        }
 
-		_logger.LogInformation("💾 TokenProvider.SetToken (Circuit: {CircuitId}): Length={Length}",
-			_circuitId, token.Length);
+        // Persist to storage
+        try
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                await _protectedLocalStorage.DeleteAsync(TOKEN_KEY);
+                _logger.LogInformation("🗑️ Token removed from storage");
+            }
+            else
+            {
+                await _protectedLocalStorage.SetAsync(TOKEN_KEY, token);
+                _logger.LogInformation("💾 Token saved to protected storage");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Failed to save token to storage");
+        }
 
-		// Store in static dictionary (shared across all instances)
-		_tokens[_circuitId] = token;
+        lock (_initLock)
+        {
+            _initialized = true;
+        }
+    }
 
-		try
-		{
-			// Persist to localStorage for page refresh scenarios (localStorage is scoped and passed in)
-			if (localStorage is not null)
-			{
-				await localStorage.SetItemAsync(TokenKey, token);
-				_logger.LogInformation("✅ TokenProvider: Token stored in localStorage");
-			}
-		}
-		catch (InvalidOperationException ex)
-		{
-			_logger.LogDebug(ex, "⚠️ TokenProvider: Could not persist to localStorage (pre-rendering)");
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "❌ TokenProvider: Error persisting token");
-		}
-	}
+    /// <summary>
+    /// Asynchronously removes the currently stored authentication token, if any.   
+    /// </summary>
+    /// <remarks>After calling this method, subsequent operations that require authentication may fail until a
+    /// new token is set.</remarks>
+    /// <returns>A task that represents the asynchronous clear operation.</returns>
+    public async Task ClearTokenAsync()
+    {
+        await SetTokenAsync(null);
+    }
+    
+    /// <summary>
+    /// Lazy initialization: loads token from ProtectedLocalStorage into static cache.
+    /// Called automatically by GetTokenAsync() on first access. Thread-safe with locks.
+    /// </summary>
+    private async Task InitializeAsync()
+    {
+        lock (_initLock)
+        {
+            if (_initialized) return;
+        }
 
-	public async Task ClearTokenAsync(ILocalStorageService localStorage)
-	{
-		_logger.LogInformation("🗑️ TokenProvider.ClearToken (Circuit: {CircuitId})", _circuitId);
+        try
+        {
+            var result = await _protectedLocalStorage.GetAsync<string>(TOKEN_KEY);
+            
+            if (result.Success && !string.IsNullOrEmpty(result.Value))
+            {
+                _tokenCache[CACHE_KEY] = result.Value;
+                _logger.LogInformation("✅ Token loaded from protected storage");
+            }
+            else
+            {
+                _logger.LogInformation("ℹ️ No token found in storage");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Failed to load token from storage");
+        }
+        finally
+        {
+            lock (_initLock)
+            {
+                _initialized = true;
+            }
+        }
+    }
 
-		// Remove from static dictionary
-		_tokens.TryRemove(_circuitId, out _);
+    // Backward compatibility methods
+    public string? GetToken()
+    {
+        _tokenCache.TryGetValue(CACHE_KEY, out var token);
+        return token;
+    }
 
-		try
-		{
-			if (localStorage is not null)
-			{
-				await localStorage.RemoveItemAsync(TokenKey);
-				_logger.LogInformation("✅ TokenProvider: Token cleared from localStorage");
-			}
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "❌ TokenProvider: Error clearing token from localStorage");
-		}
-	}
+    public void SetToken(string? token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            _tokenCache.TryRemove(CACHE_KEY, out _);
+        }
+        else
+        {
+            _tokenCache[CACHE_KEY] = token;
+        }
+        // Note: This doesn't persist to storage - use SetTokenAsync for persistence
+    }
 
-	public async Task InitializeAsync(ILocalStorageService localStorage)
-	{
-		_logger.LogInformation("🔄 TokenProvider.Initialize (Circuit: {CircuitId})", _circuitId);
-
-		// Check if we already have a token in static storage
-		if (_tokens.ContainsKey(_circuitId))
-		{
-			_logger.LogInformation("✅ Token already exists in static storage");
-			return;
-		}
-
-		try
-		{
-			// Try to load from localStorage (localStorage is scoped and passed in)
-			if (localStorage is not null)
-			{
-				var token = await localStorage.GetItemAsync<string>(TokenKey);
-
-				if (!string.IsNullOrWhiteSpace(token))
-				{
-					_tokens[_circuitId] = token;
-					_logger.LogInformation("✅ Token loaded from localStorage and stored in static storage");
-				}
-			}
-		}
-		catch (InvalidOperationException)
-		{
-			_logger.LogDebug("⚠️ Could not load token during pre-rendering");
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "❌ Error loading token from localStorage");
-		}
-	}
+    public void ClearToken()
+    {
+        _tokenCache.TryRemove(CACHE_KEY, out _);
+        // Note: This doesn't clear from storage - use ClearTokenAsync for persistence
+    }
 }

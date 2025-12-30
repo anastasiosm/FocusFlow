@@ -1,7 +1,15 @@
-using System.Net.Http.Headers;
+using FocusFlow.BlazorApp.Services; 
+using System.Net.Http.Headers; 
 
 namespace FocusFlow.BlazorApp.Auth;
 
+/// <summary>
+/// HTTP handler that adds Authorization header with Bearer token to outgoing requests. 
+/// 
+/// •	Inheriting DelegatingHandler makes this class an HTTP message handler that can participate in an HttpClient pipeline. 
+///		It can inspect/modify outgoing HttpRequestMessages and incoming HttpResponseMessages by overriding SendAsync(HttpRequestMessage, CancellationToken).
+/// •	Because it is public, it can be registered with dependency injection and reused across the app
+/// </summary>
 public class AuthHeaderHandler : DelegatingHandler
 {
 	private readonly ITokenProvider _tokenProvider;
@@ -13,6 +21,10 @@ public class AuthHeaderHandler : DelegatingHandler
 		_logger = logger;
 	}
 
+	/// <summary>
+	/// Adds a Bearer Authorization header to outgoing HTTP requests when a token is available (via ITokenProvider) 
+	/// and skips certain endpoints or requests that already have an Authorization header.
+	/// </summary>	
 	protected override async Task<HttpResponseMessage> SendAsync(
 		HttpRequestMessage request,
 		CancellationToken cancellationToken)
@@ -35,8 +47,13 @@ public class AuthHeaderHandler : DelegatingHandler
 			return await base.SendAsync(request, cancellationToken);
 		}
 
-		// Get token from provider (synchronous, no localStorage needed)
-		var token = _tokenProvider.GetToken();
+		// Get token from provider (async)
+		var token = await _tokenProvider.GetTokenAsync();
+		if (string.IsNullOrWhiteSpace(token))
+		{
+			_logger.LogDebug("⚠️ No token available, skipping Authorization header");
+			return await base.SendAsync(request, cancellationToken);
+		}
 
 		_logger.LogWarning("🔥 Token from provider: {HasToken}, Length: {Length}",
 			!string.IsNullOrWhiteSpace(token),

@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @using FocusFlow.BlazorApp.Features.Auth.Login.Store
+@using FocusFlow.BlazorApp.Shared.Components
 @using Fluxor
 @using Fluxor.Blazor.Web
 @inject NavigationManager NavigationManager
@@ -11,6 +12,15 @@
 <MudSnackbarProvider />
 <MudPopoverProvider />
 <StoreInitializer />
+
+@* Add SignalR Connection Manager (Blazor component)
+    •	By placing <SignalRConnectionManager /> inside MainLayout.razor, the app ensures a single, app-wide component 
+        manages SignalR connection lifecycle for the signed-in user. 
+        Because MainLayout wraps pages, the connection is available across navigation without re-creating it on every page.
+    •	The actual component is SignalRConnectionManager.razor (located under Shared/Components) and is responsible for 
+        starting and stopping the SignalR connection based on authentication state.
+*@
+<SignalRConnectionManager />
 
 <MudLayout>
     <MudAppBar Elevation="1">
