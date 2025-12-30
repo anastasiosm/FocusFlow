@@ -121,7 +121,7 @@ public class ProjectQueryTests : TestBase
 		};
 
 		MockProjectRepository
-			.Setup(repo => repo.GetByOwnerIdAsync(ownerId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.GetByOwnerIdWithTasksAsync(ownerId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(projects);
 
 		var handler = new GetProjectsByOwnerQueryHandler(MockProjectRepository.Object, Mapper);
