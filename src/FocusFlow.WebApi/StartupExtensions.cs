@@ -3,6 +3,7 @@ using FocusFlow.Infrastructure;
 using FocusFlow.Infrastructure.Identity;
 using FocusFlow.WebApi.Authorization.ProjectOwnership;
 using FocusFlow.WebApi.Authorization.TaskOwnership;
+using FocusFlow.WebApi.HealthChecks;
 using FocusFlow.WebApi.Hubs;
 using FocusFlow.WebApi.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
@@ -153,6 +155,18 @@ public static class StartupExtensions
 		builder.Services.AddSingleton<IHubContext<Hub>>(provider =>
 			provider.GetRequiredService<IHubContext<TasksHub>>());
 
+		// Health Checks for Kubernetes
+		builder.Services.AddHealthChecks()
+			.AddCheck<DatabaseHealthCheck>("database", tags: new[] { "ready" })
+			.AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is running"), tags: new[] { "live" });
+
+		// Add response caching for health checks
+		builder.Services.Configure<HealthCheckPublisherOptions>(options =>
+		{
+			options.Delay = TimeSpan.FromSeconds(5);
+			options.Period = TimeSpan.FromSeconds(10);
+		});
+
 		// Exception handling
 		builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 		builder.Services.AddProblemDetails(); // standardized responses
@@ -204,6 +218,17 @@ public static class StartupExtensions
 				
 		//app.UseHttpsRedirection();
 		app.MapControllers();
+
+		// Health check endpoints for Kubernetes
+		app.MapHealthChecks("/health");
+		app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+		{
+			Predicate = check => check.Tags.Contains("ready")
+		});
+		app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+		{
+			Predicate = check => check.Tags.Contains("live")
+		});
 
 		// Map SignalR hub endpoint
 		app.MapHub<TasksHub>("/hubs/tasks");

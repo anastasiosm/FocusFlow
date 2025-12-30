@@ -75,6 +75,22 @@ docker-compose logs -f
 # - OpenAPI JSON document: http://localhost:8080/openapi/v1.json
 (The API exposes an OpenAPI JSON document useful for tooling and client generation)
 
+### 🏥 Health Check Endpoints
+
+Both the API and Blazor applications expose health check endpoints for Kubernetes liveness and readiness probes.
+
+**API Service (Port 8080):**
+- **General Health:** `http://localhost:8080/health`
+- **Readiness (Checks DB):** `http://localhost:8080/health/ready`
+- **Liveness (Self check):** `http://localhost:8080/health/live`
+
+**Blazor UI (Port 5050):**
+- **General Health:** `http://localhost:5050/health`
+- **Readiness (Checks API):** `http://localhost:5050/health/ready`
+- **Liveness (Self check):** `http://localhost:5050/health/live`
+
+For detailed information on the health check implementation, see [Kubernetes Health Checks Documentation](docs/KUBERNETES_HEALTH_CHECKS.md).
+
 # 5. Stop services
 docker-compose down
 ```

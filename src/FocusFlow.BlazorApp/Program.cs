@@ -2,25 +2,26 @@ using FluentValidation;
 using Fluxor;
 using FocusFlow.BlazorApp.Auth;
 using FocusFlow.BlazorApp.Components;
-using Microsoft.AspNetCore.Authentication;
-using FocusFlow.BlazorApp.Features.Projects;
-using FocusFlow.BlazorApp.Features.Dashboard;
-using FocusFlow.BlazorApp.Features.Home;
-using FocusFlow.BlazorApp.Features.Projects.Shared.Services;
 using FocusFlow.BlazorApp.Features.Auth.Login.Validation;
 using FocusFlow.BlazorApp.Features.Auth.Register.Validation;
+using FocusFlow.BlazorApp.Features.Dashboard;
+using FocusFlow.BlazorApp.Features.Dashboard.Shared.Services;
+using FocusFlow.BlazorApp.Features.Home;
+using FocusFlow.BlazorApp.Features.Projects;
+using FocusFlow.BlazorApp.Features.Projects.Shared.Services;
+using FocusFlow.BlazorApp.Features.Tasks;
+using FocusFlow.BlazorApp.Features.Tasks.Shared.Services;
 using FocusFlow.BlazorApp.Services;
 using FocusFlow.BlazorApp.Services.Api;
 using FocusFlow.BlazorApp.Shared.Services.SignalR;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MudBlazor.Services;
 using Refit;
 using Serilog;
 using System.Text;
-using FocusFlow.BlazorApp.Features.Tasks.Shared.Services;
-using FocusFlow.BlazorApp.Features.Dashboard.Shared.Services;
-using FocusFlow.BlazorApp.Features.Tasks;
 
 // bootstrap logger to log events during startup.
 Log.Logger = new LoggerConfiguration()
@@ -124,6 +125,23 @@ try
 	builder.Services.AddFluxor(options =>
 	{
 		options.ScanAssemblies(typeof(Program).Assembly);
+		// TODO: Add Redux DevTools when available in Fluxor version
+	});
+
+	// Health Checks for Kubernetes
+	// Add HttpClient factory
+	builder.Services.AddHttpClient();
+
+	// Health Checks
+	builder.Services.AddHealthChecks()
+		.AddCheck("self", () => HealthCheckResult.Healthy("Blazor app is running"), tags: new[] { "live" })
+		.AddCheck<ApiHealthCheck>("api", tags: new[] { "ready" });
+
+	// Add response caching for health checks
+	builder.Services.Configure<HealthCheckPublisherOptions>(options =>
+	{
+		options.Delay = TimeSpan.FromSeconds(5);
+		options.Period = TimeSpan.FromSeconds(10);
 	});
 
 	var app = builder.Build();
@@ -155,6 +173,17 @@ try
 
 	app.MapRazorPages();
 	app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
+	// Health check endpoints for Kubernetes
+	app.MapHealthChecks("/health");
+	app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+	{
+		Predicate = check => check.Tags.Contains("ready")
+	});
+	app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+	{
+		Predicate = _ => false // Only self-checks for liveness
+	});
 
 	await app.RunAsync();
 }
