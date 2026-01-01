@@ -29,5 +29,9 @@ RUN dotnet publish "FocusFlow.BlazorApp.csproj" -c $BUILD_CONFIGURATION -o /app/
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
 WORKDIR /app
+# Install curl for health checks
+USER root
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+USER $APP_UID
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "FocusFlow.BlazorApp.dll"]

@@ -36,6 +36,12 @@ try
 {
 	var builder = WebApplication.CreateBuilder(args);
 
+	// Configure graceful shutdown (give requests 15s to complete before forceful termination)
+	builder.Services.Configure<HostOptions>(options =>
+	{
+		options.ShutdownTimeout = TimeSpan.FromSeconds(15);
+	});
+
 	// Replace the default logger with Serilog
 	builder.Host.UseSerilog((context, configuration) => configuration
 		.ReadFrom.Configuration(context.Configuration));

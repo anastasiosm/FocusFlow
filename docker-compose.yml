@@ -15,6 +15,12 @@ services:
       - "JwtSettings__Audience=${JWT_AUDIENCE}"
       - TEST_USER_EMAIL=${TEST_USER_EMAIL}
       - TEST_USER_PASSWORD=${TEST_USER_PASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -39,8 +45,15 @@ services:
       - "JwtSettings__Audience=${JWT_AUDIENCE}"
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
-      - focusflow-api
+      focusflow-api:
+        condition: service_healthy
     tmpfs:
       - /tmp
     volumes:
