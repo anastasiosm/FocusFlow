@@ -177,7 +177,13 @@ public static class StartupExtensions
 	// Configure the HTTP request pipeline.
 	public static WebApplication ConfigurePipelineAsync(this WebApplication app)
 	{
-		// Global exception handler (must be first)
+		// Serilog request logging (must be FIRST to log all requests accurately)
+		app.UseSerilogRequestLogging();
+
+		// Correlation ID middleware (after Serilog, before exception handler)
+		app.UseMiddleware<CorrelationIdMiddleware>();
+
+		// Global exception handler (after CorrelationIdMiddleware)
 		app.UseExceptionHandler(); // Αυτό καλεί το registered IExceptionHandler
 
 		// Enable endpoint routing before CORS / Authentication / Authorization
@@ -212,9 +218,6 @@ public static class StartupExtensions
 
 		app.UseAuthentication();
 		app.UseAuthorization();
-		
-		// Serilog request logging
-		app.UseSerilogRequestLogging();
 				
 		//app.UseHttpsRedirection();
 		app.MapControllers();

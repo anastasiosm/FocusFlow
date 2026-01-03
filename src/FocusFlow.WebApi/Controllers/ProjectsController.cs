@@ -7,6 +7,7 @@ using FocusFlow.Application.Features.Projects.CreateProject;
 using FocusFlow.Application.Features.Projects.UpdateProject;
 using FocusFlow.Application.Features.Projects.DeleteProject;
 using FocusFlow.Application.Features.Tasks.Common;
+using FocusFlow.Domain.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -99,10 +100,11 @@ public class ProjectsController : ControllerBase
 	public async Task<ActionResult<ProjectDto>> Create([FromBody] CreateProjectDto dto)
 	{
 		var userId = GetCurrentUserId();
+		var correlationId = HttpContext.Items["CorrelationId"]?.ToString();
 
 		_logger.LogInformation("Creating project: {ProjectName} for user {UserId}",	dto.Name, userId);
 
-		var command = new CreateProjectCommand(dto.Name, dto.Description, userId);
+		var command = new CreateProjectCommand(dto.Name, dto.Description, userId, correlationId);
 		var result = await _mediator.Send(command);
 
 		_logger.LogInformation("User {UserId} created project {ProjectId}", userId, result.Id);		
@@ -125,9 +127,11 @@ public class ProjectsController : ControllerBase
 	public async Task<IActionResult> Update(Guid id, [FromBody] UpdateProjectDto dto)
 	{
 		var userId = GetCurrentUserId();
+		var correlationId = HttpContext.Items["CorrelationId"]?.ToString();
+		
 		_logger.LogInformation("User {UserId} is updating project {ProjectId}", userId, id);
 		
-		var command = new UpdateProjectCommand(id, dto.Name, dto.Description, userId);
+		var command = new UpdateProjectCommand(id, dto.Name, dto.Description, userId, correlationId);
 		
 		await _mediator.Send(command);
 
@@ -184,6 +188,6 @@ public class ProjectsController : ControllerBase
 	private string GetCurrentUserId()
 	{
 		return User.FindFirstValue(ClaimTypes.NameIdentifier)
-			?? throw new UnauthorizedAccessException("User ID not found in token");
+			?? throw new FocusFlowUnauthorizedException("User ID not found in token");
 	}
 }

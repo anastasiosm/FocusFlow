@@ -40,6 +40,12 @@ public static class DependencyInjection
 		// ASP.NET Core Identity (moved to extension)
 		services.AddIdentityServices();
 
+		// JWT Token Generator
+		services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+		// User Service
+		services.AddScoped<IUserService, UserService>();
+
 		// Repositories
 		services.AddScoped<IProjectRepository, ProjectRepository>();
 		services.AddScoped<ITaskRepository, TaskRepository>();

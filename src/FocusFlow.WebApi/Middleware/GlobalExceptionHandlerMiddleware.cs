@@ -27,7 +27,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 		{
 			FocusFlowNotFoundException => HttpStatusCode.NotFound,
 			FocusFlowValidationException or FocusFlowBusinessRuleException or InvalidOperationException => HttpStatusCode.BadRequest,
-			FocusFlowUnauthorizedException => HttpStatusCode.Forbidden,
+			FocusFlowUnauthorizedException => HttpStatusCode.Unauthorized,
 			_ => HttpStatusCode.InternalServerError
 		};
 
@@ -83,7 +83,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 		FocusFlowNotFoundException => "Resource Not Found",
 		FocusFlowValidationException => "Validation Failed",
 		FocusFlowBusinessRuleException => "Business Rule Violation",
-		FocusFlowUnauthorizedException => "Forbidden",
+		FocusFlowUnauthorizedException => "Unauthorized",
 		InvalidOperationException => "Invalid Operation",
 		_ => statusCode == HttpStatusCode.InternalServerError ? "Internal Server Error" : "An error occurred"
 	};

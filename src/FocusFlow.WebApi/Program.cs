@@ -23,7 +23,10 @@ try
 
 	// Replace the default logger with Serilog
 	builder.Host.UseSerilog((context, configuration) => configuration
-		.ReadFrom.Configuration(context.Configuration));
+		.ReadFrom.Configuration(context.Configuration)
+		.Enrich.FromLogContext()  // Enable LogContext enrichment for CorrelationId
+		.Enrich.WithProperty("ApplicationName", "FocusFlow.WebApi")
+		.Enrich.WithMachineName());
 
 	// Configure services and pipeline
 	builder.ConfigureServices();

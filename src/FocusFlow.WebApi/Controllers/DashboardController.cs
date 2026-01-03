@@ -1,5 +1,6 @@
 using FocusFlow.Application.Features.Dashboard.Common;
 using FocusFlow.Application.Features.Dashboard.GetDashboardStatistics;
+using FocusFlow.Domain.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,6 +50,6 @@ public class DashboardController : ControllerBase
 	private string GetCurrentUserId()
 	{
 		return User.FindFirstValue(ClaimTypes.NameIdentifier)
-			?? throw new UnauthorizedAccessException("User ID not found in token");
+			?? throw new FocusFlowUnauthorizedException("User ID not found in token");
 	}
 }

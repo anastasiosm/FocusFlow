@@ -8,7 +8,11 @@
     <PackageReference Include="AutoMapper" />
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
-    <PackageReference Include="MediatR" />    
+    <PackageReference Include="MediatR" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Features\Authentication\Queries\GetCurrentUser\" />
   </ItemGroup> 
 
 </Project>

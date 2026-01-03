@@ -8,6 +8,7 @@ using FocusFlow.Application.Features.Tasks.AssignTask;
 using FocusFlow.Application.Features.Tasks.GetTasksByOwnerAndFilter;
 using FocusFlow.Application.Features.Tasks.UpdateTask;
 using FocusFlow.Application.Features.Tasks.UnassignTask;
+using FocusFlow.Domain.Exceptions;
 using FocusFlow.Application.Features.Tasks.GetTasksByUser;
 using FocusFlow.Domain.Enums;
 using MediatR;
@@ -258,7 +259,7 @@ public class TasksController : ControllerBase
 	private string GetCurrentUserId()
 	{
 		return User.FindFirstValue(ClaimTypes.NameIdentifier)
-			?? throw new UnauthorizedAccessException("User ID not found in token");
+			?? throw new FocusFlowUnauthorizedException("User ID not found in token");
 	}
 }
 

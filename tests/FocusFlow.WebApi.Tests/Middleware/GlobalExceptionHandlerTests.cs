@@ -123,13 +123,13 @@ public class GlobalExceptionHandlerTests
 	}
 
 	[Fact]
-	public async Task TryHandleAsync_WithUnauthorizedAccessException_ShouldReturn403()
+	public async Task TryHandleAsync_WithUnauthorizedException_ShouldReturn401()
 	{
 		// Arrange
 		var httpContext = new DefaultHttpContext();
 		httpContext.Response.Body = new MemoryStream();
 
-		var exception = new FocusFlowUnauthorizedException("Access denied");
+		var exception = new FocusFlowUnauthorizedException("Invalid credentials");
 
 		// Act
 		var result = await _handler.TryHandleAsync(
@@ -139,7 +139,7 @@ public class GlobalExceptionHandlerTests
 
 		// Assert
 		result.Should().BeTrue();
-		httpContext.Response.StatusCode.Should().Be((int)HttpStatusCode.Forbidden);
+		httpContext.Response.StatusCode.Should().Be((int)HttpStatusCode.Unauthorized);
 		httpContext.Response.ContentType.Should().Be("application/json; charset=utf-8");
 
 		httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -147,9 +147,8 @@ public class GlobalExceptionHandlerTests
 		var responseBody = await reader.ReadToEndAsync();
 		
 		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
-		response.GetProperty("detail").GetString().Should().Be("Access denied");
-		response.GetProperty("status").GetInt32().Should().Be(403);
-		response.GetProperty("title").GetString().Should().Be("Forbidden");
+		response.GetProperty("detail").GetString().Should().Be("Invalid credentials");
+		response.GetProperty("title").GetString().Should().Be("Unauthorized");
 	}
 
 	[Fact]
