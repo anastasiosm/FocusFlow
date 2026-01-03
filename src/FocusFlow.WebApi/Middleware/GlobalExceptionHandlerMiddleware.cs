@@ -1,5 +1,6 @@
 using FocusFlow.Domain.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text.Json;
 
@@ -10,9 +11,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 	private readonly ILogger<GlobalExceptionHandler> _logger;
 	private readonly IWebHostEnvironment _env;
 
-	public GlobalExceptionHandler(
-		ILogger<GlobalExceptionHandler> logger,
-		IWebHostEnvironment env)
+	public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IWebHostEnvironment env)
 	{
 		_logger = logger;
 		_env = env;
@@ -23,68 +22,69 @@ public class GlobalExceptionHandler : IExceptionHandler
 		Exception exception,
 		CancellationToken cancellationToken)
 	{
-		var errors = exception is FocusFlowValidationException validationEx ? validationEx.Errors : null;
-		
-		_logger.LogError(exception,
-			"Exception occurred: {Message} {@Errors} {@Exception}",
-			exception.Message,
-			errors,
-			new { 
-				Type = exception.GetType().Name,
-				Path = httpContext.Request.Path.Value,
-				Method = httpContext.Request.Method,
-				TraceId = httpContext.TraceIdentifier,
-				StatusCode = GetStatusCodeAndMessage(exception).statusCode
-			});
-
-		var (statusCode, message) = GetStatusCodeAndMessage(exception);
-
-		httpContext.Response.StatusCode = (int)statusCode;
-		httpContext.Response.ContentType = "application/json";
-
-		var response = new Dictionary<string, object?>
+		// 1. Map exception to status code
+		var statusCode = exception switch
 		{
-			["error"] = message,
-			["statusCode"] = (int)statusCode,
-			["traceId"] = httpContext.TraceIdentifier,
-			["path"] = httpContext.Request.Path.Value
+			FocusFlowNotFoundException => HttpStatusCode.NotFound,
+			FocusFlowValidationException or FocusFlowBusinessRuleException or InvalidOperationException => HttpStatusCode.BadRequest,
+			FocusFlowUnauthorizedException => HttpStatusCode.Forbidden,
+			_ => HttpStatusCode.InternalServerError
 		};
 
+		// Get correlation ID
+		var correlationId = httpContext.Items["CorrelationId"]?.ToString() ?? httpContext.TraceIdentifier;
+
+		// 2. Structured Logging
+		_logger.LogError(exception,
+			"[{ExceptionType}] [CorrelationId: {CorrelationId}] An unhandled exception occurred: {Message}. TraceId: {TraceId}, Path: {Path}",
+			exception.GetType().Name, correlationId, exception.Message, httpContext.TraceIdentifier, httpContext.Request.Path);
+
+		// 3. Build ProblemDetails (RFC 7807)
+		var problemDetails = new ProblemDetails
+		{
+			Status = (int)statusCode,
+			Title = GetTitle(exception, statusCode),
+			Detail = exception.Message,
+			Instance = httpContext.Request.Path,
+			Extensions = new Dictionary<string, object?>
+			{
+				["traceId"] = httpContext.TraceIdentifier,
+				["correlationId"] = correlationId
+			}
+		};
+
+		// Validation errors
 		if (exception is FocusFlowValidationException valEx)
 		{
-			response["errors"] = valEx.Errors;
+			problemDetails.Extensions["errors"] = valEx.Errors;
 		}
-		else if (_env.IsDevelopment())
+
+		// For unhandled server errors, do not expose details in non-development environments
+		if (statusCode == HttpStatusCode.InternalServerError && !_env.IsDevelopment())
 		{
-			response["stackTrace"] = exception.StackTrace;
+			problemDetails.Detail = "An error occurred while processing your request.";
 		}
 
-		await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
+		// Include stack trace only in Development
+		if (_env.IsDevelopment())
+		{
+			problemDetails.Extensions["stackTrace"] = exception.StackTrace;
+		}
 
-		return true; // Exception handled
+		httpContext.Response.StatusCode = problemDetails.Status.Value;
+
+		await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+
+		return true;
 	}
 
-	private static (HttpStatusCode statusCode, string message) GetStatusCodeAndMessage(Exception exception)
+	private static string GetTitle(Exception exception, HttpStatusCode statusCode) => exception switch
 	{
-		return exception switch
-		{
-			FocusFlowNotFoundException =>
-				(HttpStatusCode.NotFound, exception.Message),
-
-			FocusFlowValidationException =>
-				(HttpStatusCode.BadRequest, exception.Message),
-
-			FocusFlowBusinessRuleException =>
-				(HttpStatusCode.BadRequest, exception.Message),
-
-			UnauthorizedAccessException =>
-				(HttpStatusCode.Forbidden, exception.Message),
-
-			InvalidOperationException =>
-				(HttpStatusCode.BadRequest, exception.Message),
-
-			_ => (HttpStatusCode.InternalServerError,
-				  "An error occurred while processing your request.")
-		};
-	}
+		FocusFlowNotFoundException => "Resource Not Found",
+		FocusFlowValidationException => "Validation Failed",
+		FocusFlowBusinessRuleException => "Business Rule Violation",
+		FocusFlowUnauthorizedException => "Forbidden",
+		InvalidOperationException => "Invalid Operation",
+		_ => statusCode == HttpStatusCode.InternalServerError ? "Internal Server Error" : "An error occurred"
+	};
 }

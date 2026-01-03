@@ -53,8 +53,9 @@ public class GlobalExceptionHandlerTests
 		var responseBody = await reader.ReadToEndAsync();
 		
 		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
-		response.GetProperty("error").GetString().Should().Contain("Entity");
-		response.GetProperty("statusCode").GetInt32().Should().Be(404);
+		response.GetProperty("detail").GetString().Should().Contain("Entity");
+		response.GetProperty("status").GetInt32().Should().Be(404);
+		response.GetProperty("title").GetString().Should().Be("Resource Not Found");
 	}
 
 	[Fact]
@@ -86,7 +87,10 @@ public class GlobalExceptionHandlerTests
 		var responseBody = await reader.ReadToEndAsync();
 		
 		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
-		response.GetProperty("statusCode").GetInt32().Should().Be(400);
+		response.GetProperty("status").GetInt32().Should().Be(400);
+		response.GetProperty("title").GetString().Should().Be("Validation Failed");
+		// errors are included in extensions
+		response.GetProperty("errors").TryGetProperty("Title", out _).Should().BeTrue();
 	}
 
 	[Fact]
@@ -114,7 +118,8 @@ public class GlobalExceptionHandlerTests
 		var responseBody = await reader.ReadToEndAsync();
 		
 		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
-		response.GetProperty("error").GetString().Should().Be("Business rule violated");
+		response.GetProperty("detail").GetString().Should().Be("Business rule violated");
+		response.GetProperty("title").GetString().Should().Be("Business Rule Violation");
 	}
 
 	[Fact]
@@ -124,7 +129,7 @@ public class GlobalExceptionHandlerTests
 		var httpContext = new DefaultHttpContext();
 		httpContext.Response.Body = new MemoryStream();
 
-		var exception = new UnauthorizedAccessException("Access denied");
+		var exception = new FocusFlowUnauthorizedException("Access denied");
 
 		// Act
 		var result = await _handler.TryHandleAsync(
@@ -142,8 +147,9 @@ public class GlobalExceptionHandlerTests
 		var responseBody = await reader.ReadToEndAsync();
 		
 		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
-		response.GetProperty("error").GetString().Should().Be("Access denied");
-		response.GetProperty("statusCode").GetInt32().Should().Be(403);
+		response.GetProperty("detail").GetString().Should().Be("Access denied");
+		response.GetProperty("status").GetInt32().Should().Be(403);
+		response.GetProperty("title").GetString().Should().Be("Forbidden");
 	}
 
 	[Fact]
@@ -164,6 +170,13 @@ public class GlobalExceptionHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		httpContext.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
+		
+		httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+		var reader = new StreamReader(httpContext.Response.Body);
+		var responseBody = await reader.ReadToEndAsync();
+		
+		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
+		response.GetProperty("title").GetString().Should().Be("Invalid Operation");
 	}
 
 	[Fact]
@@ -191,8 +204,9 @@ public class GlobalExceptionHandlerTests
 		var responseBody = await reader.ReadToEndAsync();
 		
 		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
-		response.GetProperty("error").GetString().Should().Be("An error occurred while processing your request.");
-		response.GetProperty("statusCode").GetInt32().Should().Be(500);
+		response.GetProperty("detail").GetString().Should().Be("An error occurred while processing your request.");
+		response.GetProperty("status").GetInt32().Should().Be(500);
+		response.GetProperty("title").GetString().Should().Be("Internal Server Error");
 	}
 
 	[Fact]
@@ -275,7 +289,32 @@ public class GlobalExceptionHandlerTests
 	}
 
 	[Fact]
-	public async Task TryHandleAsync_ShouldIncludePath()
+	public async Task TryHandleAsync_ShouldIncludeCorrelationId()
+	{
+		// Arrange
+		var httpContext = new DefaultHttpContext();
+		httpContext.Response.Body = new MemoryStream();
+		httpContext.Items["CorrelationId"] = "test-correlation-id";
+
+		var exception = new Exception("Test exception");
+
+		// Act
+		await _handler.TryHandleAsync(
+			httpContext,
+			exception,
+			CancellationToken.None);
+
+		// Assert
+		httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+		var reader = new StreamReader(httpContext.Response.Body);
+		var responseBody = await reader.ReadToEndAsync();
+		
+		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
+		response.GetProperty("correlationId").GetString().Should().Be("test-correlation-id");
+	}
+
+	[Fact]
+	public async Task TryHandleAsync_ShouldIncludeInstancePath()
 	{
 		// Arrange
 		var httpContext = new DefaultHttpContext();
@@ -296,6 +335,6 @@ public class GlobalExceptionHandlerTests
 		var responseBody = await reader.ReadToEndAsync();
 		
 		var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
-		response.GetProperty("path").GetString().Should().Be("/api/projects/123");
+		response.GetProperty("instance").GetString().Should().Be("/api/projects/123");
 	}
 }

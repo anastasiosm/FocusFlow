@@ -42,336 +42,184 @@ public class RefitApiService : IApiService
 	}
 
 	// Auth
-	public async Task<ApiResult<string>> LoginAsync(LoginRequest request)
-	{
-		try
+	public Task<ApiResult<string>> LoginAsync(LoginRequest request) =>
+	ExecuteApiCall(
+		async () =>
 		{
 			var result = await _authApi.LoginAsync(request);
-			return ApiResult<string>.Success(result.Token ?? throw new InvalidOperationException("Login failed: No token received"));
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error logging in. Status: {StatusCode}", apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<string>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error logging in");
-			return ApiResult<string>.Failure("An unexpected error occurred during login.");
-		}
-	}
+			return result.Token ?? throw new InvalidOperationException("No token received");
+		},
+		"Login");
 
-	public async Task<ApiResult> RegisterAsync(RegisterRequest request)
-	{
-		try
-		{
-			await _authApi.RegisterAsync(request);
-			return ApiResult.Success();
-		}
-		catch (ApiException apiEx)
-		{
-			// Log the raw content for debugging
-			var rawContent = apiEx.Content ?? "No content";
-			_logger.LogError(apiEx, "API Error registering. Status: {StatusCode}, Content: {Content}",
-				apiEx.StatusCode, rawContent);
-
-			var error = await GetErrorMessage(apiEx);
-			_logger.LogWarning("Parsed error message: {ErrorMessage}", error);
-
-			return ApiResult.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error registering");
-			return ApiResult.Failure("An unexpected error occurred during registration.");
-		}
-	}
+	public Task<ApiResult> RegisterAsync(RegisterRequest request) =>
+		ExecuteApiCall(
+			() => _authApi.RegisterAsync(request),
+			"Register");
 
 	// Projects
-	public async Task<ApiResult<List<ProjectDto>>> GetProjectsAsync()
-	{
-		try
-		{
-			var result = await _projectsApi.GetProjectsAsync();
-			return ApiResult<List<ProjectDto>>.Success(result ?? new List<ProjectDto>());
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error fetching projects. Status: {StatusCode}", apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<List<ProjectDto>>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error fetching projects");
-			return ApiResult<List<ProjectDto>>.Failure("An unexpected error occurred while fetching projects.");
-		}
-	}
+	public Task<ApiResult<List<ProjectDto>>> GetProjectsAsync() =>
+		ExecuteApiCall(
+			async () => await _projectsApi.GetProjectsAsync() ?? new List<ProjectDto>(),
+			"Get projects");
 
-	public async Task<ApiResult<ProjectDetailDto>> GetProjectByIdAsync(Guid id)
-	{
-		try
-		{
-			var result = await _projectsApi.GetProjectByIdAsync(id);
-			return ApiResult<ProjectDetailDto>.Success(result ?? throw new InvalidOperationException($"Project {id} not found"));
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error fetching project {ProjectId}. Status: {StatusCode}", id, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<ProjectDetailDto>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error fetching project {ProjectId}", id);
-			return ApiResult<ProjectDetailDto>.Failure($"An unexpected error occurred while fetching project {id}.");
-		}
-	}
+	public Task<ApiResult<ProjectDetailDto>> GetProjectByIdAsync(Guid id) =>
+		ExecuteApiCall(
+			() => _projectsApi.GetProjectByIdAsync(id),
+			$"Get project {id}");
 
-	public async Task<ApiResult<ProjectDto>> CreateProjectAsync(CreateProjectDto dto)
-	{
-		try
-		{
-			var result = await _projectsApi.CreateProjectAsync(dto);
-			return ApiResult<ProjectDto>.Success(result ?? throw new InvalidOperationException("Failed to create project"));
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error creating project. Status: {StatusCode}", apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<ProjectDto>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error creating project");
-			return ApiResult<ProjectDto>.Failure("An unexpected error occurred during project creation.");
-		}
-	}
+	public Task<ApiResult<ProjectDto>> CreateProjectAsync(CreateProjectDto dto) =>
+		ExecuteApiCall(
+			() => _projectsApi.CreateProjectAsync(dto),
+			"Create project");
 
-	public async Task<ApiResult> UpdateProjectAsync(Guid id, UpdateProjectDto dto)
-	{
-		try
-		{
-			await _projectsApi.UpdateProjectAsync(id, dto);
-			return ApiResult.Success();
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error updating project {ProjectId}. Status: {StatusCode}", id, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error updating project {ProjectId}", id);
-			return ApiResult.Failure($"An unexpected error occurred while updating project {id}.");
-		}
-	}
+	public Task<ApiResult> UpdateProjectAsync(Guid id, UpdateProjectDto dto) =>
+		ExecuteApiCall(
+			() => _projectsApi.UpdateProjectAsync(id, dto),
+			$"Update project {id}");
 
-	public async Task<ApiResult> DeleteProjectAsync(Guid id)
-	{
-		try
-		{
-			await _projectsApi.DeleteProjectAsync(id);
-			return ApiResult.Success();
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error deleting project {ProjectId}. Status: {StatusCode}", id, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error deleting project {ProjectId}", id);
-			return ApiResult.Failure($"An unexpected error occurred while deleting project {id}.");
-		}
-	}
+	public Task<ApiResult> DeleteProjectAsync(Guid id) =>
+		ExecuteApiCall(
+			() => _projectsApi.DeleteProjectAsync(id),
+			$"Delete project {id}");
 
 	// Tasks
-	public async Task<ApiResult<List<TaskResponse>>> GetTasksAsync(Guid projectId)
-	{
-		try
-		{
-			var result = await _tasksApi.GetTasksAsync(projectId);
-			return ApiResult<List<TaskResponse>>.Success(result ?? new List<TaskResponse>());
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error fetching tasks for project {ProjectId}. Status: {StatusCode}", projectId, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<List<TaskResponse>>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error fetching tasks for project {ProjectId}", projectId);
-			return ApiResult<List<TaskResponse>>.Failure($"An unexpected error occurred while fetching tasks for project {projectId}.");
-		}
-	}
+	public Task<ApiResult<List<TaskResponse>>> GetTasksAsync(Guid projectId) =>
+		ExecuteApiCall(
+			async () => await _tasksApi.GetTasksAsync(projectId) ?? new List<TaskResponse>(),
+			$"Get tasks for project {projectId}");
 
-	public async Task<ApiResult<List<TaskResponse>>> GetTasksFilteredAsync(ProjectTaskStatus? status = null, Priority? priority = null, bool? isOverdue = null)
-	{
-		try
-		{
-			var result = await _tasksApi.GetTasksFilteredAsync(status, priority, isOverdue);
-			return ApiResult<List<TaskResponse>>.Success(result ?? new List<TaskResponse>());
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error fetching filtered tasks. Status: {StatusCode}", apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<List<TaskResponse>>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error fetching filtered tasks");
-			return ApiResult<List<TaskResponse>>.Failure("An unexpected error occurred while fetching filtered tasks.");
-		}
-	}
+	public Task<ApiResult<List<TaskResponse>>> GetTasksFilteredAsync(
+		ProjectTaskStatus? status = null,
+		Priority? priority = null,
+		bool? isOverdue = null) =>
+		ExecuteApiCall(
+			async () => await _tasksApi.GetTasksFilteredAsync(status, priority, isOverdue) ?? new List<TaskResponse>(),
+			"Get filtered tasks");
 
-	public async Task<ApiResult<TaskResponse>> CreateTaskAsync(CreateTaskRequest dto)
-	{
-		try
-		{
-			var request = new CreateTaskRequest
+	public Task<ApiResult<TaskResponse>> CreateTaskAsync(CreateTaskRequest dto) =>
+		ExecuteApiCall(
+			async () =>
 			{
-				ProjectId = dto.ProjectId,
-				Title = dto.Title,
-				Description = dto.Description,
-				DueDate = dto.DueDate,
-				Priority = dto.Priority,
-				AssignedUserId = dto.AssignedUserId
-			};
+				var request = new CreateTaskRequest
+				{
+					ProjectId = dto.ProjectId,
+					Title = dto.Title,
+					Description = dto.Description,
+					DueDate = dto.DueDate,
+					Priority = dto.Priority,
+					AssignedUserId = dto.AssignedUserId
+				};
 
-			var result = await _tasksApi.CreateTaskAsync(request);
-			return ApiResult<TaskResponse>.Success(result ?? throw new InvalidOperationException("Failed to create task"));
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error creating task for project {ProjectId}. Status: {StatusCode}", dto.ProjectId, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<TaskResponse>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error creating task for project {ProjectId}", dto.ProjectId);
-			return ApiResult<TaskResponse>.Failure("An unexpected error occurred during task creation.");
-		}
-	}
+				return await _tasksApi.CreateTaskAsync(request);
+			},
+			$"Create task for project {dto.ProjectId}");
 
-	public async Task<ApiResult<TaskResponse>> GetTaskByIdAsync(Guid id)
-	{
-		try
-		{
-			var result = await _tasksApi.GetTaskByIdAsync(id);
-			return ApiResult<TaskResponse>.Success(result ?? throw new InvalidOperationException($"Task {id} not found"));
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error fetching task {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<TaskResponse>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error fetching task {TaskId}", id);
-			return ApiResult<TaskResponse>.Failure($"An unexpected error occurred while fetching task {id}.");
-		}
-	}
+	public Task<ApiResult<TaskResponse>> GetTaskByIdAsync(Guid id) =>
+		ExecuteApiCall(
+			() => _tasksApi.GetTaskByIdAsync(id),
+			$"Get task {id}");
 
-	public async Task<ApiResult<TaskResponse>> UpdateTaskAsync(Guid id, UpdateTaskRequest dto)
-	{
-		try
-		{
-			var request = new UpdateTaskRequest
+	public Task<ApiResult<TaskResponse>> UpdateTaskAsync(Guid id, UpdateTaskRequest dto) =>
+		ExecuteApiCall(
+			async () =>
 			{
-				Title = dto.Title,
-				Description = dto.Description,
-				DueDate = dto.DueDate,
-				Priority = dto.Priority
-			};
-			var result = await _tasksApi.UpdateTaskAsync(id, request);
-			return ApiResult<TaskResponse>.Success(result ?? throw new InvalidOperationException($"Failed to update task {id}"));
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error updating task {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult<TaskResponse>.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error updating task {TaskId}", id);
-			return ApiResult<TaskResponse>.Failure($"An unexpected error occurred while updating task {id}.");
-		}
-	}
+				var request = new UpdateTaskRequest
+				{
+					Title = dto.Title,
+					Description = dto.Description,
+					DueDate = dto.DueDate,
+					Priority = dto.Priority
+				};
+				return await _tasksApi.UpdateTaskAsync(id, request);
+			},
+			$"Update task {id}");
 
-	public async Task<ApiResult> UpdateTaskStatusAsync(Guid id, ProjectTaskStatus status)
-	{
-		try
-		{
-			var request = new UpdateTaskStatusRequest { Status = status };
-			await _tasksApi.UpdateTaskStatusAsync(id, request);
-			return ApiResult.Success();
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error updating task status {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error updating task status {TaskId}", id);
-			return ApiResult.Failure($"An unexpected error occurred while updating task status {id}.");
-		}
-	}
+	public Task<ApiResult> UpdateTaskStatusAsync(Guid id, ProjectTaskStatus status) =>
+		ExecuteApiCall(
+			async () =>
+			{
+				var request = new UpdateTaskStatusRequest { Status = status };
+				await _tasksApi.UpdateTaskStatusAsync(id, request);
+			},
+			$"Update task status {id}");
 
-	public async Task<ApiResult> DeleteTaskAsync(Guid id)
-	{
-		try
-		{
-			await _tasksApi.DeleteTaskAsync(id);
-			return ApiResult.Success();
-		}
-		catch (ApiException apiEx)
-		{
-			_logger.LogError(apiEx, "API Error deleting task {TaskId}. Status: {StatusCode}", id, apiEx.StatusCode);
-			var error = await GetErrorMessage(apiEx);
-			return ApiResult.Failure(error);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Error deleting task {TaskId}", id);
-			return ApiResult.Failure($"An unexpected error occurred while deleting task {id}.");
-		}
-	}
+	public Task<ApiResult> DeleteTaskAsync(Guid id) =>
+		ExecuteApiCall(
+			() => _tasksApi.DeleteTaskAsync(id),
+			$"Delete task {id}");
 
 	// Dashboard
-	public async Task<ApiResult<List<ProjectStatisticsDto>>> GetDashboardStatisticsAsync()
+	public Task<ApiResult<List<ProjectStatisticsDto>>> GetDashboardStatisticsAsync() =>
+		ExecuteApiCall(
+			async () => await _dashboardApi.GetDashboardStatisticsAsync() ?? new List<ProjectStatisticsDto>(),
+			"Get dashboard statistics");
+
+	// ===============================================
+	// HELPER METHODS
+	// ===============================================
+
+	/// <summary>
+	/// Executes an API call that returns data (Task&lt;T&gt;).
+	/// </summary>
+	/// <param name="unwrapInnerResult">If true, expects the action to return ApiResult&lt;T&gt; instead of T</param>
+	private async Task<ApiResult<T>> ExecuteApiCall<T>(
+		Func<Task<T>> action,
+		string operationName,
+		bool unwrapInnerResult = false)
 	{
 		try
 		{
-			var result = await _dashboardApi.GetDashboardStatisticsAsync();
-			return ApiResult<List<ProjectStatisticsDto>>.Success(result ?? new List<ProjectStatisticsDto>());
+			var result = await action();
+
+			// Handle special case where action returns ApiResult<T>
+			if (unwrapInnerResult && result is ApiResult<T> innerResult)
+			{
+				return innerResult;
+			}
+
+			return ApiResult<T>.Success(result);
 		}
 		catch (ApiException apiEx)
 		{
-			_logger.LogError(apiEx, "API Error fetching dashboard statistics. Status: {StatusCode}", apiEx.StatusCode);
 			var error = await GetErrorMessage(apiEx);
-			return ApiResult<List<ProjectStatisticsDto>>.Failure(error);
+			_logger.LogError(apiEx, "API Error: {Operation}. Status: {StatusCode}", operationName, apiEx.StatusCode);
+			return ApiResult<T>.Failure(error);
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "Error fetching dashboard statistics");
-			return ApiResult<List<ProjectStatisticsDto>>.Failure("An unexpected error occurred while fetching dashboard statistics.");
+			_logger.LogError(ex, "Error: {Operation}", operationName);
+			return ApiResult<T>.Failure($"An unexpected error occurred during {operationName}.");
 		}
 	}
 
+	/// <summary>
+	/// Executes an API call that returns void (Task).
+	/// </summary>
+	private async Task<ApiResult> ExecuteApiCall(Func<Task> action, string operationName)
+	{
+		try
+		{
+			await action();
+			return ApiResult.Success();
+		}
+		catch (ApiException apiEx)
+		{
+			var error = await GetErrorMessage(apiEx);
+			_logger.LogError(apiEx, "API Error: {Operation}. Status: {StatusCode}", operationName, apiEx.StatusCode);
+			return ApiResult.Failure(error);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error: {Operation}", operationName);
+			return ApiResult.Failure($"An unexpected error occurred during {operationName}.");
+		}
+	}
+
+	/// <summary>
+	/// Extracts error messages from API exceptions (ValidationErrorResponse or ProblemDetails).
+	/// </summary>
 	private async Task<string> GetErrorMessage(ApiException apiEx)
 	{
-		// Log raw content first for debugging
 		_logger.LogDebug("API Exception Content: {Content}", apiEx.Content ?? "No content");
 
 		if (!apiEx.HasContent || string.IsNullOrWhiteSpace(apiEx.Content))
@@ -381,12 +229,11 @@ public class RefitApiService : IApiService
 
 		try
 		{
-			// Try to parse as ValidationErrorResponse (ASP.NET Core validation errors)
+			// Try ValidationErrorResponse (ASP.NET Core validation errors)
 			var validationError = await apiEx.GetContentAsAsync<ValidationErrorResponse>();
 
 			if (validationError?.Errors != null && validationError.Errors.Any())
 			{
-				// Combine all validation errors into a readable message
 				var messages = validationError.Errors
 					.SelectMany(kvp => kvp.Value.Select(msg => $"{kvp.Key}: {msg}"))
 					.ToList();
@@ -399,7 +246,6 @@ public class RefitApiService : IApiService
 				}
 			}
 
-			// Return the general error message if available
 			if (!string.IsNullOrEmpty(validationError?.Error))
 			{
 				_logger.LogDebug("Using error field: {Error}", validationError.Error);
@@ -408,12 +254,12 @@ public class RefitApiService : IApiService
 		}
 		catch (Exception ex)
 		{
-			_logger.LogDebug(ex, "Failed to parse as ValidationErrorResponse, trying ProblemDetails");
+			_logger.LogDebug(ex, "Failed to parse as ValidationErrorResponse");
 		}
 
 		try
 		{
-			// Try to parse as ProblemDetails (RFC 7807)
+			// Try ProblemDetails (RFC 7807)
 			var problemDetails = await apiEx.GetContentAsAsync<ProblemDetails>();
 
 			if (problemDetails != null)
@@ -428,7 +274,7 @@ public class RefitApiService : IApiService
 			_logger.LogDebug(ex, "Failed to parse as ProblemDetails");
 		}
 
-		// If all parsing fails, return the raw content (truncated if too long)
+		// Fallback: return raw content (truncated)
 		var rawContent = apiEx.Content.Length > 500
 			? apiEx.Content.Substring(0, 500) + "..."
 			: apiEx.Content;
@@ -438,7 +284,10 @@ public class RefitApiService : IApiService
 	}
 }
 
-// Validation error response class for ASP.NET Core validation errors
+// ===============================================
+// RESPONSE MODELS
+// ===============================================
+
 public class ValidationErrorResponse
 {
 	public string? Error { get; set; }
@@ -448,7 +297,6 @@ public class ValidationErrorResponse
 	public string? Path { get; set; }
 }
 
-// ProblemDetails class for RFC 7807 format
 public class ProblemDetails
 {
 	public string? Type { get; set; }
