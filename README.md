@@ -131,46 +131,49 @@ FocusFlow follows **Onion Architecture** (aka Clean Architecture) with **Vertica
 ### High-Level Architecture
 
 ```mermaid
-graph TB
-    subgraph Presentation["🖥️ Presentation Layer"]
-        Blazor["Blazor Server UI<br/>(Fluxor + MudBlazor)"]
-        API["Web API<br/>(REST + JWT)"]
+graph TD
+    %% Client Side
+    subgraph UI ["🖥️ Client Layer (Frontend)"]
+        Blazor["Blazor WebAssembly<br/>(Fluxor & MudBlazor)"]
     end
-    
-    subgraph Application["📋 Application Layer"]
-        CQRS["CQRS Commands/Queries<br/>(MediatR)"]
-        Validators["FluentValidation"]
-        DTOs["DTOs + Mappings<br/>(AutoMapper)"]
+
+    %% API / Presentation
+    subgraph Host ["🌐 Presentation Layer (Backend)"]
+        API["ASP.NET Core Web API<br/>(Controllers & Hubs)"]
     end
-    
-    subgraph Domain["💎 Domain Layer"]
-        Entities["Entities<br/>(Project, Task, User)"]
-        Business["Business Rules"]
-        Exceptions["FocusFlow Exceptions"]
+
+    %% The Core (Clean Architecture Heart)
+    subgraph Core ["🧠 Business Logic (The Core)"]
+        direction TB
+        Application["📋 Application Layer<br/>(MediatR, CQRS, DTOs)"]
+        Domain["💎 Domain Layer<br/>(Entities, Value Objects)"]
+        
+        Application --> Domain
     end
-    
-    subgraph Infrastructure["🔧 Infrastructure Layer"]
-        EF["Entity Framework Core"]
-        Identity["ASP.NET Identity"]
-        Repos["Repositories"]
+
+    %% Infrastructure
+    subgraph Infra ["🔧 Infrastructure Layer"]
+        Data["Data Access (EF Core)"]
+        SignalR["SignalR Providers"]
         DB[(PostgreSQL)]
+        
+        Data --> DB
     end
+
+    %% Connections
+    Blazor ==>|REST / WebSockets| API
+    API --> Application
     
-    Blazor -->|HTTP| API
-    API --> CQRS
-    Blazor --> CQRS
-    CQRS --> Validators
-    CQRS --> DTOs
-    CQRS --> Entities
-    CQRS --> Repos
-    Repos --> EF
-    EF --> DB
-    Identity --> DB
-    
-    style Presentation fill:#e1f5ff
-    style Application fill:#fff9e1
-    style Domain fill:#ffe1f5
-    style Infrastructure fill:#e1ffe1
+    %% Dependency Inversion representation
+    Infra -.->|Implements| Application
+    Infra -.->|Uses| Domain
+
+    %% Styling
+    style UI fill:#f0f7ff,stroke:#005fb8,stroke-width:2px
+    style Host fill:#f0f7ff,stroke:#005fb8,stroke-width:2px
+    style Core fill:#fff9e1,stroke:#d4a017,stroke-width:2px
+    style Infra fill:#f6fff6,stroke:#2e7d32,stroke-width:2px
+    style Domain fill:#fff,stroke-dasharray: 5 5
 ```
 
 ### Layer Responsibilities
@@ -182,30 +185,49 @@ graph TB
 | **Infrastructure** | Data access, Identity, EF Core | → Application, Domain |
 | **Presentation** | Blazor UI, Web API controllers | → Application, Infrastructure |
 
-### Blazor UI Architecture (Fluxor Pattern)
+### Blazor UI Architecture (Fluxor + SignalR)
+
+FocusFlow uses a **unidirectional data flow** pattern (Redux-style) powered by **Fluxor**, enhanced with **SignalR** for real-time synchronization across multiple browser tabs.
 
 ```mermaid
-graph LR
-    Component["🎨 Blazor Component"] --> Action["📤 Dispatch Action"]
-    Action --> Effect["⚡ Effect<br/>(async logic)"]
-    Effect --> API["🌐 API Service"]
-    API --> Effect
-    Effect --> Action2["📤 Success/Failure Action"]
-    Action2 --> Reducer["🔄 Reducer"]
-    Reducer --> Store["📦 State Store"]
-    Store --> Component
-    
-    style Component fill:#81c784
-    style Store fill:#64b5f6
-    style Effect fill:#ffb74d
+graph TD
+    subgraph Client["💻 Blazor Client (Fluxor)"]
+        UI["🎨 UI Component"]
+        Store["📦 State Store"]
+        Actions["📤 Actions"]
+        Effects["⚡ Effects"]
+        Listener["📡 SignalR Listener (Bridge)"]
+    end
+
+    subgraph Server["☁️ Backend API"]
+        Hub["🔄 SignalR Hub"]
+        Handler["⚙️ Command Handler"]
+        Publisher["📢 Event Publisher"]
+    end
+
+    UI -->|1. User Action| Actions
+    Actions -->|2. Trigger| Effects
+    Effects -->|3. HTTP Request| Handler
+    Handler -->|4. Save & Publish| Publisher
+    Publisher --> Hub
+    Hub -.->|5. Push Notification| Listener
+    Listener -->|6. Dispatch| Actions
+    Actions -->|7. Update| Store
+    Store --> UI
+
+    style Listener fill:#ffcc80
+    style Hub fill:#e1f5fe
 ```
 
-**Flow Example (Create Project):**
-1. User clicks "Create Project" → Component dispatches `CreateProjectAction`
-2. `CreateProjectEffect` intercepts → Calls `IApiService.CreateProject()`
-3. API responds → Effect dispatches `CreateProjectSuccessAction` or `CreateProjectFailureAction`
-4. `ProjectReducer` updates `ProjectState`
-5. Component re-renders with new state 
+**Real-time Flow:**
+1. **Action**: User modifies a task; a Fluxor Action is dispatched.
+2. **Persistence**: An Effect calls the Web API via REST.
+3. **Notification**: After saving to DB, the server publishes an event via `IEventPublisher`.
+4. **Broadcast**: The SignalR Hub pushes the update to all clients in the relevant project group.
+5. **Bridge**: The `SignalRTasksListener` intercepts the message and dispatches a Fluxor Action.
+6. **Sync**: Reducers update the Store, and the UI re-renders automatically across all open tabs.
+
+For a deep dive into this implementation, see [SignalR + Fluxor Architecture Documentation](docs/SIGNALR_FLUXOR_ARCHITECTURE.md).
 
 ---
 
@@ -309,6 +331,8 @@ E2E tests use **Playwright + Testcontainers** and require:
 | **Microsoft.AspNetCore.Authentication.JwtBearer** | 8.0.0 | JWT token authentication for API |
 | **Swashbuckle.AspNetCore** | 6.6.2 | OpenAPI/Swagger documentation generation |
 | **Scalar.AspNetCore** | 2.11.6 | Modern interactive API documentation UI |
+| Scalar.AspNetCore | 2.11.6 | Modern interactive API documentation UI |
+| **Microsoft.AspNetCore.SignalR** | (see project) | Real-time bi-directional communication hub |
 | **Serilog.AspNetCore** | (see project) | Structured logging integration for ASP.NET Core and centralized logging pipelines |
 | **Serilog.Enrichers.Environment** | (see project) | Adds environment metadata to Serilog events (machine, environment) |
 | **Serilog.Enrichers.Thread** | (see project) | Adds thread id/name information to Serilog events |
@@ -321,6 +345,7 @@ E2E tests use **Playwright + Testcontainers** and require:
 | **MudBlazor** | 7.8.0 | Material Design component library (rich UI components) |
 | **Fluxor** | 6.9.0 | Redux-like state management for Blazor (predictable state) |
 | **Fluxor.Blazor.Web** | (see project) | Blazor-specific Fluxor bindings and middleware |
+| **Microsoft.AspNetCore.SignalR.Client** | (see project) | SignalR client for real-time updates |
 | **Blazored.LocalStorage** | 4.5.0 | Browser LocalStorage wrapper (JWT persistence) |
 | **Refit** | (see project) | Type-safe, interface-based REST API client used by the Blazor UI |
 | **Blazored.FluentValidation** | 2.2.0 | Client-side FluentValidation integration |
@@ -360,449 +385,140 @@ E2E tests use **Playwright + Testcontainers** and require:
 
 ## 📂 Project Structure
 
-```
+```text
 FocusFlow/
 ├── src/
-│   ├── FocusFlow.Domain/                    # ✅ Core business entities
-│   │   ├── Entities/
-│   │   │   ├── Project.cs                   # Project aggregate root
-│   │   │   ├── ProjectTask.cs               # Task entity with ownership
-│   │   │   └── ApplicationUser.cs           # Identity user extension
+│   ├── FocusFlow.Domain/                # 💎 Core Domain (Pure C#)
+│   │   ├── Entities/                    # (Project, Task, User)
 │   │   ├── Enums/
-│   │   │   ├── TaskStatus.cs                # Todo/InProgress/Done/Cancelled
-│   │   │   └── Priority.cs                  # Low/Medium/High/Critical
 │   │   └── Exceptions/
-│   │       ├── FocusFlowException.cs        # Base exception
-│   │       ├── FocusFlowValidationException.cs
-│   │       ├── FocusFlowBusinessRuleException.cs
-│   │       ├── FocusFlowNotFoundException.cs
-│   │       └── FocusFlowUnauthorizedException.cs
 │   │
-│   ├── FocusFlow.Application/               # ✅ CQRS use cases
-│   │   ├── Projects/
-│   │   │   ├── Commands/
-│   │   │   │   ├── CreateProjectCommand.cs
-│   │   │   │   ├── UpdateProjectCommand.cs
-│   │   │   │   └── DeleteProjectCommand.cs
-│   │   │   ├── Queries/
-│   │   │   │   ├── GetAllProjectsQuery.cs
-│   │   │   │   └── GetProjectByIdQuery.cs
-│   │   │   ├── Validators/
-│   │   │   │   ├── CreateProjectCommandValidator.cs
-│   │   │   │   └── UpdateProjectCommandValidator.cs
-│   │   │   └── Dtos/
-│   │   │       └── ProjectDto.cs
-│   │   ├── Tasks/
-│   │   │   ├── Commands/ (Create, Update, Assign, Complete)
-│   │   │   ├── Queries/ (GetByProject, GetById, GetOverdue)
-│   │   │   ├── Validators/
-│   │   │   └── Dtos/
+│   ├── FocusFlow.Application/           # 📋 Use Cases (CQRS & Vertical Slices)
+│   │   ├── Projects/                    # Feature folder (Commands, Queries, Validators)
+│   │   ├── Tasks/                       # Feature folder
 │   │   ├── Dashboard/
-│   │   │   ├── Queries/
-│   │   │   │   └── GetDashboardStatsQuery.cs
-│   │   │   └── Dtos/
-│   │   │       └── DashboardStatsDto.cs
-│   │   ├── Common/
-│   │   │   ├── Behaviours/
-│   │   │   │   └── ValidationBehaviour.cs   # MediatR pipeline for validation
-│   │   │   ├── Interfaces/
-│   │   │   │   ├── IProjectRepository.cs
-│   │   │   │   ├── ITaskRepository.cs
-│   │   │   │   └── IUnitOfWork.cs
-│   │   │   └── Mappings/
-│   │   │       └── MappingProfile.cs        # AutoMapper profiles
+│   │   └── Common/                      # Behaviours, Interfaces, Mappings
 │   │
-│   ├── FocusFlow.Infrastructure/            # ✅ Data access & Identity
-│   │   ├── Data/
-│   │   │   ├── ApplicationDbContext.cs
-│   │   │   └── Configurations/              # EF Core entity configurations
-│   │   ├── Repositories/
-│   │   │   ├── ProjectRepository.cs
-│   │   │   ├── TaskRepository.cs
-│   │   │   └── UnitOfWork.cs
-│   │   ├── Identity/
-│   │   │   └── ApplicationUser.cs
-│   │   └── Migrations/                      # EF Core migrations
+│   ├── FocusFlow.Infrastructure/        # 🔧 External concerns
+│   │   ├── Data/                        # DbContext, EF Configurations
+│   │   ├── Repositories/                # Repository Implementations
+│   │   └── Identity/                    # ASP.NET Identity setup
 │   │
-│   ├── FocusFlow.WebApi/                    # ✅ REST API
-│   │   ├── Controllers/
-│   │   │   ├── AuthController.cs            # Register, Login, Refresh
-│   │   │   ├── ProjectsController.cs
-│   │   │   ├── TasksController.cs
-│   │   │   └── DashboardController.cs
-│   │   ├── Middleware/
-│   │   │   └── GlobalExceptionHandler.cs    # Maps exceptions to HTTP status codes
-│   │   ├── Authorization/
-│   │   │   ├── ProjectOwnershipHandler.cs   # Policy-based authorization
-│   │   │   └── TaskOwnershipHandler.cs
-│   │   └── Program.cs                       # Service registration & middleware pipeline
+│   ├── FocusFlow.WebApi/                # 🌐 Entry Point & Composition Root
+│   │   ├── Program.cs                   # DI Container Setup (The Composition Root)
+│   │   ├── Controllers/                 # Thin controllers (REST Endpoints)
+│   │   └── Middleware/                  # Global Exception Handling
 │   │
-│   └── FocusFlow.BlazorApp/                 # ✅ Blazor Server UI
-│       ├── Components/
-│       │   ├── Layout/
-│       │   │   ├── MainLayout.razor
-│       │   │   ├── NavMenu.razor
-│       │   │   └── LoginDisplay.razor
-│       │   ├── Pages/
-│       │   │   ├── Index.razor              # Dashboard
-│       │   │   ├── Login.razor
-│       │   │   ├── Register.razor
-│       │   │   ├── Projects.razor           # Project list
-│       │   │   └── ProjectDetails.razor     # Project + tasks view
-│       │   ├── Projects/
-│       │   │   ├── ProjectCard.razor
-│       │   │   ├── ProjectEditForm.razor
-│       │   │   └── DeleteProjectDialog.razor
-│       │   └── Tasks/
-│       │       ├── TaskCard.razor
-│       │       ├── CreateTaskDialog.razor
-│       │       └── TaskListView.razor
-│       ├── Store/                           # Fluxor state management
+│   └── FocusFlow.BlazorApp/             # 🎨 UI Client (Feature-Based Architecture)
+│       ├── Components/                  # Global Shared Components (Layout, App)
+│       ├── Features/                    # Vertical Slices (UI + Logic per feature)
+│       │   ├── Projects/                # (List, Detail, Create, Edit)
+│       │   ├── Tasks/
 │       │   ├── Auth/
-│       │   │   ├── AuthState.cs
-│       │   │   ├── LoginAction.cs
-│       │   │   ├── LoginEffect.cs
-│       │   │   └── AuthReducers.cs
-│       │   ├── Projects/
-│       │   │   ├── ProjectState.cs
-│       │   │   ├── LoadProjectsAction.cs
-│       │   │   ├── LoadProjectsEffect.cs
-│       │   │   └── ProjectReducers.cs
-│       │   └── ProjectDetail/               # Project + tasks combined state
-│       │       ├── ProjectDetailState.cs
-│       │       ├── CreateTaskAction.cs
-│       │       ├── CreateTaskEffect.cs
-│       │       └── ProjectDetailReducers.cs
-│       ├── Services/
-│       │   ├── IApiService.cs
-│       │   ├── ApiService.cs                # HTTP client wrapper
-│       │   └── AuthenticationStateProvider.cs
-│       └── Program.cs
+│       │   └── Dashboard/
+│       └── Services/                    # HttpClients & Infrastructure Wrappers
 │
 ├── tests/
-│   ├── FocusFlow.Domain.Tests/              # ✅ 50+ tests
-│   ├── FocusFlow.Application.Tests/         # ✅ 100+ tests
-│   ├── FocusFlow.Infrastructure.Tests/      # ✅ 50+ tests
-│   ├── FocusFlow.Integration.Tests/         # ✅ 80+ tests (API)
-│   ├── FocusFlow.BlazorApp.Tests/           # ✅ 60+ tests (bUnit)
-│   └── FocusFlow.E2E.Tests/                 # ✅ 15+ tests (Playwright)
-│       ├── AuthenticationFlowTests.cs
-│       ├── ProjectManagementFlowTests.cs
-│       ├── TaskManagementFlowTests.cs
-│       ├── DashboardTests.cs
-│       ├── E2ETestEnvironment.cs           # Testcontainers orchestration
-│       └── PlaywrightTestBase.cs           # Browser automation setup
+│   ├── FocusFlow.Domain.Tests/          # Unit Tests
+│   ├── FocusFlow.Application.Tests/     # Unit Tests (Handlers & Validators)
+│   ├── FocusFlow.Infrastructure.Tests/  # Integration Tests (DB)
+│   ├── FocusFlow.Integration.Tests/     # API Integration Tests (WebApplicationFactory)
+│   ├── FocusFlow.BlazorApp.Tests/       # Component Tests (bUnit)
+│   └── FocusFlow.E2E.Tests/             # End-to-End (Playwright + Testcontainers)
 │
-├── scripts/
-│   ├── build-e2e-images.ps1                 # Build Docker images for E2E testing
-│   └── setup-dev-certs.ps1                  # HTTPS certificate generation (optional)
-│
-├── docker-compose.yml                       # Production-like Docker setup
-├── docker-compose.override.yml              # Development overrides (HTTP-only)
-├── .env.example                             # Environment variable template
-├── .gitignore
-└── README.md
+├── scripts/                             # Setup & DevOps scripts
+└── docker-compose.yml
 ```
 
 ---
 
 ## 🎯 Key Design Decisions (ADR)
 
-### ADR-001: Onion Architecture Over N-Tier
-**Decision:** Use Onion Architecture (Clean Architecture variant)  
-**Rationale:** 
-- Domain layer has **zero dependencies** (pure business logic)
-- Easier to test (mock infrastructure)
-- Framework-agnostic domain layer
-- Enforces dependency inversion (infrastructure depends on domain, not vice versa)
+For a detailed explanation including code examples and diagrams, see [Architecture Decision Records](docs/ADR.md).
 
-**Consequences:**  
-✅ Better testability (~95% domain coverage)  
-✅ Business logic isolated from infrastructure changes  
-⚠️ More projects (4 layers) but clearer separation
+#### **ADR-001: Onion Architecture**
+*   **Decision:** Use Onion Architecture with a pure .NET Domain layer.
+*   **Rationale:** Ensures zero external dependencies in business logic and high testability (~95% coverage).
+*   **Consequences:** Increases initial setup complexity and number of projects.
 
----
+#### **ADR-002: CQRS with MediatR**
+*   **Decision:** Separate Commands (writes) from Queries (reads).
+*   **Rationale:** Enforces Single Responsibility Principle and simplifies handler testing.
+*   **Consequences:** Significantly increases file count (one class per operation).
 
-### ADR-002: CQRS with MediatR
-**Decision:** Separate Commands (writes) from Queries (reads) using MediatR  
-**Rationale:**
-- **Single Responsibility** - Each handler does one thing
-- **Testability** - Mock `IMediator` instead of 10+ service methods
-- **Performance** - Queries can bypass domain validation
-- **Clarity** - `CreateProjectCommand` vs `GetAllProjectsQuery` is self-documenting
+#### **ADR-003: Vertical Slice Architecture**
+*   **Decision:** Organize code by feature (e.g., `Features/Projects`) instead of layer.
+*   **Rationale:** High cohesion; related code sits together (commands, queries, validators).
+*   **Consequences:** Requires strict discipline to avoid dependencies between features.
 
-**Consequences:**  
-✅ 100+ handlers, each <50 lines  
-✅ Easy to add new features (just add handler)  
-⚠️ More files, but organized by feature (Vertical Slice)
+#### **ADR-004: FocusFlow-Branded Exceptions**
+*   **Decision:** Prefix domain exceptions with `FocusFlow` (e.g., `FocusFlowNotFoundException`).
+*   **Rationale:** Clear identification in logs and easy global mapping to HTTP status codes.
+*   **Consequences:** Verbose naming convention.
 
-**Example:**
-```csharp
-// Command (write)
-public record CreateProjectCommand(string Name, DateTime StartDate) : IRequest<Result<ProjectDto>>;
+#### **ADR-005: FluentValidation**
+*   **Decision:** Use FluentValidation instead of Data Annotations.
+*   **Rationale:** Keeps validation logic out of entities; allows complex/async rules.
+*   **Consequences:** Adds an external dependency to the Application layer.
 
-// Query (read)
-public record GetAllProjectsQuery(string UserId) : IRequest<Result<List<ProjectDto>>>;
-```
+#### **ADR-006: AutoMapper**
+*   **Decision:** Use AutoMapper for Entity-to-DTO conversion.
+*   **Rationale:** Eliminates boilerplate mapping code; centralizes configuration.
+*   **Consequences:** Can hide mapping errors until runtime; "magic" behavior.
 
----
+#### **ADR-007: Fluxor (Redux for Blazor)**
+*   **Decision:** Use Fluxor for state management.
+*   **Rationale:** Provides predictable unidirectional data flow and Time-Travel debugging.
+*   **Consequences:** Higher learning curve compared to simple cascading parameters.
 
-### ADR-003: Vertical Slice Architecture in Application Layer
-**Decision:** Organize by feature (Tasks/, Projects/) instead of technical layer (Commands/, Queries/)  
-**Rationale:**
-- **Cohesion** - All "Create Task" artifacts in one folder
-- **Discoverability** - Easy to find related code
-- **Team scalability** - Features can be developed independently
+#### **ADR-008: MudBlazor**
+*   **Decision:** Use MudBlazor component library.
+*   **Rationale:** Rapid UI development with rich, accessible Material Design components.
+*   **Consequences:** Increases initial bundle size (mitigated by tree-shaking).
 
-**Structure:**
-```
-Tasks/
-  Commands/
-    CreateTaskCommand.cs
-    CreateTaskCommandHandler.cs
-    CreateTaskCommandValidator.cs
-  Queries/
-    GetTaskByIdQuery.cs
-    GetTaskByIdQueryHandler.cs
-  Dtos/
-    TaskDto.cs
-```
+#### **ADR-009: Playwright for E2E**
+*   **Decision:** Use Playwright for end-to-end testing.
+*   **Rationale:** Modern API with auto-wait reduces flakiness; cross-browser support.
+*   **Consequences:** Requires local browser installation.
 
----
+#### **ADR-010: PostgreSQL**
+*   **Decision:** Use PostgreSQL as the primary database.
+*   **Rationale:** Robust open-source option with excellent Docker support and JSON capabilities.
+*   **Consequences:** Syntax differences from SQL Server (e.g., `SERIAL` vs `IDENTITY`).
 
-### ADR-004: FocusFlow-Branded Exceptions
-**Decision:** Prefix all domain exceptions with `FocusFlow` (e.g., `FocusFlowNotFoundException`)  
-**Rationale:**
-- **Explicit** - No confusion with framework exceptions
-- **Searchable** - Easy to find in logs
-- **Branding** - Clear ownership of exception types
+#### **ADR-011: JWT Authentication**
+*   **Decision:** Use stateless JWT tokens.
+*   **Rationale:** Scalable; works across different clients (Web, Mobile, CLI).
+*   **Consequences:** Requires implementing explicit token refresh logic.
 
-**Consequences:**  
-✅ No namespace conflicts  
-✅ Global exception handler easily maps to HTTP status codes  
-⚠️ Longer names
+#### **ADR-012: Docker Compose for Development**
+*   **Decision:** Use Docker Compose as the standard dev environment.
+*   **Rationale:** Ensures environment consistency ("works on my machine") and fast onboarding.
+*   **Consequences:** Higher RAM usage compared to running IIS Express.
 
-**Exception Hierarchy:**
-```
-FocusFlowException (base)
-├── FocusFlowValidationException → 400 Bad Request
-├── FocusFlowBusinessRuleException → 422 Unprocessable Entity
-├── FocusFlowNotFoundException → 404 Not Found
-└── FocusFlowUnauthorizedException → 403 Forbidden
-```
+#### **ADR-013: HTTP-Only Development**
+*   **Decision:** Run containers on HTTP locally.
+*   **Rationale:** Simplifies setup by avoiding certificate management for new developers.
+*   **Consequences:** Slight parity gap with Production (which uses HTTPS).
 
----
+#### **ADR-014: Repository Pattern**
+*   **Decision:** Use Repositories alongside EF Core.
+*   **Rationale:** Decouples business logic from data access details; simplifies mocking.
+*   **Consequences:** Can add redundant abstraction over `DbSet`.
 
-### ADR-005: FluentValidation Over Data Annotations
-**Decision:** Use FluentValidation for all validation logic  
-**Rationale:**
-- **Testable** - Validators are POCO classes
-- **Expressive** - `RuleFor(x => x.EndDate).GreaterThan(x => x.StartDate)`
-- **Reusable** - Compose validators
-- **Complex rules** - Cross-property, async DB checks
+#### **ADR-015: bUnit for Component Tests**
+*   **Decision:** Use bUnit for Blazor testing.
+*   **Rationale:** Extremely fast execution (~100ms); tests logic without a browser.
+*   **Consequences:** Cannot verify visual layout or CSS rendering.
 
-**Consequences:**  
-✅ Validation lives in Application layer (not Domain)  
-✅ MediatR pipeline runs all validators automatically  
-⚠️ Extra package dependency
+#### **ADR-016: Testcontainers for E2E**
+*   **Decision:** Use Testcontainers to orchestrate tests.
+*   **Rationale:** Tests against real infrastructure (DB, API) ensuring true integration validity.
+*   **Consequences:** Slower test startup and higher resource consumption (4GB+ RAM).
 
-**Example:**
-```csharp
-public class CreateProjectCommandValidator : AbstractValidator<CreateProjectCommand>
-{
-    public CreateProjectCommandValidator()
-    {
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Project name is required")
-            .MaximumLength(200);
-        
-        RuleFor(x => x.EndDate)
-            .GreaterThan(x => x.StartDate)
-            .When(x => x.EndDate.HasValue);
-    }
-}
-```
+#### **ADR-017: SignalR for Real-Time**
+*   **Decision:** Use SignalR for bi-directional communication.
+*   **Rationale:** Enables instant updates (Push) across tabs/users; utilizes WebSocket abstraction.
+*   **Consequences:** Adds complexity by introducing a second data flow path (Push vs Pull) that must be bridged to the State Store.
 
 ---
-
-### ADR-006: AutoMapper for DTOs
-**Decision:** Use AutoMapper for Entity↔DTO mapping  
-**Rationale:**
-- **DRY** - Define mapping once, use everywhere
-- **Convention-based** - Automatically maps properties with same name
-- **Testable** - `AssertConfigurationIsValid()`
-
-**Consequences:**  
-✅ Eliminates 500+ lines of manual mapping code  
-✅ Profiles document transformations  
-⚠️ "Magic" behavior (convention-based)
-
----
-
-### ADR-007: Fluxor for Blazor State Management
-**Decision:** Use Fluxor (Redux pattern) instead of Blazor's built-in state containers  
-**Rationale:**
-- **Predictable** - Single source of truth
-- **DevTools** - Redux DevTools support (time-travel debugging)
-- **Testable** - Reducers are pure functions
-- **Scalable** - Clear action → effect → reducer flow
-
-**Consequences:**  
-✅ Easier to debug state changes  
-✅ Supports complex async workflows (e.g., optimistic updates)  
-⚠️ Learning curve for developers unfamiliar with Redux
-
-**Flow:**
-```
-Component → Dispatch(CreateProjectAction) 
-  → CreateProjectEffect (async API call) 
-    → Dispatch(CreateProjectSuccessAction) 
-      → ProjectReducer (updates state) 
-        → Component re-renders
-```
-
----
-
-### ADR-008: MudBlazor for UI Components
-**Decision:** Use MudBlazor over Bootstrap or custom components  
-**Rationale:**
-- **Rich components** - DataGrid, DatePicker, Autocomplete, Dialogs
-- **Material Design** - Modern, consistent UI
-- **Accessibility** - ARIA attributes built-in
-- **Active maintenance** - 7k+ GitHub stars
-
-**Consequences:**  
-✅ Faster UI development  
-✅ Responsive grid system  
-⚠️ ~2MB bundle size (but tree-shakeable)
-
----
-
-### ADR-009: Playwright for E2E Tests
-**Decision:** Use Playwright over Selenium  
-**Rationale:**
-- **Auto-wait** - No `Thread.Sleep()` or manual waits
-- **Cross-browser** - Chromium, Firefox, WebKit
-- **Video/screenshot** - Automatic on test failure
-- **Modern API** - Async/await, auto-retry
-
-**Consequences:**  
-✅ Reliable E2E tests (no flakiness)  
-✅ Debugging with video recordings  
-⚠️ Requires browser installation (~300MB)
-
----
-
-### ADR-010: PostgreSQL Over SQL Server
-**Decision:** Use PostgreSQL as the primary database  
-**Rationale:**
-- **Open-source** - No licensing costs
-- **Docker-friendly** - Official image, easy setup
-- **JSON support** - Native JSONB type (future analytics)
-- **Performance** - Better concurrency with MVCC
-
-**Consequences:**  
-✅ Easy local development (Docker)  
-✅ Cloud-agnostic (AWS RDS, Azure PostgreSQL, etc.)  
-⚠️ Different from SQL Server (no `IDENTITY`, uses `SERIAL`)
-
----
-
-### ADR-011: JWT Authentication for API
-**Decision:** Use JWT tokens for API authentication (not session cookies)  
-**Rationale:**
-- **Stateless** - No server-side session storage
-- **Scalable** - Works across multiple API instances
-- **Mobile-friendly** - Easy to use in non-browser clients
-- **Claims-based** - Roles embedded in token
-
-**Consequences:**  
-✅ Blazor app stores JWT in LocalStorage  
-✅ API validates token signature (no DB lookup per request)  
-⚠️ Token refresh logic needed (implement refresh tokens)
-
----
-
-### ADR-012: Docker Compose for Local Development
-**Decision:** Provide `docker-compose.yml` as the primary local dev environment  
-**Rationale:**
-- **Consistency** - Same environment for all developers
-- **Database included** - No manual PostgreSQL setup
-- **CI/CD parity** - Mirrors production deployment
-- **Fast onboarding** - `docker-compose up` = working app
-
-**Consequences:**  
-✅ New developers productive in <5 minutes  
-✅ Tests run against real database (not in-memory SQLite)  
-⚠️ Requires Docker Desktop (~4GB RAM)
-
----
-
-### ADR-013: HTTP-Only Development Mode
-**Decision:** Run Docker containers with HTTP (not HTTPS) in development  
-**Rationale:**
-- **Simplicity** - No certificate setup for first-time users
-- **Faster** - No HTTPS overhead
-- **Localhost** - Browsers allow HTTP on localhost
-
-**Consequences:**  
-✅ `docker-compose up` works immediately  
-✅ No certificate errors  
-⚠️ Production must enable HTTPS (see `scripts/setup-dev-certs.ps1` for cert generation)
-
----
-
-### ADR-014: Repository Pattern with Unit of Work
-**Decision:** Use Repository + UnitOfWork pattern despite EF Core's DbContext already being a UoW  
-**Rationale:**
-- **Testability** - Mock `IProjectRepository` instead of DbContext
-- **Abstraction** - Business logic doesn't know about EF Core
-- **Complex queries** - Encapsulate in repository methods
-
-**Consequences:**  
-✅ Easy to test Application layer (mock repositories)  
-✅ Could swap EF Core for Dapper/ADO.NET without changing handlers  
-⚠️ Extra abstraction layer (some argue it's redundant)
-
----
-
-### ADR-015: bUnit for Blazor Component Testing
-**Decision:** Use bUnit for testing Blazor components  
-**Rationale:**
-- **In-memory** - No browser needed
-- **Fast** - ~100ms per test
-- **Queries** - Find elements like `Find("button.save")`
-- **Event simulation** - Click, input, etc.
-
-**Consequences:**  
-✅ Tests Blazor components in isolation  
-✅ Catches UI bugs before E2E tests  
-⚠️ Cannot test CSS/layout (need E2E for that)
-
----
-
-### ADR-016: Testcontainers for E2E Test Environment
-**Decision:** Use Testcontainers to orchestrate real Docker containers (PostgreSQL + API + Blazor) for E2E tests  
-**Rationale:**
-- **Real environment** - Tests against actual PostgreSQL, not in-memory SQLite
-- **Container parity** - Same Docker images used in production
-- **Isolation** - Fresh database per test suite
-- **Networking** - Tests inter-container communication (API ↔ DB, Blazor ↔ API)
-- **DataProtection** - Validates shared key scenarios between API and Blazor
-
-**Consequences:**  
-✅ E2E tests catch Docker configuration issues  
-✅ No "works on my machine" - consistent test environment  
-✅ Tests real database migrations and seeding  
-⚠️ Slower than in-memory tests (~2-3 minutes startup)  
-⚠️ Requires Docker Desktop with sufficient resources (4GB+ RAM)
-
-**Implementation:**
-```csharp
-// E2ETestEnvironment orchestrates 3 containers:
-// 1. PostgreSQL (fresh DB per test suite)
-// 2. API container (focusflow-api:test image)  
-// 3. Blazor container (focusflow-client:test image)
-// + Custom Docker network for inter-container communication
-// + Shared DataProtection keys volume
-```
