@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: focusflow-postgres
+  namespace: focusflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: focusflow-postgres
+  template:
+    metadata:
+      labels:
+        app: focusflow-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: focusflow-config
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: focusflow-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: focusflow-config
+              key: POSTGRES_DB
+        ports:
+        - containerPort: 5432
+          name: postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: focusflow-postgres
+  namespace: focusflow
+spec:
+  selector:
+    app: focusflow-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  type: ClusterIP

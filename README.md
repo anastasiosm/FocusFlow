@@ -8,7 +8,8 @@ A production-ready task management application built with .NET 8, demonstrating 
 
 - [Prerequisites](#-prerequisites)
 - [Quick Start](#-quick-start)
-  - [Docker Compose (Recommended)](#docker-compose-recommended)
+  - [Docker Compose (Recommended)](#option-1-docker-compose-recommended)
+  - [Kubernetes (Demo)](#option-2-kubernetes-minimal-demo-setup)
 - [Architecture](#-architecture)
 - [Testing](#-testing)
 - [Technology Stack](#-technology-stack)
@@ -122,6 +123,44 @@ pwsh scripts/setup-dev-certs.ps1
 # Then enable HTTPS in docker-compose.yml by uncommenting the HTTPS configuration
 ```
 
+### Option 2: Kubernetes (Demo)
+
+**For demos, testing, and learning Kubernetes** - see [k8s/minimal/README.md](k8s/minimal/README.md)
+
+Quick start:
+
+```powershell
+# 1. Build Docker images
+docker build -f src/FocusFlow.WebApi/Dockerfile -t focusflow-api:latest .
+docker build -f src/FocusFlow.BlazorApp/Dockerfile -t focusflow-blazor:latest .
+
+# 2. Deploy to Kubernetes
+cd k8s/minimal
+.\deploy.ps1
+
+# 3. Access via port-forward (in separate terminals)
+kubectl port-forward -n focusflow service/focusflow-api 8080:8080
+kubectl port-forward -n focusflow service/focusflow-blazor 8081:8081
+
+# 4. Access the application
+# - Blazor UI:  http://localhost:8081
+# - API:        http://localhost:8080/swagger
+
+# 5. Cleanup
+.\cleanup.ps1
+```
+
+**What's included:**
+- PostgreSQL, API, and Blazor UI deployments
+- Health checks (liveness & readiness probes)
+- One-command deployment and cleanup
+- Windows PowerShell scripts only
+- Perfect for demos (no Ingress, no persistent volumes)
+
+**Notes:**
+- Requires Docker Desktop with Kubernetes enabled (or Minikube/Kind)
+- Images are pulled from local Docker (not a registry)
+- Data is **not** persisted across pod restarts (ephemeral storage for simplicity)
 ---
 
 ## 🏗️ Architecture

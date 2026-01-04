@@ -19,6 +19,16 @@
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
     <None Include=".env.example" />
+    <None Include="docs\KUBERNETES_HEALTH_CHECKS.md" />
+    <None Include="k8s\minimal\api.yaml" />
+    <None Include="k8s\minimal\blazor.yaml" />
+    <None Include="k8s\minimal\cleanup.ps1" />
+    <None Include="k8s\minimal\configmap.yaml" />
+    <None Include="k8s\minimal\deploy.ps1" />
+    <None Include="k8s\minimal\namespace.yaml" />
+    <None Include="k8s\minimal\postgres.yaml" />
+    <None Include="k8s\minimal\README.md" />
+    <None Include="k8s\minimal\secrets.yaml" />
     <None Include="scripts\setup-dev-certs.ps1" />
     <None Include="scripts\run-e2e-tests.ps1" />
   </ItemGroup>
