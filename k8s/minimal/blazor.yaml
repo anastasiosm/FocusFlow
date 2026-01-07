@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: blazor
-        image: focusflow-blazor:latest
+        image: focusflow-focusflow-blazor:latest
         imagePullPolicy: IfNotPresent
         env:
         - name: ASPNETCORE_ENVIRONMENT
@@ -26,12 +26,12 @@ spec:
         - name: ApiBaseUrl
           value: "http://focusflow-api:8080"
         ports:
-        - containerPort: 8081
+        - containerPort: 8080
           name: http
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 8081
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
@@ -39,7 +39,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 8081
+            port: 8080
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
@@ -55,6 +55,6 @@ spec:
     app: focusflow-blazor
   ports:
   - port: 8081
-    targetPort: 8081
+    targetPort: 8080
     name: http
   type: ClusterIP

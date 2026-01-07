@@ -13,43 +13,43 @@ if (!(Get-Command kubectl -ErrorAction SilentlyContinue)) {
 # Check if images exist locally
 Write-Host ""
 Write-Host "Checking Docker images..." -ForegroundColor Yellow
-$apiImage = docker images focusflow-api:latest --format "{{.Repository}}"
-$blazorImage = docker images focusflow-blazor:latest --format "{{.Repository}}"
+$apiImage = docker images focusflow-focusflow-api:latest --format "{{.Repository}}"
+$blazorImage = docker images focusflow-focusflow-blazor:latest --format "{{.Repository}}"
 
 if (!$apiImage) {
-    Write-Host "Warning: focusflow-api:latest image not found locally" -ForegroundColor Yellow
-    Write-Host "   Build it with: docker build -f src/FocusFlow.WebApi/Dockerfile -t focusflow-api:latest ." -ForegroundColor Gray
+    Write-Host "Warning: focusflow-focusflow-api:latest image not found locally" -ForegroundColor Yellow
+    Write-Host "   Build it with: docker build -f src/FocusFlow.WebApi/Dockerfile -t focusflow-focusflow-api:latest ." -ForegroundColor Gray
 }
 
 if (!$blazorImage) {
-    Write-Host "Warning: focusflow-blazor:latest image not found locally" -ForegroundColor Yellow
-    Write-Host "   Build it with: docker build -f src/FocusFlow.BlazorApp/Dockerfile -t focusflow-blazor:latest ." -ForegroundColor Gray
+    Write-Host "Warning: focusflow-focusflow-blazor:latest image not found locally" -ForegroundColor Yellow
+    Write-Host "   Build it with: docker build -f src/FocusFlow.BlazorApp/Dockerfile -t focusflow-focusflow-blazor:latest ." -ForegroundColor Gray
 }
 
 Write-Host ""
 Write-Host "Applying Kubernetes manifests..." -ForegroundColor Yellow
 
 # Apply manifests in order
-kubectl apply -f k8s/minimal/namespace.yaml
+kubectl apply -f namespace.yaml
 Write-Host "Namespace created" -ForegroundColor Green
 
-kubectl apply -f k8s/minimal/secrets.yaml
+kubectl apply -f secrets.yaml
 Write-Host "Secrets created" -ForegroundColor Green
 
-kubectl apply -f k8s/minimal/configmap.yaml
+kubectl apply -f configmap.yaml
 Write-Host "ConfigMap created" -ForegroundColor Green
 
-kubectl apply -f k8s/minimal/postgres.yaml
+kubectl apply -f postgres.yaml
 Write-Host "PostgreSQL deployed" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "Waiting for PostgreSQL to be ready..." -ForegroundColor Yellow
 kubectl wait --for=condition=ready pod -l app=focusflow-postgres -n focusflow --timeout=120s
 
-kubectl apply -f k8s/minimal/api.yaml
+kubectl apply -f api.yaml
 Write-Host "API deployed" -ForegroundColor Green
 
-kubectl apply -f k8s/minimal/blazor.yaml
+kubectl apply -f blazor.yaml
 Write-Host "Blazor app deployed" -ForegroundColor Green
 
 Write-Host ""

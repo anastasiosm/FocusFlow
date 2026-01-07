@@ -5,6 +5,6 @@ metadata:
   namespace: focusflow
 data:
   ASPNETCORE_ENVIRONMENT: "Development"
-  POSTGRES_HOST: "focusflow-postgres"
+  POSTGRES_HOST: "10.100.178.155"
   POSTGRES_DB: "focusflow"
   POSTGRES_USER: "focusflow"
